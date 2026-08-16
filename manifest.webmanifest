@@ -1,0 +1,32 @@
+{
+  "name": "Cora 2027 - Plataforma Estratégica de Matrículas",
+  "short_name": "Cora 2027",
+  "description": "Painel estratégico de matrículas, retenção, captação, projeções e relatórios do Colégio Cora Coralina.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f2f6fb",
+  "theme_color": "#0f4f95",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "maskable-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
