@@ -1,4 +1,4 @@
-const CACHE_NAME='cora-2027-v20';
+const CACHE_NAME='cora-2027-v21';
 const ASSETS=[
 './','./index.html','./app.css','./app-1.js','./app-2.js','./app-3.js','./reajustes-2027.js',
 './manifest.webmanifest','./icon-192.png','./icon-512.png','./maskable-icon-512.png',
@@ -12,13 +12,12 @@ self.addEventListener('fetch',e=>{
   if(u.origin===self.location.origin&&(u.pathname.endsWith('/coracoralina/')||u.pathname.endsWith('/coracoralina/index.html'))){
     e.respondWith(fetch(e.request).then(async r=>{
       let html=await r.text();
-      if(!html.includes('reajustes-2027.js'))html=html.replace('</body>',"<script src='./reajustes-2027.js?v=2'></script></body>");
-      const out=new Response(html,{status:r.status,statusText:r.statusText,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}});
-      return out;
+      if(!html.includes('reajustes-2027.js'))html=html.replace('</body>',"<script src='./reajustes-2027.js?v=3'></script></body>");
+      return new Response(html,{status:r.status,statusText:r.statusText,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}});
     }).catch(()=>caches.match('./index.html').then(async r=>{
       if(!r)return new Response('Offline',{status:503});
       let html=await r.text();
-      if(!html.includes('reajustes-2027.js'))html=html.replace('</body>',"<script src='./reajustes-2027.js?v=2'></script></body>");
+      if(!html.includes('reajustes-2027.js'))html=html.replace('</body>',"<script src='./reajustes-2027.js?v=3'></script></body>");
       return new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8'}});
     })));
     return;
