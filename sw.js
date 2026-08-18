@@ -1,33 +1,41 @@
-const CACHE_NAME='cora-2027-v22';
+const CACHE_NAME='cora-2027-v23';
 const ASSETS=[
-'./','./index.html','./app.css','./app-1.js','./app-2.js','./app-3.js','./reajustes-2027.js',
+'./','./index.html','./app.css','./app-1.js','./app-2.js','./app-3.js','./reajustes-2027.js','./mensalidades-2027-v2.js',
 './manifest.webmanifest','./icon-192.png','./icon-512.png','./maskable-icon-512.png',
 './apple-touch-icon.png','./logo-escola-web.png','./logo-pdf-web.png'
 ];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)));self.skipWaiting();});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))));self.clients.claim();});
-function forceReajustes(html){
-  const tag="<script src='./reajustes-2027.js?v=4'></script>";
+function forceScripts(html){
+  const reaj="<script src='./reajustes-2027.js?v=5'></script>";
+  const mensal="<script src='./mensalidades-2027-v2.js?v=1'></script>";
   if(/<script[^>]+src=["'][^"']*reajustes-2027\.js[^"']*["'][^>]*><\/script>/i.test(html)){
-    return html.replace(/<script[^>]+src=["'][^"']*reajustes-2027\.js[^"']*["'][^>]*><\/script>/ig,tag);
+    html=html.replace(/<script[^>]+src=["'][^"']*reajustes-2027\.js[^"']*["'][^>]*><\/script>/ig,reaj);
+  }else{
+    html=html.replace('</body>',reaj+'</body>');
   }
-  return html.replace('</body>',tag+'</body>');
+  if(/<script[^>]+src=["'][^"']*mensalidades-2027-v2\.js[^"']*["'][^>]*><\/script>/i.test(html)){
+    html=html.replace(/<script[^>]+src=["'][^"']*mensalidades-2027-v2\.js[^"']*["'][^>]*><\/script>/ig,mensal);
+  }else{
+    html=html.replace('</body>',mensal+'</body>');
+  }
+  return html;
 }
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
   const u=new URL(e.request.url);
   if(u.origin===self.location.origin&&(u.pathname.endsWith('/coracoralina/')||u.pathname.endsWith('/coracoralina/index.html'))){
     e.respondWith(fetch(e.request,{cache:'no-store'}).then(async r=>{
-      const html=forceReajustes(await r.text());
+      const html=forceScripts(await r.text());
       return new Response(html,{status:r.status,statusText:r.statusText,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store, no-cache, must-revalidate'}});
     }).catch(()=>caches.match('./index.html').then(async r=>{
       if(!r)return new Response('Offline',{status:503});
-      const html=forceReajustes(await r.text());
+      const html=forceScripts(await r.text());
       return new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}});
     })));
     return;
   }
-  if(u.pathname.endsWith('/reajustes-2027.js')){
+  if(u.pathname.endsWith('/reajustes-2027.js')||u.pathname.endsWith('/mensalidades-2027-v2.js')){
     e.respondWith(fetch(e.request,{cache:'no-store'}));
     return;
   }
