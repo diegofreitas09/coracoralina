@@ -1,6 +1,6 @@
-const CACHE_NAME='cora-2027-v25';
+const CACHE_NAME='cora-2027-v26';
 const ASSETS=[
-'./','./index.html','./app.css','./app-1.js','./app-2.js','./app-3.js','./reajustes-2027.js','./mensalidades-2027-v2.js','./fechamento-nav-fix.js',
+'./','./index.html','./app.css','./app-1.js','./app-2.js','./app-3.js','./reajustes-2027.js','./mensalidades-2027-v2.js','./fechamento-nav-fix.js','./relatorio-fechamento-2027.js',
 './manifest.webmanifest','./icon-192.png','./icon-512.png','./maskable-icon-512.png',
 './apple-touch-icon.png','./logo-escola-web.png','./logo-pdf-web.png'
 ];
@@ -8,9 +8,10 @@ self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))));self.clients.claim();});
 function forceScripts(html){
   const scripts=[
-    [/<script[^>]+src=["'][^"']*reajustes-2027\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./reajustes-2027.js?v=7'></script>"],
-    [/<script[^>]+src=["'][^"']*mensalidades-2027-v2\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./mensalidades-2027-v2.js?v=3'></script>"],
-    [/<script[^>]+src=["'][^"']*fechamento-nav-fix\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./fechamento-nav-fix.js?v=2'></script>"]
+    [/<script[^>]+src=["'][^"']*reajustes-2027\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./reajustes-2027.js?v=8'></script>"],
+    [/<script[^>]+src=["'][^"']*mensalidades-2027-v2\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./mensalidades-2027-v2.js?v=4'></script>"],
+    [/<script[^>]+src=["'][^"']*fechamento-nav-fix\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./fechamento-nav-fix.js?v=3'></script>"],
+    [/<script[^>]+src=["'][^"']*relatorio-fechamento-2027\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./relatorio-fechamento-2027.js?v=1'></script>"]
   ];
   scripts.forEach(([re,tag])=>{
     if(re.test(html)){re.lastIndex=0;html=html.replace(re,tag)}else html=html.replace('</body>',tag+'</body>');
@@ -31,7 +32,7 @@ self.addEventListener('fetch',e=>{
     })));
     return;
   }
-  if(u.pathname.endsWith('/reajustes-2027.js')||u.pathname.endsWith('/mensalidades-2027-v2.js')||u.pathname.endsWith('/fechamento-nav-fix.js')){
+  if(u.pathname.endsWith('/reajustes-2027.js')||u.pathname.endsWith('/mensalidades-2027-v2.js')||u.pathname.endsWith('/fechamento-nav-fix.js')||u.pathname.endsWith('/relatorio-fechamento-2027.js')){
     e.respondWith(fetch(e.request,{cache:'no-store'}));return;
   }
   e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(CACHE_NAME).then(cache=>cache.put(e.request,c));return r;}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html'))));
