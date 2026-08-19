@@ -14,7 +14,7 @@ function forceScripts(html){
     [/<script[^>]+src=["'][^"']*relatorio-fechamento-layout-v2\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./relatorio-fechamento-layout-v2.js?v=18'></script>"],
     [/<script[^>]+src=["'][^"']*listas-material-2027\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./listas-material-2027.js?v=18'></script>"],
     [/<script[^>]+src=["'][^"']*sync-planilha-2027\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./sync-planilha-2027.js?v=16'></script>"],
-    [/<script[^>]+src=["'][^"']*fechamento-sti-v29\.js[^"']*["'][^"']*["'][^>]*><\/script>/ig,"<script src='./fechamento-sti-v29.js?v=16'></script>"],
+    [/<script[^>]+src=["'][^"']*fechamento-sti-v29\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./fechamento-sti-v29.js?v=16'></script>"],
     [/<script[^>]+src=["'][^"']*pdf-fechamento-fix-v30\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./pdf-fechamento-fix-v30.js?v=15'></script>"],
     [/<script[^>]+src=["'][^"']*receita-espelho-fechamento-v32\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./receita-espelho-fechamento-v32.js?v=13'></script>"],
     [/<script[^>]+src=["'][^"']*alunos-ajuste-v35\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./alunos-ajuste-v35.js?v=10'></script>"],
