@@ -1,5 +1,13 @@
 (function(){
+  function ensureGuard(){
+    if(document.getElementById('cora-tab-guard'))return;
+    const s=document.createElement('style');
+    s.id='cora-tab-guard';
+    s.textContent=`main > section{display:none!important} main > section.active{display:block!important}`;
+    document.head.appendChild(s);
+  }
   function normalizeSections(activeId){
+    ensureGuard();
     document.querySelectorAll('main > section').forEach(sec=>{
       sec.style.removeProperty('display');
       sec.classList.toggle('active',sec.id===activeId);
@@ -9,7 +17,8 @@
     });
   }
   function route(id){
-    if(!id||!document.getElementById(id))return;
+    const sec=document.getElementById(id);
+    if(!id||!sec||sec.parentElement?.tagName!=='MAIN')return;
     normalizeSections(id);
     try{
       if(id==='graficos'&&typeof window.renderGraphs==='function')window.renderGraphs();
@@ -21,8 +30,9 @@
     window.scrollTo(0,0);
   }
   function install(){
+    ensureGuard();
     document.querySelectorAll('main > section').forEach(sec=>sec.style.removeProperty('display'));
-    const current=document.querySelector('main > section.active');
+    const current=document.querySelector('main > section.active')||document.querySelector('main > section#inicio');
     if(current)normalizeSections(current.id);
   }
   document.addEventListener('click',function(e){
@@ -35,15 +45,13 @@
     route(id);
   },true);
   const mo=new MutationObserver(()=>{
+    ensureGuard();
     const active=[...document.querySelectorAll('main > section.active')];
-    if(active.length>1){
-      const activeBtn=document.querySelector('#nav button[data-tab].active');
-      const keep=activeBtn?.dataset.tab||active[0]?.id;
-      if(keep)normalizeSections(keep);
-    }
-    document.querySelectorAll('main > section:not(.active)').forEach(sec=>{
-      if(sec.style.display==='block')sec.style.removeProperty('display');
-    });
+    const activeBtn=document.querySelector('#nav button[data-tab].active');
+    let keep=activeBtn?.dataset.tab||active[0]?.id||'inicio';
+    if(!document.getElementById(keep))keep='inicio';
+    if(active.length!==1||active[0]?.id!==keep)normalizeSections(keep);
+    document.querySelectorAll('main > section').forEach(sec=>sec.style.removeProperty('display'));
   });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{install();mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style']})});
   else{install();mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style']})}
