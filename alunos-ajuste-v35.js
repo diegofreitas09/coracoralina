@@ -1,7 +1,7 @@
 (function(){
   const KEY='cora2027_alunos_oficial_v1';
   const API='https://script.google.com/macros/s/AKfycbwSpAtBgMjFyQ7J5yUxIfobEt0CxCGNgWEQZxp-mj9z-9zfWIcV2ig9iQlGzcCL5UYk/exec';
-  const SHEET='https://docs.google.com/spreadsheets/d/1dHrXFN8Gddha5zIoqZou2WfjV7EYbcyHh4-EOFC_qBg/edit';
+  const SHEET='https://docs.google.com/spreadsheets/d/1dHrXFN8Gddha5zIoqZou2WfjV7EYbcyHh4-EOFC_qBg/edit?gid=1201#gid=1201';
   const n=v=>Math.max(0,Math.round(Number(v)||0));
   const pct=v=>(Number(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
   const rows=()=>window.STUDENTS||STUDENTS||[];
@@ -13,12 +13,55 @@
   function officialSerie(r){const d=load();return d[r.serie]?.valor!==undefined?n(d[r.serie].valor):n(state?.studentGoals?.[r.serie]??r.goal)}
   function official(key){return selected(key).reduce((s,r)=>s+officialSerie(r),0)}
   function distribute(key,total){const rr=selected(key);total=n(total);if(!rr.length)return;const base=rr.reduce((s,r)=>s+officialSerie(r),0)||rr.reduce((s,r)=>s+n(r.goal),0)||1;let assigned=0;rr.forEach((r,i)=>{let v;if(i===rr.length-1)v=Math.max(0,total-assigned);else{v=Math.max(0,Math.round(officialSerie(r)*total/base));assigned+=v}state.studentGoals[r.serie]=v})}
-  async function post(r,val){try{await fetch(API,{method:'POST',mode:'no-cors',cache:'no-store',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'salvarRegistro',aba:'Produtos 2027',id:'ALUNOS|'+r.serie,data:{'Categoria':'Planejamento de Alunos','Segmento/Turma':r.serie,'Produto':'Quantidade oficial de alunos 2027','Descrição':r.segmento,'Valor 2026':n(r.a26),'Valor 2027':n(val),'Reajuste %':r.a26?((n(val)/r.a26-1)*100):0,'Parcelamento':'','Obrigatório':'SIM','Status':'RASCUNHO','Aprovado em':'','Publicado no Cora Família':'NÃO','ID':'ALUNOS|'+r.serie,'Observação':'Projeção inicial 2027: '+n(r.goal)}})})}catch(e){console.warn(e)}}
-  async function saveOfficial(){const key=studentSel.value||'Todos',manual=document.getElementById('studentManual27');if(!manual)return;const total=n(manual.value);distribute(key,total);const d=load(),stamp=new Date().toLocaleString('pt-BR',{timeZone:'America/Fortaleza'});for(const r of selected(key)){const val=n(state.studentGoals[r.serie]);d[r.serie]={valor:val,saved:true,savedAt:stamp,segmento:r.segmento,base26:n(r.a26),projecao:n(r.goal)};await post(r,val)}persist(d);try{localStorage.setItem('cora2027_v16_state',JSON.stringify(state))}catch(e){}if(typeof renderAll==='function')renderAll();setTimeout(refresh,80);toast('✅ Quantitativo oficial 2027 salvo e sincronizado.')}
+  async function post(r,val,stamp){
+    try{
+      await fetch(API,{method:'POST',mode:'no-cors',cache:'no-store',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({
+        action:'salvarRegistro',aba:'Alunos 2027',id:'ALUNOS|'+r.serie,data:{
+          'ID':'ALUNOS|'+r.serie,
+          'Segmento':r.segmento,
+          'Série/Turma':r.serie,
+          'Alunos 2025':n(r.a25),
+          'Alunos 2026':n(r.a26),
+          'Projeção 2027':n(r.goal),
+          'Oficial 2027':n(val),
+          'Variação 26→27 %':r.a26?((n(val)/r.a26-1)*100):0,
+          'Status':'SALVO',
+          'Salvo em':stamp,
+          'Observação':'Valor oficial definido na Cora Gestão 2027'
+        }
+      })});
+      return true;
+    }catch(e){console.warn(e);return false}
+  }
+  async function saveOfficial(){
+    const key=studentSel.value||'Todos',manual=document.getElementById('studentManual27');if(!manual)return;
+    const total=n(manual.value);distribute(key,total);
+    const d=load(),stamp=new Date().toLocaleString('pt-BR',{timeZone:'America/Fortaleza'});
+    for(const r of selected(key)){
+      const val=n(state.studentGoals[r.serie]);
+      d[r.serie]={valor:val,saved:true,savedAt:stamp,segmento:r.segmento,base26:n(r.a26),projecao:n(r.goal)};
+      await post(r,val,stamp);
+    }
+    persist(d);
+    try{localStorage.setItem('cora2027_v16_state',JSON.stringify(state))}catch(e){}
+    if(typeof renderAll==='function')renderAll();
+    setTimeout(refresh,80);
+    toast('✅ Quantitativo 2027 salvo e enviado para a aba Alunos 2027.');
+  }
   function toast(t){let e=document.getElementById('alunosToast35');if(!e){e=document.createElement('div');e.id='alunosToast35';e.className='alunos-toast35';document.body.appendChild(e)}e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',2600)}
-  function ensureUI(){const sec=document.getElementById('alunos');if(!sec)return;const old=document.getElementById('alunosGestao2027');if(old)old.remove();const controls=sec.querySelector('.controls');if(!controls)return;
+  function ensureUI(){
+    const sec=document.getElementById('alunos');if(!sec)return;
+    const old=document.getElementById('alunosGestao2027');if(old)old.remove();
+    const controls=sec.querySelector('.controls');if(!controls)return;
     const oldGoal=document.getElementById('studentGoal');if(oldGoal){oldGoal.readOnly=true;oldGoal.style.background='#eef3f8';const lab=oldGoal.closest('div')?.querySelector('label');if(lab)lab.textContent='Projeção inicial 2027'}
-    let box=document.getElementById('alunosManualBox');if(!box){box=document.createElement('div');box.id='alunosManualBox';box.className='alunos-manual-box';box.innerHTML=`<div><label>Alunos 2027 — valor manual/oficial</label><input id="studentManual27" type="number" min="0"></div><div class="alunos-manual-actions"><button id="studentSave27">💾 Salvar 2027</button><a href="${SHEET}" target="_blank" rel="noopener">📊 Planilha</a><button id="studentPdf27">📄 PDF de alunos</button></div><div id="studentOfficialInfo" class="student-official-info"></div>`;controls.insertAdjacentElement('afterend',box);document.getElementById('studentSave27').onclick=saveOfficial;document.getElementById('studentPdf27').onclick=pdf}
+    let box=document.getElementById('alunosManualBox');
+    if(!box){
+      box=document.createElement('div');box.id='alunosManualBox';box.className='alunos-manual-box';
+      box.innerHTML=`<div><label>Alunos 2027 — valor manual/oficial</label><input id="studentManual27" type="number" min="0"></div><div class="alunos-manual-actions"><button id="studentSave27">💾 Salvar 2027</button><a href="${SHEET}" target="_blank" rel="noopener">📊 Alunos na planilha</a><button id="studentPdf27">📄 PDF de alunos</button></div><div id="studentOfficialInfo" class="student-official-info"></div>`;
+      controls.insertAdjacentElement('afterend',box);
+      document.getElementById('studentSave27').onclick=saveOfficial;
+      document.getElementById('studentPdf27').onclick=pdf;
+    }
   }
   function refresh(){ensureUI();const key=studentSel?.value||'Todos';const p=projection(key),o=official(key),b=base26(key);if(studentGoal)studentGoal.value=p;const m=document.getElementById('studentManual27');if(m)m.value=o;const info=document.getElementById('studentOfficialInfo');if(info){const d=b?((o/b-1)*100):0;info.innerHTML=`<span><b>2026:</b> ${b}</span><span><b>Projeção 2027:</b> ${p}</span><span><b>Manual oficial 2027:</b> ${o}</span><span><b>Variação:</b> ${(d>=0?'+':'')+pct(d)}</span>`}}
   async function jsPDF(){if(window.jspdf?.jsPDF)return window.jspdf.jsPDF;await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)});return window.jspdf.jsPDF}
