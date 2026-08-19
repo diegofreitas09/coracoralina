@@ -101,6 +101,7 @@ function criarPdfOrcamento_(id,data) {
   const responsavel = normalize_(data['Responsável'] || data.responsavel || 'Responsável');
   const aluno = normalize_(data['Aluno'] || data.aluno || 'Aluno');
   const serie = normalize_(data['Série/Segmento'] || data.serie || '');
+  const observacoes = normalize_(data['Observações'] || data.observacoes || '');
   const nomeSeguro = (aluno || responsavel || id).replace(/[\\/:*?"<>|]/g,'-');
   const doc = DocumentApp.create('TEMP-' + id);
   const body = doc.getBody();
@@ -128,6 +129,11 @@ function criarPdfOrcamento_(id,data) {
   body.appendHorizontalRule();
   body.appendParagraph('ITENS SELECIONADOS').setHeading(DocumentApp.ParagraphHeading.HEADING2);
   body.appendParagraph(normalize_(data['Itens selecionados'] || 'Nenhum item informado.'));
+  if (observacoes) {
+    body.appendHorizontalRule();
+    body.appendParagraph('OBSERVAÇÕES').setHeading(DocumentApp.ParagraphHeading.HEADING2);
+    body.appendParagraph(observacoes);
+  }
   body.appendParagraph('Documento gerado automaticamente pelo Cora Família. Valores oficiais de 2027.');
   doc.saveAndClose();
   const file = DriveApp.getFileById(doc.getId());
