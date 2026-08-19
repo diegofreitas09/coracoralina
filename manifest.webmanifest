@@ -1,7 +1,7 @@
 {
-  "name": "Cora 2027 - Plataforma Estratégica de Matrículas",
-  "short_name": "Cora 2027",
-  "description": "Painel estratégico de matrículas, retenção, captação, projeções e relatórios do Colégio Cora Coralina.",
+  "name": "Cora Gestão",
+  "short_name": "Cora Gestão",
+  "description": "Plataforma de gestão estratégica do Colégio Cora Coralina para matrículas, alunos, retenção, valores, produtos, receita, projeções e relatórios.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
