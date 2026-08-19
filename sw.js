@@ -1,4 +1,4 @@
-const CACHE_NAME='cora-2027-v60';
+const CACHE_NAME='cora-2027-v61';
 const ASSETS=[
 './','./index.html','./app.css','./app-1.js','./app-2.js','./app-3.js','./reajustes-2027.js','./mensalidades-2027-v2.js','./fechamento-nav-fix.js','./relatorio-fechamento-2027.js','./relatorio-fechamento-layout-v2.js','./listas-material-2027.js','./listas-material-bootstrap-v54.js','./listas-material-corrige-v55.js','./sync-planilha-2027.js','./fechamento-sti-v29.js','./pdf-fechamento-fix-v30.js','./receita-espelho-fechamento-v32.js','./alunos-ajuste-v35.js','./visao-geral-fachada-v36.js','./materiais-gestao-v38.js','./mensalidades-portfolio-v40.js','./tab-router-fix-v41.js','./cora-gestao-brand-v45.js','./presentation-hardening-v59.js','./panfleto-ajuste-v58.js',
 './manifest.webmanifest','./icon-192.png','./icon-512.png','./maskable-icon-512.png','./apple-touch-icon.png','./logo-escola-web.png','./logo-pdf-web.png'
@@ -26,7 +26,7 @@ function forceScripts(html){
     [/<script[^>]+src=["'][^"']*tab-router-fix-v41\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./tab-router-fix-v41.js?v=18'></script>"],
     [/<script[^>]+src=["'][^"']*cora-gestao-brand-v45\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./cora-gestao-brand-v45.js?v=15'></script>"],
     [/<script[^>]+src=["'][^"']*presentation-hardening-v59\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./presentation-hardening-v59.js?v=1'></script>"],
-    [/<script[^>]+src=["'][^"']*panfleto-ajuste-v58\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./panfleto-ajuste-v58.js?v=3'></script>"]
+    [/<script[^>]+src=["'][^"']*panfleto-ajuste-v58\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./panfleto-ajuste-v58.js?v=4'></script>"]
   ];
   html=html.replace(/<script[^>]+src=["'][^"']*sti-sync-receita-v31\.js[^"']*["'][^>]*><\/script>/ig,'');
   html=html.replace(/<script[^>]+src=["'][^"']*alunos-gestao-v34\.js[^"']*["'][^>]*><\/script>/ig,'');
