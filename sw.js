@@ -1,4 +1,4 @@
-const CACHE_NAME='cora-2027-v38';
+const CACHE_NAME='cora-2027-v39';
 const ASSETS=[
 './','./index.html','./app.css','./app-1.js','./app-2.js','./app-3.js','./reajustes-2027.js','./mensalidades-2027-v2.js','./fechamento-nav-fix.js','./relatorio-fechamento-2027.js','./relatorio-fechamento-layout-v2.js','./listas-material-2027.js','./sync-planilha-2027.js','./fechamento-sti-v29.js','./pdf-fechamento-fix-v30.js','./receita-espelho-fechamento-v32.js','./alunos-ajuste-v35.js','./visao-geral-fachada-v36.js','./materiais-gestao-v38.js',
 './manifest.webmanifest','./icon-192.png','./icon-512.png','./maskable-icon-512.png',
@@ -8,19 +8,19 @@ self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))));self.clients.claim();});
 function forceScripts(html){
   const scripts=[
-    [/<script[^>]+src=["'][^"']*reajustes-2027\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./reajustes-2027.js?v=20'></script>"],
-    [/<script[^>]+src=["'][^"']*mensalidades-2027-v2\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./mensalidades-2027-v2.js?v=16'></script>"],
-    [/<script[^>]+src=["'][^"']*fechamento-nav-fix\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./fechamento-nav-fix.js?v=15'></script>"],
-    [/<script[^>]+src=["'][^"']*relatorio-fechamento-2027\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./relatorio-fechamento-2027.js?v=13'></script>"],
-    [/<script[^>]+src=["'][^"']*relatorio-fechamento-layout-v2\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./relatorio-fechamento-layout-v2.js?v=12'></script>"],
-    [/<script[^>]+src=["'][^"']*listas-material-2027\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./listas-material-2027.js?v=12'></script>"],
-    [/<script[^>]+src=["'][^"']*sync-planilha-2027\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./sync-planilha-2027.js?v=11'></script>"],
-    [/<script[^>]+src=["'][^"']*fechamento-sti-v29\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./fechamento-sti-v29.js?v=10'></script>"],
-    [/<script[^>]+src=["'][^"']*pdf-fechamento-fix-v30\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./pdf-fechamento-fix-v30.js?v=9'></script>"],
-    [/<script[^>]+src=["'][^"']*receita-espelho-fechamento-v32\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./receita-espelho-fechamento-v32.js?v=7'></script>"],
-    [/<script[^>]+src=["'][^"']*alunos-ajuste-v35\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./alunos-ajuste-v35.js?v=4'></script>"],
-    [/<script[^>]+src=["'][^"']*visao-geral-fachada-v36\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./visao-geral-fachada-v36.js?v=3'></script>"],
-    [/<script[^>]+src=["'][^"']*materiais-gestao-v38\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./materiais-gestao-v38.js?v=1'></script>"]
+    [/<script[^>]+src=["'][^"']*reajustes-2027\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./reajustes-2027.js?v=21'></script>"],
+    [/<script[^>]+src=["'][^"']*mensalidades-2027-v2\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./mensalidades-2027-v2.js?v=17'></script>"],
+    [/<script[^>]+src=["'][^"']*fechamento-nav-fix\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./fechamento-nav-fix.js?v=16'></script>"],
+    [/<script[^>]+src=["'][^"']*relatorio-fechamento-2027\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./relatorio-fechamento-2027.js?v=14'></script>"],
+    [/<script[^>]+src=["'][^"']*relatorio-fechamento-layout-v2\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./relatorio-fechamento-layout-v2.js?v=13'></script>"],
+    [/<script[^>]+src=["'][^"']*listas-material-2027\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./listas-material-2027.js?v=13'></script>"],
+    [/<script[^>]+src=["'][^"']*sync-planilha-2027\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./sync-planilha-2027.js?v=12'></script>"],
+    [/<script[^>]+src=["'][^"']*fechamento-sti-v29\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./fechamento-sti-v29.js?v=11'></script>"],
+    [/<script[^>]+src=["'][^"']*pdf-fechamento-fix-v30\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./pdf-fechamento-fix-v30.js?v=10'></script>"],
+    [/<script[^>]+src=["'][^"']*receita-espelho-fechamento-v32\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./receita-espelho-fechamento-v32.js?v=8'></script>"],
+    [/<script[^>]+src=["'][^"']*alunos-ajuste-v35\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./alunos-ajuste-v35.js?v=5'></script>"],
+    [/<script[^>]+src=["'][^"']*visao-geral-fachada-v36\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./visao-geral-fachada-v36.js?v=4'></script>"],
+    [/<script[^>]+src=["'][^"']*materiais-gestao-v38\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./materiais-gestao-v38.js?v=2'></script>"]
   ];
   html=html.replace(/<script[^>]+src=["'][^"']*sti-sync-receita-v31\.js[^"']*["'][^>]*><\/script>/ig,'');
   html=html.replace(/<script[^>]+src=["'][^"']*alunos-gestao-v34\.js[^"']*["'][^>]*><\/script>/ig,'');
