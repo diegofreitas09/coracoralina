@@ -19,9 +19,7 @@
     let n=Number(v)||0;
     const a=Number(annuity)||0;
     if(n<=0)return n;
-    // Corrige o erro antigo: 580.00 era lido como 58000.
     if(n>5000 && n/100>0 && (!a || n/100<a)) n=n/100;
-    // Uma parcela individual nunca pode superar a própria anuidade.
     if(a>0 && n>a && n/100<a) n=n/100;
     return Math.round(n*100)/100;
   }
@@ -85,16 +83,19 @@
       }
       first.max='5000';
       first.min='0';
-      first.addEventListener('change',()=>{
-        const v=Number(first.value)||0;
-        const a=Number(ann.value)||0;
-        if(v>5000 || (a>0&&v>a)){
-          const corrected=plausibleMoney(v,a);
-          first.value=corrected.toFixed(2);
-          first.dispatchEvent(new Event('input',{bubbles:true}));
-          alert('Valor da 1ª parcela corrigido. O sistema bloqueou um valor incompatível com a anuidade.');
-        }
-      },{once:true});
+      if(first.dataset.moneyGuard!=='1'){
+        first.dataset.moneyGuard='1';
+        first.addEventListener('change',()=>{
+          const v=Number(first.value)||0;
+          const a=Number(ann.value)||0;
+          if(v>5000 || (a>0&&v>a)){
+            const corrected=plausibleMoney(v,a);
+            first.value=corrected.toFixed(2);
+            first.dispatchEvent(new Event('input',{bubbles:true}));
+            alert('Valor da 1ª parcela corrigido. O sistema bloqueou um valor incompatível com a anuidade.');
+          }
+        });
+      }
     });
   }
 
@@ -105,16 +106,74 @@
     },80);
   }
 
+  let receitaAtualizando=false;
+  let ultimaNuvem=0;
+
+  function receitaVisivel(){
+    const sec=document.getElementById('receita');
+    return !!(sec&&(sec.classList.contains('active')||sec.offsetParent!==null));
+  }
+
+  function travarPrecoNaReceita(){
+    ['finTuRate','finMatRate','finUniRate','finStiRate'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){
+        el.disabled=true;
+        el.title='Valor definido no Fechamento 2027';
+      }
+    });
+  }
+
+  async function atualizarReceitaOficial(forcarNuvem){
+    if(receitaAtualizando)return;
+    receitaAtualizando=true;
+    try{
+      repairStorage();
+      const agora=Date.now();
+      if((forcarNuvem||agora-ultimaNuvem>15000) && window.CoraGestaoSync && typeof window.CoraGestaoSync.hydrateCloud==='function'){
+        await window.CoraGestaoSync.hydrateCloud(true);
+        ultimaNuvem=Date.now();
+        repairStorage();
+      }
+      if(typeof window.CoraReceitaRefresh==='function')window.CoraReceitaRefresh();
+      travarPrecoNaReceita();
+    }catch(e){
+      console.warn('Receita: falha ao espelhar Fechamento 2027',e);
+      try{if(typeof window.CoraReceitaRefresh==='function')window.CoraReceitaRefresh()}catch(_){}
+    }finally{
+      receitaAtualizando=false;
+    }
+  }
+
   function init(){
     applyBrand();
     hardenStorage();
     refreshIfRepaired();
     sanitizeInputs();
-    new MutationObserver(()=>sanitizeInputs()).observe(document.body,{childList:true,subtree:true});
-    // Proteção extra contra sincronizações antigas ainda abertas em outra aba.
-    setInterval(()=>{refreshIfRepaired();sanitizeInputs()},1500);
+    new MutationObserver(()=>{sanitizeInputs();if(receitaVisivel())travarPrecoNaReceita()}).observe(document.body,{childList:true,subtree:true});
+    setInterval(()=>{refreshIfRepaired();sanitizeInputs();if(receitaVisivel())atualizarReceitaOficial(false)},5000);
   }
 
+  document.addEventListener('click',e=>{
+    const alvo=e.target.closest('button,[data-tab],[data-page],.tab,.navbtn');
+    if(!alvo)return;
+    const texto=(alvo.textContent||'').toLowerCase();
+    const tab=(alvo.getAttribute('data-tab')||alvo.getAttribute('data-page')||'').toLowerCase();
+    if(texto.includes('receita')||tab==='receita')setTimeout(()=>atualizarReceitaOficial(true),80);
+  },true);
+
+  document.addEventListener('cora:official-values',()=>{
+    if(receitaVisivel())setTimeout(()=>atualizarReceitaOficial(false),30);
+  });
+
+  window.addEventListener('focus',()=>{
+    applyBrand();
+    refreshIfRepaired();
+    sanitizeInputs();
+    if(receitaVisivel())setTimeout(()=>atualizarReceitaOficial(true),80);
+  });
+
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
-  window.addEventListener('load',()=>{applyBrand();refreshIfRepaired();sanitizeInputs()});
+  window.addEventListener('load',()=>{applyBrand();refreshIfRepaired();sanitizeInputs();if(receitaVisivel())atualizarReceitaOficial(true)});
+  window.CoraReceitaOficialRefresh=()=>atualizarReceitaOficial(true);
 })();
