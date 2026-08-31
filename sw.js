@@ -1,45 +1,5 @@
-const CACHE_NAME='cora-2027-v65';
-const ASSETS=[
-'./','./index.html','./app.css','./app-1.js','./app-2.js','./app-3.js','./reajustes-2027.js','./mensalidades-2027-v2.js','./fechamento-nav-fix.js','./relatorio-fechamento-2027.js','./relatorio-fechamento-layout-v2.js','./listas-material-2027.js','./listas-material-bootstrap-v54.js','./listas-material-corrige-v55.js','./sync-planilha-2027.js','./sync-publicacao-v64.js','./integridade-v65.js','./fechamento-sti-v29.js','./pdf-fechamento-fix-v30.js','./receita-espelho-fechamento-v32.js','./alunos-ajuste-v35.js','./visao-geral-fachada-v36.js','./materiais-gestao-v38.js','./mensalidades-portfolio-v40.js','./tab-router-fix-v41.js','./cora-gestao-brand-v45.js','./presentation-hardening-v59.js','./panfleto-final-v63.js',
-'./manifest.webmanifest','./icon-192.png','./icon-512.png','./maskable-icon-512.png','./apple-touch-icon.png','./logo-escola-web.png','./logo-pdf-web.png'
-];
-self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)));self.skipWaiting();});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))));self.clients.claim();});
-function forceScripts(html){
-  const scripts=[
-    [/<script[^>]+src=["'][^"']*reajustes-2027\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./reajustes-2027.js?v=40'></script>"],
-    [/<script[^>]+src=["'][^"']*mensalidades-2027-v2\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./mensalidades-2027-v2.js?v=36'></script>"],
-    [/<script[^>]+src=["'][^"']*fechamento-nav-fix\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./fechamento-nav-fix.js?v=35'></script>"],
-    [/<script[^>]+src=["'][^"']*relatorio-fechamento-2027\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./relatorio-fechamento-2027.js?v=33'></script>"],
-    [/<script[^>]+src=["'][^"']*relatorio-fechamento-layout-v2\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./relatorio-fechamento-layout-v2.js?v=32'></script>"],
-    [/<script[^>]+src=["'][^"']*listas-material-2027\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./listas-material-2027.js?v=32'></script>"],
-    [/<script[^>]+src=["'][^"']*listas-material-bootstrap-v54\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./listas-material-bootstrap-v54.js?v=6'></script>"],
-    [/<script[^>]+src=["'][^"']*listas-material-corrige-v55\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./listas-material-corrige-v55.js?v=5'></script>"],
-    [/<script[^>]+src=["'][^"']*sync-planilha-2027\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./sync-planilha-2027.js?v=30'></script>"],
-    [/<script[^>]+src=["'][^"']*sync-publicacao-v64\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./sync-publicacao-v64.js?v=1'></script>"],
-    [/<script[^>]+src=["'][^"']*integridade-v65\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./integridade-v65.js?v=1'></script>"],
-    [/<script[^>]+src=["'][^"']*fechamento-sti-v29\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./fechamento-sti-v29.js?v=30'></script>"],
-    [/<script[^>]+src=["'][^"']*pdf-fechamento-fix-v30\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./pdf-fechamento-fix-v30.js?v=30'></script>"],
-    [/<script[^>]+src=["'][^"']*receita-espelho-fechamento-v32\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./receita-espelho-fechamento-v32.js?v=27'></script>"],
-    [/<script[^>]+src=["'][^"']*alunos-ajuste-v35\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./alunos-ajuste-v35.js?v=24'></script>"],
-    [/<script[^>]+src=["'][^"']*visao-geral-fachada-v36\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./visao-geral-fachada-v36.js?v=23'></script>"],
-    [/<script[^>]+src=["'][^"']*materiais-gestao-v38\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./materiais-gestao-v38.js?v=21'></script>"],
-    [/<script[^>]+src=["'][^"']*mensalidades-portfolio-v40\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./mensalidades-portfolio-v40.js?v=19'></script>"],
-    [/<script[^>]+src=["'][^"']*tab-router-fix-v41\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./tab-router-fix-v41.js?v=18'></script>"],
-    [/<script[^>]+src=["'][^"']*cora-gestao-brand-v45\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./cora-gestao-brand-v45.js?v=15'></script>"],
-    [/<script[^>]+src=["'][^"']*presentation-hardening-v59\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./presentation-hardening-v59.js?v=1'></script>"],
-    [/<script[^>]+src=["'][^"']*panfleto-final-v63\.js[^"']*["'][^>]*><\/script>/ig,"<script src='./panfleto-final-v63.js?v=1'></script>"]
-  ];
-  [
-    'sti-sync-receita-v31.js','alunos-gestao-v34.js','panfleto-matricula-v46.js','panfleto-premium-v48.js','panfleto-lista-material-v52.js','panfleto-oficial-v55.js','panfleto-oficial-v56.js','panfleto-oficial-v57.js','panfleto-ajuste-v58.js','panfleto-compact-v62.js'
-  ].forEach(name=>{const esc=name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');html=html.replace(new RegExp('<script[^>]+src=["\'][^"\']*'+esc+'[^"\']*["\'][^>]*><\\/script>','ig'),'')});
-  scripts.forEach(([re,tag])=>{if(re.test(html)){re.lastIndex=0;html=html.replace(re,tag)}else html=html.replace('</body>',tag+'</body>')});
-  return html;
-}
-self.addEventListener('fetch',e=>{
-  if(e.request.method!=='GET')return;
-  const u=new URL(e.request.url);
-  if(u.origin===self.location.origin&&(u.pathname.endsWith('/coracoralina/')||u.pathname.endsWith('/coracoralina/index.html'))){e.respondWith(fetch(e.request,{cache:'no-store'}).then(async r=>{const html=forceScripts(await r.text());return new Response(html,{status:r.status,statusText:r.statusText,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store, no-cache, must-revalidate'}})}).catch(()=>caches.match('./index.html').then(async r=>{if(!r)return new Response('Offline',{status:503});const html=forceScripts(await r.text());return new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}})})));return}
-  if(['/reajustes-2027.js','/mensalidades-2027-v2.js','/fechamento-nav-fix.js','/relatorio-fechamento-2027.js','/relatorio-fechamento-layout-v2.js','/listas-material-2027.js','/listas-material-bootstrap-v54.js','/listas-material-corrige-v55.js','/sync-planilha-2027.js','/sync-publicacao-v64.js','/integridade-v65.js','/fechamento-sti-v29.js','/pdf-fechamento-fix-v30.js','/receita-espelho-fechamento-v32.js','/alunos-ajuste-v35.js','/visao-geral-fachada-v36.js','/materiais-gestao-v38.js','/mensalidades-portfolio-v40.js','/tab-router-fix-v41.js','/cora-gestao-brand-v45.js','/presentation-hardening-v59.js','/panfleto-final-v63.js'].some(x=>u.pathname.endsWith(x))){e.respondWith(fetch(e.request,{cache:'no-store'}));return}
-  e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(CACHE_NAME).then(cache=>cache.put(e.request,c));return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html'))));
-});
+const CACHE_NAME='cora-2027-v66';
+const ASSETS=['./','./index.html','./app.css','./app-1.js','./app-2.js','./app-3.js','./sync-planilha-2027.js','./sync-publicacao-v64.js','./integridade-v65.js','./fonte-unica-v66.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)).catch(()=>{}));self.skipWaiting()});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))));self.clients.claim()});
+function inject(html){html=html.replace(/<script[^>]+src=["'][^"']*fonte-unica-v66\.js[^"']*["'][^>]*><\/script>/ig,'');return html.replace('</body>',"<script src='./fonte-unica-v66.js?v=66'></script></body>")}
+self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const u=new URL(e.request.url);const nav=u.origin===self.location.origin&&(e.request.mode==='navigate'||u.pathname.endsWith('/coracoralina/')||u.pathname.endsWith('/coracoralina/index.html'));if(nav){e.respondWith(fetch(e.request,{cache:'no-store'}).then(async r=>new Response(inject(await r.text()),{status:r.status,statusText:r.statusText,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store, no-cache, must-revalidate'}})).catch(()=>caches.match('./index.html').then(async r=>r?new Response(inject(await r.text()),{headers:{'Content-Type':'text/html; charset=utf-8'} }):new Response('Offline',{status:503}))));return}e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{if(r&&r.ok){const c=r.clone();caches.open(CACHE_NAME).then(x=>x.put(e.request,c)).catch(()=>{})}return r}).catch(()=>caches.match(e.request)))})
