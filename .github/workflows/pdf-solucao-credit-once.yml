@@ -1,0 +1,47 @@
+name: Aplicar crédito PDF Solução Educacional
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pdf-solucao-credit-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  aplicar-credito:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Atualizar autoria e rodapé
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from urllib.parse import quote
+
+          p = Path('index.html')
+          html = p.read_text(encoding='utf-8')
+          html = html.replace('PDF - Soluções Financeiras', 'PDF Solução Educacional')
+
+          if 'pdf-solucao-credit-footer' not in html:
+              mensagem = quote('Olá! Vim por um projeto desenvolvido pela PDF Solução Educacional e gostaria de falar com vocês.')
+              footer = f'''\n<footer id="pdf-solucao-credit-footer" style="background:#08162f;border-top:1px solid rgba(255,255,255,.12);padding:16px 18px;color:#fff;font-family:inherit">\n  <a href="https://wa.me/5585984161882?text={mensagem}" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:14px;max-width:520px;margin:0 auto;text-decoration:none;color:#fff">\n    <img src="logo-pdf-web.png" alt="PDF Solução Educacional" style="height:52px;width:auto;object-fit:contain">\n    <span style="display:grid;gap:2px;text-align:left">\n      <small style="font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:#9fb0ca">Desenvolvido por</small>\n      <strong style="font-size:14px;font-weight:900">PDF Solução Educacional</strong>\n      <span style="font-size:12px;font-weight:800;color:#9ee8ff">(85) 98416-1882</span>\n    </span>\n  </a>\n</footer>\n'''
+              html = html.replace('</main>', '</main>' + footer, 1)
+
+          p.write_text(html, encoding='utf-8')
+          PY
+
+      - name: Publicar alteração
+        run: |
+          if git diff --quiet; then
+            echo "Nada para alterar."
+            exit 0
+          fi
+          git config user.name "PDF Solução Educacional"
+          git config user.email "actions@users.noreply.github.com"
+          git add index.html
+          git commit -m "feat: exibir autoria PDF Solução Educacional no rodapé"
+          git push
