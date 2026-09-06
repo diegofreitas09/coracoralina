@@ -94,31 +94,3 @@ body.standalone-app main{padding-bottom:max(26px, env(safe-area-inset-bottom))}
   .big{font-size:23px!important}
   .kpi b{font-size:20px!important}
 }
-
-/* ===== CRÉDITO PDF SOLUÇÃO EDUCACIONAL ===== */
-.consult b{font-size:0}
-.consult b::after{content:"PDF Solução Educacional";font-size:16px}
-body::after{
-  content:"Desenvolvido por  PDF Solução Educacional  •  (85) 98416-1882";
-  display:block;
-  box-sizing:border-box;
-  min-height:78px;
-  padding:28px 20px 22px 82px;
-  background:#061c39 url('logo-pdf-web.png') no-repeat calc(50% - 235px) center/48px auto;
-  color:#fff;
-  text-align:center;
-  font-size:13px;
-  font-weight:900;
-  letter-spacing:.02em;
-  border-top:1px solid #ffffff24;
-}
-@media(max-width:680px){
-  body::after{
-    min-height:112px;
-    padding:66px 12px 18px;
-    background-position:center 12px;
-    background-size:44px auto;
-    font-size:12px;
-    line-height:1.45;
-  }
-}
