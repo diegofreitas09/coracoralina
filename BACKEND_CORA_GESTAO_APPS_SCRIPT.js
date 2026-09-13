@@ -9,6 +9,45 @@ function normalize_(v) {
   return String(v == null ? '' : v).trim();
 }
 
+const CORA_CONTROLLED_FIELDS_ = ['Status','Aprovado em','Publicado no Cora Família','Publicado em'];
+const CORA_OFFICIAL_CATEGORIES_ = ['mensalidade','material didático','fardamento','sti / tempo integral'];
+
+function officialCategory_(value) {
+  const category = normalize_(value).toLowerCase();
+  return CORA_OFFICIAL_CATEGORIES_.indexOf(category) >= 0;
+}
+
+function stripControlledFields_(data) {
+  const clean = Object.assign({}, data || {});
+  CORA_CONTROLLED_FIELDS_.forEach(function (key) { delete clean[key]; });
+  return clean;
+}
+
+function rowsAsObjects_(values) {
+  const headers = values[0] || [];
+  return values.slice(1).filter(function (row) {
+    return row.some(function (value) { return value !== ''; });
+  }).map(function (row) {
+    const out = {};
+    headers.forEach(function (header, index) { out[String(header)] = row[index]; });
+    return out;
+  });
+}
+
+function catalogAudit_() {
+  const rows = rowsAsObjects_(sheet_('Produtos 2027').getDataRange().getValues());
+  const approved = rows.filter(function (row) {
+    return normalize_(row.Status).toUpperCase() === 'APROVADO' &&
+      normalize_(row['Publicado no Cora Família']).toUpperCase() === 'SIM';
+  });
+  const drafts = rows.filter(function (row) {
+    return normalize_(row.Status).toUpperCase() === 'RASCUNHO' &&
+      normalize_(row['Publicado no Cora Família']).toUpperCase() === 'NÃO';
+  });
+  const report = rows.filter(function (row) { return officialCategory_(row.Categoria); });
+  return {total:rows.length,aprovadosPublicados:approved.length,rascunhos:drafts.length,relatorioCompleto:report.length};
+}
+
 function sheet_(name) {
   const ss = SpreadsheetApp.openById(CORA_GESTAO_SPREADSHEET_ID);
   const sh = ss.getSheetByName(name);
@@ -34,6 +73,10 @@ function doGet(e) {
       return json_({ok:true,aba,rows});
     }
 
+    if (action === 'auditarCatalogo') {
+      return json_({ok:true,versao:'71',auditoria:catalogAudit_(),requisicaoSobreposta:false});
+    }
+
     return json_({ok:false,mensagem:'Ação GET desconhecida.'});
   } catch (err) {
     return json_({ok:false,mensagem:String(err && err.message || err)});
@@ -56,7 +99,9 @@ function doPost(e) {
       if (idCol < 0) throw new Error('Coluna ID não encontrada em ' + aba);
       let row = -1;
       for (let i=1;i<values.length;i++) if (normalize_(values[i][idCol]) === id) { row = i+1; break; }
-      const data = body.data || {};
+      // Compatibilidade: gravações antigas continuam aceitas, mas o cliente não
+      // pode mais promover ou rebaixar registros.
+      const data = stripControlledFields_(body.data || {});
       const out = headers.map(h => Object.prototype.hasOwnProperty.call(data,h) ? data[h] : '');
       if (row > 0) {
         const current = sh.getRange(row,1,1,headers.length).getValues()[0];
@@ -69,6 +114,63 @@ function doPost(e) {
       }
       registrarHistorico_(aba,id,data);
       return json_({ok:true,aba,id,row});
+    }
+
+    if (action === 'salvarLote') {
+      const aba = normalize_(body.aba || 'Produtos 2027');
+      const registros = Array.isArray(body.registros) ? body.registros : [];
+      const escopo = normalize_(body.escopo);
+      if (!registros.length) throw new Error('registros é obrigatório');
+      if (registros.length > 200) throw new Error('Lote excede 200 registros');
+      if (escopo === 'CATALOGO_OFICIAL_36') {
+        if (registros.length !== 36) throw new Error('Catálogo oficial deve conter exatamente 36 registros');
+        if (registros.some(function (r) { return !officialCategory_(r && r.data && r.data.Categoria); })) {
+          throw new Error('Categoria não autorizada no catálogo oficial');
+        }
+      }
+      const lock = LockService.getScriptLock();
+      if (!lock.tryLock(60000)) return json_({ok:false,codigo:'LOTE_OCUPADO',mensagem:'Outra gravação está em andamento'});
+      try {
+        const sh = sheet_(aba);
+        const values = sh.getDataRange().getValues();
+        const headers = values[0] || [];
+        const idCol = headers.findIndex(function (h) { return normalize_(h).toLowerCase() === 'id'; });
+        if (idCol < 0) throw new Error('Coluna ID não encontrada em ' + aba);
+        const index = {};
+        for (let i=1;i<values.length;i++) index[normalize_(values[i][idCol])] = i;
+        const stamp = new Date();
+        registros.forEach(function (registro) {
+          const id = normalize_(registro && registro.id);
+          if (!id) throw new Error('Todos os registros precisam de ID fixo');
+          const incoming = stripControlledFields_(registro.data || {});
+          incoming.ID = id;
+          let rowIndex = index[id];
+          if (rowIndex == null) {
+            rowIndex = values.length;
+            index[id] = rowIndex;
+            values.push(headers.map(function () { return ''; }));
+          }
+          headers.forEach(function (header, col) {
+            if (Object.prototype.hasOwnProperty.call(incoming, header)) values[rowIndex][col] = incoming[header];
+          });
+          if (escopo === 'CATALOGO_OFICIAL_36') {
+            const statusCol = headers.indexOf('Status');
+            const approvedAtCol = headers.indexOf('Aprovado em');
+            const publishedCol = headers.indexOf('Publicado no Cora Família');
+            const publishedAtCol = headers.indexOf('Publicado em');
+            if (statusCol >= 0) values[rowIndex][statusCol] = 'APROVADO';
+            if (approvedAtCol >= 0) values[rowIndex][approvedAtCol] = stamp;
+            if (publishedCol >= 0) values[rowIndex][publishedCol] = 'SIM';
+            if (publishedAtCol >= 0) values[rowIndex][publishedAtCol] = stamp;
+          }
+        });
+        if (values.length > 1) sh.getRange(1,1,values.length,headers.length).setValues(values);
+        const audit = catalogAudit_();
+        registrarHistorico_(aba,'LOTE-V71',{quantidade:registros.length,escopo:escopo,auditoria:audit});
+        return json_({ok:true,versao:'71',gravados:registros.length,auditoria:audit,requisicaoSobreposta:false});
+      } finally {
+        lock.releaseLock();
+      }
     }
 
     if (action === 'salvarPdfOrcamento') {
