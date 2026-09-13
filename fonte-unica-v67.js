@@ -24,7 +24,16 @@ function rows(){const db=read(FECH_KEY);const map=new Map();[...tuitionRows(db),
 let publishing=false;
 async function publish(){if(publishing)return 0;publishing=true;try{const rs=rows();if(!rs.length)return 0;for(const row of rs)await post(row);localStorage.setItem('cora2027_ultima_publicacao_v67',JSON.stringify({at:new Date().toISOString(),count:rs.length,ids:rs.map(r=>r.id)}));document.dispatchEvent(new CustomEvent('cora:catalog-published',{detail:{count:rs.length,version:'67'}}));return rs.length}finally{publishing=false}}
 function bind(){document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.matches('.tu-save,#saveAllTuition,#adjSaveAll,.adj-save-row,.sti-save-row,#saveAllSti,.aluno-save,#alunosSaveAll,#lmSave,#saveMaterialsSegment,#saveAllMaterials'))setTimeout(()=>publish().catch(console.warn),900)},true)}
-function init(){bind();setTimeout(()=>publish().catch(console.warn),1600)}
+let cloudTimer=0;
+function publishAfterCloud(){
+  clearTimeout(cloudTimer);
+  cloudTimer=setTimeout(()=>publish().catch(console.warn),700);
+}
+function init(){
+  bind();
+  document.addEventListener('cora:official-values',publishAfterCloud);
+  setTimeout(()=>publish().catch(console.warn),1600);
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 window.CoraFonteUnicaV67={publish,rows,version:'67'};
 })();
