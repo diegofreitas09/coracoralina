@@ -1,0 +1,26 @@
+# Security Checklist
+
+- [x] Repository and branch inventory.
+- [x] Git snapshots created.
+- [x] Critical Sheets backup copies created.
+- [x] Isolated restore test performed.
+- [x] Netlify deploy provenance checked.
+- [x] GitHub branch protection checked.
+- [x] Existing CI status checked.
+- [x] Deployed Apps Script read-only probe.
+- [x] Production HTTP header probe.
+- [x] Cloudflare Worker invalid-auth probe.
+- [x] Product IDs checked for missing/duplicates.
+- [ ] Deployed write API authenticated and retested.
+- [ ] Server-side financial recalculation.
+- [ ] RBAC enforcement tests.
+- [ ] Rate limiting tests.
+- [ ] Full secret-history scan.
+- [ ] Dependency/SCA scan.
+- [ ] SAST/CodeQL.
+- [ ] DAST in authorized non-production environment.
+- [ ] Security headers deployed and retested.
+- [ ] Netlify deploy tied to versioned source.
+- [ ] Branch ruleset/protection enabled.
+- [ ] Cloudflare Worker source/deployment brought under version control.
+- [ ] SHA-256 manifests for exported backups.
