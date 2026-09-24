@@ -11,6 +11,15 @@ function normalize_(v) {
 
 const CORA_CONTROLLED_FIELDS_ = ['Status','Aprovado em','Publicado no Cora Família','Publicado em'];
 const CORA_OFFICIAL_CATEGORIES_ = ['mensalidade','material didático','fardamento','sti / tempo integral'];
+const CORA_PUBLIC_READ_SHEETS_ = ['Produtos 2027','Alunos 2027'];
+const CORA_WRITABLE_SHEETS_ = ['Produtos 2027','Alunos 2027','Listas de Material','Orçamentos Cora Família'];
+
+function requireAllowedSheet_(name, allowed, operation) {
+  if (allowed.indexOf(name) < 0) {
+    throw new Error('Aba não autorizada para ' + operation);
+  }
+  return name;
+}
 
 function officialCategory_(value) {
   const category = normalize_(value).toLowerCase();
@@ -61,7 +70,7 @@ function doGet(e) {
     if (!action || action === 'ping') return json_({ok:true,servico:'Cora Gestão 2027'});
 
     if (action === 'listar') {
-      const aba = normalize_(e.parameter.aba);
+      const aba = requireAllowedSheet_(normalize_(e.parameter.aba), CORA_PUBLIC_READ_SHEETS_, 'leitura');
       const sh = sheet_(aba);
       const values = sh.getDataRange().getValues();
       const headers = values.shift() || [];
@@ -89,7 +98,7 @@ function doPost(e) {
     const action = normalize_(body.action);
 
     if (action === 'salvarRegistro') {
-      const aba = normalize_(body.aba);
+      const aba = requireAllowedSheet_(normalize_(body.aba), CORA_WRITABLE_SHEETS_, 'gravação');
       const id = normalize_(body.id);
       if (!aba || !id) throw new Error('aba e id são obrigatórios');
       const sh = sheet_(aba);
@@ -117,7 +126,7 @@ function doPost(e) {
     }
 
     if (action === 'salvarLote') {
-      const aba = normalize_(body.aba || 'Produtos 2027');
+      const aba = requireAllowedSheet_(normalize_(body.aba || 'Produtos 2027'), ['Produtos 2027'], 'gravação em lote');
       const registros = Array.isArray(body.registros) ? body.registros : [];
       const escopo = normalize_(body.escopo);
       if (!registros.length) throw new Error('registros é obrigatório');
