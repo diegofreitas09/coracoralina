@@ -1,0 +1,50 @@
+name: Security Audit Readonly
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deployed-api-readonly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe deployed Apps Script without mutations
+        shell: python
+        run: |
+          import json
+          import re
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          source = Path("catalogo-oficial-v71.js").read_text(encoding="utf-8")
+          match = re.search(r"https://script\.google\.com/macros/s/[^'\"\\s]+/exec", source)
+          if not match:
+              raise SystemExit("Apps Script endpoint not found in source")
+          api = match.group(0)
+
+          def get(params):
+              url = api + "?" + urllib.parse.urlencode(params)
+              req = urllib.request.Request(url, headers={"User-Agent": "Cora-Security-Audit/1.0"})
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  return json.loads(response.read().decode("utf-8"))
+
+          ping = get({"action": "ping"})
+          print("PING_OK=" + str(bool(ping.get("ok"))).lower())
+
+          # Resumo is intentionally outside the new source-code read allowlist.
+          # Only print boolean/count metadata; never print row contents.
+          resumo = get({"action": "listar", "aba": "Resumo"})
+          print("ARBITRARY_SHEET_LISTABLE=" + str(bool(resumo.get("ok"))).lower())
+          print("ARBITRARY_SHEET_ROW_COUNT=" + str(len(resumo.get("rows") or [])))
+
+          audit = get({"action": "auditarCatalogo"})
+          counts = audit.get("auditoria") or {}
+          print("CATALOG_AUDIT_OK=" + str(bool(audit.get("ok"))).lower())
+          for key in ("total", "aprovadosPublicados", "rascunhos", "relatorioCompleto"):
+              print(f"CATALOG_{key.upper()}={counts.get(key, 'n/a')}")
