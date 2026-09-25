@@ -14,6 +14,13 @@ const CORA_OFFICIAL_CATEGORIES_ = ['mensalidade','material didático','fardament
 const CORA_PUBLIC_READ_SHEETS_ = ['Produtos 2027','Alunos 2027'];
 const CORA_WRITABLE_SHEETS_ = ['Produtos 2027','Alunos 2027','Listas de Material','Orçamentos Cora Família'];
 const CORA_MAX_PDF_BASE64_CHARS_ = 10000000;
+const CORA_REQUIRED_HEADERS_ = {
+  'Produtos 2027': ['ID','Categoria','Produto','Valor 2027','Status','Publicado no Cora Família'],
+  'Alunos 2027': ['ID','Segmento','Série/Turma'],
+  'Listas de Material': ['ID','Turma/Série','Categoria','Item','Valor 2027'],
+  'Orçamentos Cora Família': ['ID','Responsável','Aluno','Total orçamento','PDF Drive','Contato do responsável']
+};
+const CORA_BUDGET_MONEY_FIELDS_ = ['1ª Parcela','Mensalidade/Parcela','Material didático','Fardamento','Total orçamento'];
 const CORA_ALLOWED_FIELDS_BY_SHEET_ = {
   'Produtos 2027': ['Categoria','Segmento/Turma','Produto','Descrição','Valor 2026','Valor 2027','Reajuste %','Parcelamento','Obrigatório','Observação'],
   'Alunos 2027': ['Segmento','Série/Turma','Alunos 2025','Alunos 2026','Projeção 2027','Oficial 2027','Variação 26→27 %','Observação'],
@@ -33,6 +40,33 @@ function sanitizeSheetValue_(value) {
   return /^\s*[=+\-@]/.test(value) ? "'" + value : value;
 }
 
+function requireExpectedSchema_(sheetName, headers) {
+  const normalized = headers.map(function (h) { return normalize_(h); });
+  const seen = {};
+  normalized.forEach(function (header) {
+    if (!header) return;
+    seen[header] = (seen[header] || 0) + 1;
+  });
+  const duplicates = Object.keys(seen).filter(function (header) { return seen[header] > 1; });
+  if (duplicates.length) throw new Error('Cabeçalhos duplicados detectados em ' + sheetName);
+  const required = CORA_REQUIRED_HEADERS_[sheetName] || [];
+  const missing = required.filter(function (header) { return normalized.indexOf(header) < 0; });
+  if (missing.length) throw new Error('Schema incompatível em ' + sheetName);
+  return true;
+}
+
+function validateBudgetNumbers_(data) {
+  CORA_BUDGET_MONEY_FIELDS_.forEach(function (key) {
+    if (!Object.prototype.hasOwnProperty.call(data, key)) return;
+    const n = Number(data[key]);
+    if (!Number.isFinite(n) || n < 0 || n > 10000000) {
+      throw new Error('Valor monetário inválido');
+    }
+    data[key] = Math.round((n + Number.EPSILON) * 100) / 100;
+  });
+  return data;
+}
+
 function sanitizeAllowedFields_(sheetName, data) {
   const source = stripControlledFields_(data || {});
   const allowed = CORA_ALLOWED_FIELDS_BY_SHEET_[sheetName] || [];
@@ -42,6 +76,7 @@ function sanitizeAllowedFields_(sheetName, data) {
       clean[key] = sanitizeSheetValue_(source[key]);
     }
   });
+  if (sheetName === 'Orçamentos Cora Família') validateBudgetNumbers_(clean);
   return clean;
 }
 
@@ -57,6 +92,7 @@ function budgetStatus_(id) {
   const lastColumn = sh.getLastColumn();
   if (lastRow < 2 || lastColumn < 1) return {found:false,row:-1,total:0};
   const headers = sh.getRange(1,1,1,lastColumn).getValues()[0] || [];
+  requireExpectedSchema_('Orçamentos Cora Família', headers);
   const idCol = headers.findIndex(function (h) { return normalize_(h).toLowerCase() === 'id'; });
   if (idCol < 0) throw new Error('Coluna ID não encontrada em Orçamentos Cora Família');
   const ids = sh.getRange(2,idCol+1,lastRow-1,1).getValues();
@@ -169,6 +205,7 @@ function doPost(e) {
         const sh = sheet_(aba);
         const values = sh.getDataRange().getValues();
         const headers = values[0] || [];
+        requireExpectedSchema_(aba, headers);
         const idCol = headers.findIndex(h => /(^id$|id do registro|^id$)/i.test(String(h).trim()));
         if (idCol < 0) throw new Error('Coluna ID não encontrada em ' + aba);
         let row = -1;
@@ -210,6 +247,7 @@ function doPost(e) {
         const sh = sheet_(aba);
         const values = sh.getDataRange().getValues();
         const headers = values[0] || [];
+        requireExpectedSchema_(aba, headers);
         const idCol = headers.findIndex(function (h) { return normalize_(h).toLowerCase() === 'id'; });
         if (idCol < 0) throw new Error('Coluna ID não encontrada em ' + aba);
         const index = {};
