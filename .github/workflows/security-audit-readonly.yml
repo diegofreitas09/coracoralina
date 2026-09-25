@@ -34,6 +34,20 @@ jobs:
               with urllib.request.urlopen(req, timeout=30) as response:
                   return json.loads(response.read().decode("utf-8"))
 
+          def post_noop(payload):
+              body = json.dumps(payload).encode("utf-8")
+              req = urllib.request.Request(
+                  api,
+                  data=body,
+                  method="POST",
+                  headers={
+                      "User-Agent": "Cora-Security-Audit/1.0",
+                      "Content-Type": "text/plain;charset=utf-8",
+                  },
+              )
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  return json.loads(response.read().decode("utf-8"))
+
           ping = get({"action": "ping"})
           print("PING_OK=" + str(bool(ping.get("ok"))).lower())
 
@@ -42,6 +56,16 @@ jobs:
           resumo = get({"action": "listar", "aba": "Resumo"})
           print("ARBITRARY_SHEET_LISTABLE=" + str(bool(resumo.get("ok"))).lower())
           print("ARBITRARY_SHEET_ROW_COUNT=" + str(len(resumo.get("rows") or [])))
+
+          # Invalid/missing IDs force validation failure before any sheet write.
+          # This proves route recognition only; it must never create or modify records.
+          save_probe = post_noop({"action": "salvarRegistro", "aba": "Resumo", "id": ""})
+          save_msg = str(save_probe.get("mensagem") or "")
+          print("POST_SALVAR_REGISTRO_RECOGNIZED=" + str("desconhecida" not in save_msg.lower()).lower())
+
+          batch_probe = post_noop({"action": "salvarLote", "registros": []})
+          batch_msg = str(batch_probe.get("mensagem") or "")
+          print("POST_SALVAR_LOTE_RECOGNIZED=" + str("desconhecida" not in batch_msg.lower()).lower())
 
           audit = get({"action": "auditarCatalogo"})
           counts = audit.get("auditoria") or {}
