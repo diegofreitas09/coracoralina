@@ -67,6 +67,14 @@ jobs:
           batch_msg = str(batch_probe.get("mensagem") or "")
           print("POST_SALVAR_LOTE_RECOGNIZED=" + str("desconhecida" not in batch_msg.lower()).lower())
 
+          pdf_probe = post_noop({"action": "salvarPdfOrcamento", "id": ""})
+          pdf_msg = str(pdf_probe.get("mensagem") or "")
+          print("POST_PDF_ROUTE_RECOGNIZED=" + str("desconhecida" not in pdf_msg.lower()).lower())
+
+          pdf64_probe = post_noop({"action": "salvarPdfBase64", "id": "", "pdfBase64": ""})
+          pdf64_msg = str(pdf64_probe.get("mensagem") or "")
+          print("POST_PDF_BASE64_ROUTE_RECOGNIZED=" + str("desconhecida" not in pdf64_msg.lower()).lower())
+
           audit = get({"action": "auditarCatalogo"})
           counts = audit.get("auditoria") or {}
           print("CATALOG_AUDIT_OK=" + str(bool(audit.get("ok"))).lower())
