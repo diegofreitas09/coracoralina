@@ -1,4 +1,4 @@
-const CACHE_NAME='cora-2027-v71-unified';
+const CACHE_NAME='cora-2027-v72-values-save';
 const ASSETS=['./','./index.html','./app.css','./app-1.js','./app-2.js','./app-3.js','./integridade-v65.js','./fonte-unica-v67.js','./catalogo-oficial-v71.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)).catch(()=>{}));self.skipWaiting()});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))));self.clients.claim()});
 function inject(html){return html}
