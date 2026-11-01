@@ -126,3 +126,40 @@ dialog.cora-event-dialog .modal-actions{border-top:1px solid #edf2f6;padding-top
  dialog.cora-event-dialog .form-row{grid-template-columns:1fr}
 }
 @media(prefers-reduced-motion:reduce){#app .day,#app .event-actions button{transition:none}}
+
+/* Cabeçalho institucional — marca à esquerda, título em escala adequada */
+#app .brand{display:flex;gap:12px;align-items:center}
+#app .brand .brand-heading{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;flex:1;min-width:0}
+#app .brand .brand-heading .brand-school{color:#a9cce7;font-size:9px;font-weight:750;letter-spacing:.65px;line-height:1.35}
+#app .brand .brand-heading .brand-management{font-size:clamp(23px,2vw,30px);line-height:1.02;letter-spacing:.2px;color:#fff;font-weight:900}
+#app .brand .brand-heading .brand-calendar{color:#f5d58c;font-weight:800;font-size:clamp(10px,1.1vw,13px);line-height:1.4;letter-spacing:1px}
+#app .brand .school-logo{box-shadow:0 5px 14px #061b2b44;border-radius:11px;flex-shrink:0}
+.cp-manager-bar strong{font-size:15px;letter-spacing:.1px}
+@media(max-width:1180px){
+ #app .sidebar{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:4px;align-items:center}
+ #app .brand{grid-column:1/-1;width:100%;min-width:0;margin:0;padding:6px 0 10px;border-bottom:1px solid #ffffff1d;min-height:91px;position:relative}
+ #app .brand .school-logo{height:74px!important;width:65px!important;min-width:65px!important;max-width:65px!important;flex:0 0 65px!important}
+ #app .brand .brand-heading{padding-right:65px}
+ #app .brand .brand-heading .brand-management{font-size:clamp(28px,5.2vw,40px)}
+ #app .brand .brand-heading .brand-calendar{font-size:clamp(13px,2.5vw,19px);letter-spacing:1.7px}
+ #app .brand .brand-heading .brand-school{font-size:clamp(9px,1.7vw,12px)}
+ #app .year-block{grid-column:1/-1;grid-row:2;justify-content:flex-end;margin-left:0;padding:0 0 3px}
+ #app #monthNav{grid-column:1/-1;grid-row:3;margin-top:0}
+}
+@media(max-width:560px){
+ #app .sidebar{padding:11px 12px 9px;row-gap:7px}
+ #app .brand{gap:9px;min-height:86px;padding:3px 0 9px}
+ #app .brand .school-logo{height:68px!important;width:58px!important;min-width:58px!important;max-width:58px!important;flex:0 0 58px!important}
+ #app .brand .brand-heading{padding-right:58px}
+ #app .brand .brand-heading .brand-management{font-size:clamp(28px,8vw,35px)!important;letter-spacing:.5px}
+ #app .brand .brand-heading .brand-calendar{font-size:clamp(13px,3.6vw,17px);letter-spacing:1px}
+ #app .brand .brand-heading .brand-school{font-size:9px;letter-spacing:.6px}
+ #app .year-block{gap:8px}
+ #app #monthNav{padding:1px 0 7px}
+ .cp-manager-bar{padding:9px 12px;gap:8px}
+ .cp-manager-bar strong{font-size:14px}
+}
+@media(max-width:340px){
+ #app .brand .brand-heading .brand-management{font-size:25px!important}
+ #app .brand .brand-heading .brand-calendar{font-size:12px;letter-spacing:.3px}
+}

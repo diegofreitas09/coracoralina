@@ -53,6 +53,71 @@
  }
  function fmt(y,m,d){return String(y)+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0')}
  function fmtBR(s){const [y,m,d]=String(s).split('-');return d+'/'+m+'/'+y;}
+
+ // Sugestões anuais: conserva cadastros existentes; novas datas exigem validação.
+ const managedAssessmentEvent=e=>/^cora-(?:entrega-avaliacoes|periodo-avaliacao)-/.test(String(e?.id||''));
+ const suggestedDate=(value,from,to,title='Atividade escolar')=>String(value||'').startsWith(from+'-')?(targetDate(value,to,'Pedagógico',title)?.date||''):'';
+ function suggestedRange(start,end,from,to,title){
+   const moved=suggestedDate(start,from,to,title);
+   const span=Math.round((Date.parse(end+'T12:00:00Z')-Date.parse(start+'T12:00:00Z'))/86400000);
+   if(!moved||!Number.isFinite(span)||span<0)return null;
+   const shiftedEnd=new Date(Date.parse(moved+'T12:00:00Z')+span*86400000).toISOString().slice(0,10);
+   return shiftedEnd.startsWith(to+'-')?{start:moved,end:shiftedEnd}:null;
+ }
+ function academicPreview(from,to){
+   const previous=window.CoraStages?.get?.(from)||[],current=window.CoraStages?.get?.(to)||[];
+   const former=window.CoraAssessments?.get?.(from)?.items||[],now=window.CoraAssessments?.get?.(to)?.items||[];
+   const ranges=previous.filter((x,i)=>x.start&&x.end&&!current[i]?.start&&!current[i]?.end);
+   const deliveries=former.filter((x,i)=>(x.due||x.items?.length)&&!now[i]?.due&&!now[i]?.items?.length&&!now[i]?.deliveryTypes);
+   return {stages:ranges.length,assessments:deliveries.length,
+     firstStage:ranges[0]?suggestedDate(ranges[0].start,from,to):'',
+     firstDue:deliveries[0]?suggestedDate(deliveries[0].due,from,to,'Entrega de avaliações'):''};
+ }
+ function copyAcademicSuggestions(from,to,{stages=true,assessments=true}={}){
+   const result={stages:0,assessments:0,warnings:[]};
+   if(!Number.isInteger(from)||!Number.isInteger(to)||from>=to)return {...result,warnings:['Selecione anos válidos.']};
+   if(stages&&window.CoraStages){
+     const earlier=window.CoraStages.get(from),next=window.CoraStages.get(to);
+     for(let i=0;i<4;i++){
+       const source=earlier[i],current=next[i];
+       if(!source?.start||!source.end||!current||current.start||current.end)continue;
+       const start=suggestedDate(source.start,from,to),end=suggestedDate(source.end,from,to);
+       if(!start||!end||start>end){result.warnings.push('Revisar etapa '+(i+1)+'.');continue;}
+       const previousEnd=next[i-1]?.end||'',followingStart=next[i+1]?.start||'';
+       if((previousEnd&&start<=previousEnd)||(followingStart&&end>=followingStart)){
+         result.warnings.push('Sugestão da '+(i+1)+'ª etapa não copiada porque conflita com uma etapa já preenchida. Confira as datas na Gestão.');
+         continue;
+       }
+       next[i]={number:i+1,start,end,needsReview:true,originYear:from};result.stages++;
+     }
+     if(result.stages){
+       const saved=window.CoraStages.save(to,next);
+       if(!saved.ok){result.warnings.push('Etapas não importadas: '+(saved.message||'períodos incompatíveis'));result.stages=0;}
+     }
+   }
+   if(assessments&&window.CoraAssessments){
+     const former=window.CoraAssessments.get(from),target=window.CoraAssessments.get(to);
+     for(let i=0;i<4;i++){
+       const source=former.items?.[i],current=target.items?.[i];
+       if(!source||!current||current.due||current.items?.length||current.deliveryTypes)continue;
+       const due=source.due?suggestedDate(source.due,from,to,'Entrega de avaliações'):'';
+       const items=[];
+       for(const item of source.items||[]){
+         const range=suggestedRange(item.start,item.end,from,to,item.title);
+         if(!range){result.warnings.push('Revisar avaliação: '+item.title);continue;}
+         items.push({title:String(item.title||'').replace(new RegExp('\\b'+from+'\\b','g'),String(to)),...range});
+       }
+       if(!due&&!items.length)continue;
+       target.items[i]={stage:i+1,due,deliveryTypes:source.deliveryTypes||'',items};
+       target.source='Sugestão de '+from+' · verificar antes de publicar';result.assessments++;
+     }
+     if(result.assessments){
+       const saved=window.CoraAssessments.save(target);
+       if(!saved.ok){result.warnings.push('Entregas não importadas: '+(saved.error||'datas incompatíveis'));result.assessments=0;}
+     }
+   }
+   return result;
+ }
  function identify(e){return String(e.title||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLocaleLowerCase('pt-BR');}
  function sameEvent(a,b){
    return (String(b.originId||'')===String(a.id)&&Number(b.originYear)===Number(a.date?.slice(0,4)))||
@@ -77,6 +142,7 @@
    const short=document.querySelector('.sidebar-foot');if(short)short.textContent=year===2026?'Ano base · Dados preservados':'Ano '+year+' · Rascunhos em revisão neste dispositivo';
    const importButton=$('carryMonthManual');if(importButton)importButton.hidden=year<=2026;
    const fullYearButton=$('carryWholeYear');if(fullYearButton)fullYearButton.hidden=year<=2026;
+   const topImport=$('importYearSuggestions');if(topImport){topImport.hidden=year<=2026;topImport.textContent='↻ Importar '+(year-1)+' → '+year;}
    const help=$('yearCarryHelp');if(help)help.textContent=year<=2026?'Ano de referência preservado. Selecione 2027 para iniciar um novo planejamento.':'Reaproveite atividades, projetos e planejamento do mês anterior, com datas revisáveis.';
    const footer=document.querySelector('main > footer');if(footer){const original=footer.dataset.original||footer.innerHTML;footer.dataset.original=original;footer.innerHTML=original.replace('CALENDÁRIO ANUAL 2026','CALENDÁRIO ANUAL '+year);}
    const originalSection=$('officialCalendarSection');if(year>2026&&originalSection)originalSection.hidden=true;
@@ -118,6 +184,7 @@
    $('yearCarryTools')?.appendChild(fullYearBtn);
    fullYearBtn.hidden=CoraYears.activeYear<=2026;
    fullYearBtn.addEventListener('click',()=>showFullYearWizard(CoraYears.activeYear));
+   $('importYearSuggestions')?.addEventListener('click',()=>showFullYearWizard(CoraYears.activeYear));
    $('editMonthProjects')?.addEventListener('click',()=>{
       const year=CoraYears.activeYear,month=CoraYears.month;
       const list=getProjects(year);
@@ -156,6 +223,7 @@
     '<label class="year-carry-project"><input id="carryProjects" type="checkbox" checked /> Copiar também os projetos do mês</label>'+
     '<label class="year-carry-project"><input id="carryPlanning" type="checkbox" checked /> Reaproveitar planejamento pedagógico, quando existir (revisar datas)</label>'+ 
     '<label class="year-carry-project"><input id="carryFiles" type="checkbox" checked /> Copiar também os documentos deste mês</label>'+
+     '<div class="year-carry-academic"><strong>Sugestões para todo o ano</strong><label><input id="carryStages" type="checkbox" checked /> Início e fim das quatro etapas</label><label><input id="carryAssessments" type="checkbox" checked /> Prazos e períodos das avaliações</label><small>Importa sugestões anuais mesmo ao selecionar só um mês. Não altera dados existentes e exige conferência.</small></div>'+
     '<p class="year-carry-warning">Os registros importados serão marcados como “Em revisão”. Nada será publicado para professores sem conferência da Gestão.</p></div>'+
     '<div class="year-carry-actions"><button type="button" id="carrySkip" class="btn btn-ghost">Começar mês vazio</button><button type="button" id="carryConfirm" class="btn btn-primary">Importar seleção</button></div>';
    chooser.showModal();
@@ -167,7 +235,7 @@
    refreshPreview();
  }
  function refreshPreview(){
-   preview=readEvents(sourceYear,targetMonth).map(e=>({...e,adjusted:targetDate(e.date,targetYear,e.type,e.title)}));
+   preview=readEvents(sourceYear,targetMonth).filter(e=>!managedAssessmentEvent(e)).map(e=>({...e,adjusted:targetDate(e.date,targetYear,e.type,e.title)}));
    const count=preview.length;
    const projects=getProjects(sourceYear)[targetMonth]||[];
    const srcPlan=stored(PLAN_KEY(sourceYear),{})[targetMonth];
@@ -212,16 +280,17 @@
      }
    }
    localStorage.setItem(FLAG_KEY(targetYear,targetMonth),'imported');
-   const docs=$('carryFiles')?.checked?await window.CoraApp?.copyFilesBetweenYears?.(sourceYear,targetYear,[targetMonth]):null;
+   const academic=copyAcademicSuggestions(sourceYear,targetYear,{stages:!!$('carryStages')?.checked,assessments:!!$('carryAssessments')?.checked});
+    const docs=$('carryFiles')?.checked?await window.CoraApp?.copyFilesBetweenYears?.(sourceYear,targetYear,[targetMonth]):null;
    chooser.close();
    window.dispatchEvent(new CustomEvent('cora-data-changed',{detail:{year:targetYear}}));
    putProjects(targetYear,targetMonth);
-   const message=(docs?.count?docs.count+' arquivo(s) importados. ':'')+(docs?.error?docs.error+' ':'')+created+' evento(s) importados e marcados para revisão. '+(copiedProjects?copiedProjects+' projeto(s). ':'')+(copiedPlan?'Planejamento reaproveitado. ':'')+(duplicates?duplicates+' já existentes ignorados. ':'')+(skipped?skipped+' data(s) não importadas.':'');
+   const message=(docs?.count?docs.count+' arquivo(s) importados. ':'')+(docs?.error?docs.error+' ':'')+created+' evento(s) importados e marcados para revisão. '+(copiedProjects?copiedProjects+' projeto(s). ':'')+(copiedPlan?'Planejamento reaproveitado. ':'')+(duplicates?duplicates+' já existentes ignorados. ':'')+(skipped?skipped+' data(s) não importadas. ':'')+academic.stages+' etapas sugeridas; '+academic.assessments+' cronogramas de avaliações sugeridos. '+academic.warnings.join(' ');
    const alert=$('toast');if(alert){alert.textContent=message;alert.classList.add('visible');setTimeout(()=>alert.classList.remove('visible'),6000);}
  }
 
  function copyYearMonth(from,to,month,includeProjects,includePlan){
-   const events=readEvents(from,month),key=EVENT_KEY(to),existing=stored(key,[]);
+   const events=readEvents(from,month).filter(e=>!managedAssessmentEvent(e)),key=EVENT_KEY(to),existing=stored(key,[]);
    const next=Array.isArray(existing)?[...existing]:[];
    let added=0,duplicates=0;
    for(const event of events){
@@ -270,12 +339,15 @@
    '<label class="year-carry-project"><input type="checkbox" id="fullProjects" checked /> Incluir todos os projetos mensais</label>'+
    '<label class="year-carry-project"><input type="checkbox" id="fullPlanning" checked /> Incluir os planejamentos pedagógicos</label>'+ 
    '<label class="year-carry-project"><input type="checkbox" id="fullFiles" checked /> Incluir documentos anexados dos meses selecionados</label>'+
+    '<div class="year-carry-academic"><strong>Etapas e prazos pedagógicos</strong><label><input type="checkbox" id="fullStages" checked /> Sugerir início e fim das quatro etapas letivas</label><label><input type="checkbox" id="fullAssessments" checked /> Sugerir entregas e avaliações AP2, AD e AR</label><div id="fullAcademicPreview" class="year-carry-academic-preview" aria-live="polite"></div><small>As datas serão rascunhos. Eventos e etapas já preenchidos permanecem intactos.</small></div>'+
    '<p class="year-carry-warning">Atividades já cadastradas não serão apagadas nem duplicadas. Após importar, clique nos eventos para editar a data e salvar.</p></div>'+
    '<div class="year-carry-actions"><button id="fullCancel" type="button" class="btn btn-ghost">Cancelar</button><button id="fullConfirm" type="button" class="btn btn-primary">Importar ano selecionado</button></div>';
    chooser.showModal();
    const refresh=()=>{
      const from=Number($('fullSource').value);
-     const counts=MONTHS.map((name,month)=>({name,month,n:readEvents(from,month).length,p:getProjects(from)[month]?.length||0}));
+     const suggested=academicPreview(from,year),output=$('fullAcademicPreview');
+     if(output)output.textContent=suggested.stages+' etapa(s) e '+suggested.assessments+' cronograma(s) disponíveis.'+(suggested.firstStage?' Primeira etapa sugerida: '+fmtBR(suggested.firstStage)+'.':'')+(suggested.firstDue?' Primeira entrega: '+fmtBR(suggested.firstDue)+'.':'');
+     const counts=MONTHS.map((name,month)=>({name,month,n:readEvents(from,month).filter(e=>!managedAssessmentEvent(e)).length,p:getProjects(from)[month]?.length||0}));
      $('fullSummary').textContent=counts.reduce((a,b)=>a+b.n,0)+' eventos e '+counts.reduce((a,b)=>a+b.p,0)+' projetos disponíveis em '+from+'.';
      $('fullMonths').innerHTML=counts.map(c=>'<label><input type="checkbox" data-full-month="'+c.month+'" checked /><strong>'+c.name+'</strong><small>'+c.n+' eventos · '+c.p+' projetos</small></label>').join('');
    };
@@ -291,17 +363,18 @@
          stats.added+=result.added;stats.duplicates+=result.duplicates;stats.projectCount+=result.projectCount;if(result.planCopied)stats.plans++;
        }
      }catch(e){alert(e.message);return}
-     const docs=$('fullFiles').checked?await window.CoraApp?.copyFilesBetweenYears?.(from,year,months):null;
+     const academic=copyAcademicSuggestions(from,year,{stages:!!$('fullStages')?.checked,assessments:!!$('fullAssessments')?.checked});
+      const docs=$('fullFiles').checked?await window.CoraApp?.copyFilesBetweenYears?.(from,year,months):null;
      chooser.close();
      window.dispatchEvent(new CustomEvent('cora-data-changed',{detail:{year,month:CoraYears.month}}));
      window.dispatchEvent(new CustomEvent('cora-projects-changed',{detail:{year,month:CoraYears.month}}));
      window.dispatchEvent(new CustomEvent('cora-planning-copied',{detail:{year,month:CoraYears.month}}));
      putProjects(year,CoraYears.month);
-     const msg='Importação concluída: '+stats.added+' eventos, '+stats.projectCount+' projetos, '+stats.plans+' planejamentos e '+(docs?.count||0)+' documentos. '+(docs?.error||'')+' '+stats.duplicates+' eventos existentes preservados. Confira as datas em revisão.';
+     const msg='Importação concluída: '+stats.added+' atividades, '+stats.projectCount+' projetos, '+stats.plans+' planejamentos, '+academic.stages+' etapas sugeridas, '+academic.assessments+' cronogramas de avaliação e '+(docs?.count||0)+' documentos. '+(docs?.error||'')+' '+stats.duplicates+' eventos anteriores preservados. '+academic.warnings.join(' ')+' Confira as datas antes de publicar.';
      const toast=$('toast');if(toast){toast.textContent=msg;toast.classList.add('visible');setTimeout(()=>toast.classList.remove('visible'),7000)}
    });
    refresh();
  }
 
- window.CoraYearPlanner={targetDate,readEvents,showWizard,showFullYearWizard,copyYearMonth,importSelection};
+ window.CoraYearPlanner={targetDate,readEvents,showWizard,showFullYearWizard,copyYearMonth,importSelection,academicPreview,copyAcademicSuggestions};
 })();
