@@ -72,34 +72,33 @@
         </div>
       </section>
       <section id="cardStudio" class="studio-section" aria-labelledby="cardHeading">
-        <div class="studio-section-head"><div><div class="eyebrow">COMUNICAÇÃO VISUAL · IDENTIDADE INSTITUCIONAL</div><h2 id="cardHeading">Criador de cards</h2><p>Escolha um dos seis modelos institucionais, edite as informações e baixe a imagem pronta para divulgar.</p></div><span class="studio-pill studio-pill-gold">PNG + PDF</span></div>
+        <div class="studio-section-head"><div><div class="eyebrow">COMUNICAÇÃO VISUAL · IDENTIDADE INSTITUCIONAL</div><h2 id="cardHeading">Criador de cards</h2><p>Escolha um dos cinco modelos inspirados nos seus exemplos, edite as informações e baixe a imagem pronta para divulgar.</p></div><span class="studio-pill studio-pill-gold">PNG + PDF</span></div>
         <div class="template-picker" role="group" aria-label="Escolha um modelo de card">
           <button type="button" class="template-btn is-selected" data-template="comunicado"><span class="template-icon">!</span><strong>Comunicado</strong><small>Avisos e feriados</small></button>
           <button type="button" class="template-btn" data-template="solidaria"><span class="template-icon">♡</span><strong>Campanha</strong><small>Ações solidárias</small></button>
           <button type="button" class="template-btn" data-template="reuniao"><span class="template-icon">▦</span><strong>Reunião</strong><small>Escola e família</small></button>
-          <button type="button" class="template-btn" data-template="cronograma"><span class="template-icon">▤</span><strong>Cronograma geral</strong><small>Provas + simulados</small></button>
-          <button type="button" class="template-btn" data-template="avaliacoes"><span class="template-icon">▣</span><strong>Avaliações</strong><small>AP1, AP2, AD, globais</small></button>
-          <button type="button" class="template-btn" data-template="avaliacao"><span class="template-icon">✓</span><strong>2ª chamada</strong><small>Somente reposições</small></button>
+          <button type="button" class="template-btn" data-template="cronograma"><span class="template-icon">▤</span><strong>Cronograma geral</strong><small>Provas, simulados e sondagens</small></button>
+          <button type="button" class="template-btn" data-template="avaliacao"><span class="template-icon">✓</span><strong>2ª chamada</strong><small>Somente segunda chamada</small></button>
         </div>
         <div class="studio-layout card-editor-layout"><form id="cardForm" class="studio-form"><div class="studio-form-heading"><strong>Editar informações do card</strong><span id="cardSaveStatus">Rascunho automático</span></div>
           <div id="holidayControls" class="holiday-controls" aria-label="Feriados mensais do comunicado">
             <div class="holiday-controls-row"><label for="holidayMonth">Feriados do mês <select id="holidayMonth" name="month" aria-describedby="holidayMonthInfo"></select></label><button type="button" class="btn btn-dark" id="loadMonthHolidays">↻ Preencher todos os feriados</button></div>
             <p id="holidayMonthInfo" class="holiday-month-info" role="status" aria-live="polite">Datas conforme o calendário escolar de 2026. Confira alterações da coordenação antes de divulgar.</p>
           </div>
-          <div id="assessmentControls" class="holiday-controls" aria-label="Avaliações do calendário escolar" hidden>
-            <div class="holiday-controls-row"><label for="assessmentMonth">Mês das avaliações <select id="assessmentMonth" name="assessmentMonth" aria-describedby="assessmentMonthInfo"></select></label><button type="button" class="btn btn-dark" id="loadMonthAssessments">↻ Buscar avaliações do mês</button></div>
-            <p id="assessmentMonthInfo" class="holiday-month-info" role="status" aria-live="polite">O cronograma inclui simulados e avaliações; o modelo Avaliações traz somente avaliações regulares. A segunda chamada fica separada.</p>
+          <div id="assessmentControls" class="holiday-controls" aria-label="Cronograma de avaliações por mês" hidden>
+            <div class="holiday-controls-row"><label for="assessmentsMonth">Mês das avaliações<select id="assessmentsMonth" aria-describedby="assessmentsInfo"></select></label><button type="button" class="btn btn-dark" id="loadMonthAssessments">↻ Carregar avaliações do mês</button></div>
+            <p id="assessmentsInfo" class="holiday-month-info" role="status" aria-live="polite">Calendário de avaliações filtrado por modelo.</p>
           </div>
           <label>Título principal<input name="title" maxlength="110" required /></label>
           <label>Subtítulo / destaque<input name="subtitle" maxlength="160" /></label>
           <label>Mensagem ou descrição<textarea name="body" rows="4" maxlength="1300"></textarea></label>
-          <label>Itens ou cronograma <span class="field-hint">No comunicado, feriados. Nos demais modelos, as datas e atividades podem ser editadas.</span><textarea name="items" rows="6" maxlength="2200"></textarea></label>
+          <label>Itens ou cronograma <span class="field-hint"><span id="cardItemsHint">No comunicado, os feriados do mês podem ser editados.</span></span><textarea name="items" rows="6" maxlength="2200"></textarea></label>
           <div class="studio-three"><label>Data<input name="date" placeholder="06/11/2026" maxlength="45" /></label><label>Horário<input name="time" placeholder="18h30" maxlength="45" /></label><label>Local<input name="place" placeholder="Quadra da escola" maxlength="80" /></label></div>
           <label>Rodapé / assinatura<input name="footer" maxlength="180" /></label>
           <p class="card-export-context" id="cardExportContext" role="status" aria-live="polite">Modelo ativo: COMUNICADO · NOVEMBRO DE 2026</p>
           <div class="studio-actions"><button type="button" class="btn btn-ghost" id="resetCard">Restaurar este modelo</button><button type="button" class="btn btn-primary" id="downloadCardPng">↓ PNG · Comunicado</button><button type="button" class="btn btn-outline" id="downloadCardPdf">↓ PDF · Comunicado</button></div>
-          <p class="note">O PNG tem 1080 × 1350 px por página. Se houver mais de 10 avaliações, o app inclui todas em uma imagem longa ou em PDF de várias páginas. Os rascunhos ficam neste dispositivo.</p>
-        </form><aside class="card-canvas-wrap"><div class="card-preview-top"><strong>Prévia em tempo real</strong><span>1080 × 1350 px</span></div><canvas id="studioCardCanvas" width="1080" height="1350" aria-label="Prévia visual do card" role="img"></canvas><div class="preview-footer">Paleta institucional azul-marinho, azul e amarelo • Colégio Cora Coralina</div></aside></div>
+          <p class="note">O arquivo PNG sai em 1080 × 1350 pixels. Os modelos são editáveis e os rascunhos ficam salvos somente neste navegador.</p>
+        </form><aside class="card-canvas-wrap"><div class="card-preview-top"><strong>Prévia em tempo real</strong><span>1080 × 1350 px</span></div><canvas id="studioCardCanvas" width="1080" height="1350" aria-label="Prévia visual do card" role="img"></canvas><div class="preview-footer" id="cardPagesInfo" aria-live="polite"></div><div class="preview-footer">Paleta institucional azul-marinho, azul e amarelo • Colégio Cora Coralina</div></aside></div>
       </section>
       <footer>CALENDÁRIO ANUAL 2026 <span>•</span> COLÉGIO CORA CORALINA <span class="footer-right">Organização, planejamento e gestão</span></footer>
     </main>
@@ -107,7 +106,7 @@
 </div>
 <input id="filePicker" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.webp" multiple hidden />
 <input id="restorePicker" type="file" accept=".json" hidden />
-<dialog id="eventModal"><form id="eventForm" method="dialog"><div class="modal-head"><h3 id="modalTitle">Novo evento</h3><button type="button" id="closeModal" class="icon-button">✕</button></div><label>Nome do evento<input id="eventTitle" placeholder="Ex.: Reunião de planejamento" required maxlength="170" /></label><div class="form-row"><label>Data<input id="eventDate" type="date" required min="2026-01-01" max="2026-12-31" /></label><label>Categoria<select id="eventType"><option value="Pedagógico">Pedagógico</option><option value="Avaliação">Avaliação</option><option value="Reunião">Reunião</option><option value="Evento">Evento</option><option value="Feriado">Feriado</option><option value="Outros">Outros</option></select></label></div><label>Observações (opcional)<textarea id="eventNotes" rows="3" placeholder="Informações e orientações..."></textarea></label><div class="modal-actions"><button type="button" class="btn btn-ghost" id="cancelEvent">Cancelar</button><button type="submit" class="btn btn-primary">Salvar evento</button></div></form></dialog>
+<dialog id="eventModal"><form id="eventForm" method="dialog"><div class="modal-head"><h3 id="modalTitle">Novo evento</h3><button type="button" id="closeModal" class="icon-button">✕</button></div><label>Nome do evento<input id="eventTitle" placeholder="Ex.: Reunião de planejamento" required maxlength="170" /></label><div class="form-row"><label>Data<input id="eventDate" type="date" required min="2026-01-01" max="2026-12-31" /></label><label>Categoria<select id="eventType"><option value="Pedagógico">Pedagógico</option><option value="Avaliação">Avaliação</option><option value="Simulado">Simulado</option><option value="Sondagem">Sondagem</option><option value="2ª Chamada">2ª Chamada</option><option value="Reunião">Reunião</option><option value="Evento">Evento</option><option value="Feriado">Feriado</option><option value="Outros">Outros</option></select></label></div><label>Observações (opcional)<textarea id="eventNotes" rows="3" placeholder="Informações e orientações..."></textarea></label><div class="modal-actions"><button type="button" class="btn btn-ghost" id="cancelEvent">Cancelar</button><button type="submit" class="btn btn-primary">Salvar evento</button></div></form></dialog>
 <div id="toast" role="status" aria-live="polite"></div>
 <script src="studio-assets.js" defer></script>
 <script src="school-brand.js" defer></script>
