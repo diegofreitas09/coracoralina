@@ -11,7 +11,7 @@
  const dateStr=(date)=>{const d=new Date(date);return Number.isNaN(d.getTime())?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
  const isoNow=()=>{const d=new Date();return `${dateStr(d)}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`};
  const app=$('#app'),root=document.createElement('div');root.id='coraPortal';document.body.prepend(root);
- let role='',chosen='gestao',data=null,year=Number(window.CoraYears?.activeYear)||2026,availableYears=[2026],month=new Date().getFullYear()===2026?new Date().getMonth():0,tab='resumo',selectedStage=0,managerNotices=[],leadDays=3,timer=null,showBell=false,teacherProfile=null,teacherSaving=false;
+ let role='',chosen='gestao',data=null,year=Number(window.CoraYears?.activeYear)||2026,availableYears=[2026],month=new Date().getFullYear()===2026?new Date().getMonth():0,tab='resumo',selectedStage=0,managerNotices=[],leadDays=3,timer=null,showBell=false,teacherProfile=null,teacherSaving=false,individualRequired=false;
  const seenPublicationIds=new Map();
  const endpoint=action=>`${API}?action=${encodeURIComponent(action)}`;
  async function api(action,payload,query=''){
@@ -41,13 +41,13 @@
  function logo(){return window.CORA_SCHOOL_LOGO||window.CORA_STUDIO_ASSETS?.logo||''}
  function gateway(error=''){
   document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');role='';
-  root.innerHTML=`<div class="cp-gateway"><div class="cp-login-shell"><div class="cp-login-head"><img id="cpGatewayLogo" alt="Brasão Cora Coralina"><div><small>COLÉGIO CORA CORALINA · PDF SOLUÇÃO EDUCACIONAL</small><h1>Portal do Calendário Escolar</h1><p>Selecione seu ambiente de trabalho</p></div></div><div class="cp-role-grid"><button type="button" class="cp-role ${chosen==='gestao'?'active':''}" data-cp-role="gestao"><span class="cp-role-icon">⚙</span><strong>Gestão</strong><span>Organizar o ano, editar eventos e publicar avisos para toda a equipe</span></button><button type="button" class="cp-role ${chosen==='equipe'?'active':''}" data-cp-role="equipe"><span class="cp-role-icon">▦</span><strong>Equipe Pedagógica</strong><span>Consultar o calendário, receber alertas e baixar os materiais publicados</span></button></div><form id="cpLoginForm" class="cp-auth"><div id="cpEmailWrap" ${chosen==='gestao'?'hidden':''}><label for="cpEmail">E-mail individual do colaborador</label><input type="email" id="cpEmail" autocomplete="username" placeholder="professor@exemplo.com" ${chosen==='equipe'?'required':''}></div><label id="cpLegacyWrap" class="cp-legacy-option" ${chosen==='gestao'?'hidden':''}><input type="checkbox" id="cpUseLegacy"> Usar senha coletiva temporária (migração)</label><div><label for="cpPassword">Senha pessoal · <span id="cpRoleLabel">${chosen==='gestao'?'Gestão':'Equipe Pedagógica'}</span></label><input type="password" id="cpPassword" autocomplete="current-password" required placeholder="Digite sua senha"></div><button type="submit" class="cp-btn">Entrar no painel</button><p class="cp-error" role="alert">${safe(error)}</p></form><div class="cp-gateway-foot"><span>A Gestão publica · a Equipe acompanha</span><span>Calendário 2026 · Acesso restrito</span></div></div></div>`;
+  root.innerHTML=`<div class="cp-gateway"><div class="cp-login-shell"><div class="cp-login-head"><img id="cpGatewayLogo" alt="Brasão Cora Coralina"><div><small>COLÉGIO CORA CORALINA · PDF SOLUÇÃO EDUCACIONAL</small><h1>Portal do Calendário Escolar</h1><p>Selecione seu ambiente de trabalho</p></div></div><div class="cp-role-grid"><button type="button" class="cp-role ${chosen==='gestao'?'active':''}" data-cp-role="gestao"><span class="cp-role-icon">⚙</span><strong>Gestão</strong><span>Organizar o ano, editar eventos e publicar avisos para toda a equipe</span></button><button type="button" class="cp-role ${chosen==='equipe'?'active':''}" data-cp-role="equipe"><span class="cp-role-icon">▦</span><strong>Equipe Pedagógica</strong><span>Consultar o calendário, receber alertas e baixar os materiais publicados</span></button></div><form id="cpLoginForm" class="cp-auth"><div id="cpEmailWrap" ${chosen==='gestao'?'hidden':''}><label for="cpEmail">E-mail individual do colaborador</label><input type="email" id="cpEmail" autocomplete="username" placeholder="professor@exemplo.com" ${chosen==='equipe'?'required':''}></div><label id="cpLegacyWrap" class="cp-legacy-option" ${chosen==='gestao'||individualRequired?'hidden':''}><input type="checkbox" id="cpUseLegacy"> Usar senha coletiva temporária (migração)</label><div><label for="cpPassword">Senha pessoal · <span id="cpRoleLabel">${chosen==='gestao'?'Gestão':'Equipe Pedagógica'}</span></label><input type="password" id="cpPassword" autocomplete="current-password" required placeholder="Digite sua senha"></div><button type="submit" class="cp-btn">Entrar no painel</button><p class="cp-error" role="alert">${safe(error)}</p></form><div class="cp-gateway-foot"><span>A Gestão publica · a Equipe acompanha</span><span>Calendário 2026 · Acesso restrito</span></div></div></div>`;
   $('#cpGatewayLogo').src=logo();
-  root.querySelectorAll('[data-cp-role]').forEach(b=>b.onclick=()=>{chosen=b.dataset.cpRole;root.querySelectorAll('[data-cp-role]').forEach(x=>x.classList.toggle('active',x===b));$('#cpRoleLabel').textContent=chosen==='gestao'?'Gestão':'Equipe Pedagógica';$('#cpEmailWrap').hidden=chosen==='gestao';$('#cpLegacyWrap').hidden=chosen==='gestao';$('#cpUseLegacy').checked=false;$('#cpEmail').required=chosen==='equipe';(chosen==='equipe'?$('#cpEmail'):$('#cpPassword')).focus()});
+  root.querySelectorAll('[data-cp-role]').forEach(b=>b.onclick=()=>{chosen=b.dataset.cpRole;root.querySelectorAll('[data-cp-role]').forEach(x=>x.classList.toggle('active',x===b));$('#cpRoleLabel').textContent=chosen==='gestao'?'Gestão':'Equipe Pedagógica';$('#cpEmailWrap').hidden=chosen==='gestao';$('#cpLegacyWrap').hidden=chosen==='gestao'||individualRequired;$('#cpUseLegacy').checked=false;$('#cpEmail').required=chosen==='equipe';(chosen==='equipe'?$('#cpEmail'):$('#cpPassword')).focus()});
   $('#cpUseLegacy').onchange=()=>{const collective=$('#cpUseLegacy').checked;$('#cpEmailWrap').hidden=collective;$('#cpEmail').required=!collective};
    $('#cpLoginForm').onsubmit=async e=>{e.preventDefault();const btn=$('#cpLoginForm button[type=submit]');btn.disabled=true;try{const r=await api('login',{role:chosen,email:chosen==='equipe'&&!$('#cpUseLegacy').checked?$('#cpEmail').value.trim():'',password:$('#cpPassword').value});role=r.role;await enter();}catch(err){gateway((err.message||'Credenciais inválidas.')+' '+(err.status===503?'Contate a administração.':''));}finally{btn.disabled=false;}};
  }
- async function logout(){if(role==='equipe')try{await api('delivery-signout',{})}catch{}teacherProfile=null;try{await api('logout',{})}catch{}clearInterval(timer);timer=null;gateway();}
+ async function logout(){teacherProfile=null;try{await api('logout',{})}catch{}clearInterval(timer);timer=null;gateway();}
  async function enter(){if(role==='gestao')manager();else await team();}
  function manager(){
   year=Number(window.CoraYears?.activeYear)||2026;
@@ -73,7 +73,7 @@
   $('#cpEnforceIndividual').onclick=async()=>{
    if(!confirm('ATENÇÃO: depois da confirmação, a senha coletiva da Equipe deixará de abrir o calendário. Professores sem conta individual ativa não conseguirão entrar. Confirmar?'))return;
    try{
-     await api('accounts-policy',{confirmed:true});toast('Login individual obrigatório ativado. Senha coletiva revogada.');
+     await api('accounts-policy',{confirmed:true});individualRequired=true;toast('Login individual obrigatório ativado. Senha coletiva revogada.');
      await loadAccounts();
    }catch(error){$('#cpAccountsStatus').textContent=error.message}
   };
@@ -625,7 +625,7 @@
   document.body.classList.add('portal-loading');
   try{
    if(activationGateway())return;
-   const s=await api('me');
+   const s=await api('me');individualRequired=Boolean(s.individualRequired);
    if(s.role){role=s.role;await enter()}else gateway();
   }catch(e){unavailable(e);}
  }
