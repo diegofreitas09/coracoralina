@@ -5,7 +5,7 @@
  'use strict';
  const API='/calendario-anual/api', $=s=>document.querySelector(s);
  const MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
- const TEACHER_LINKS=Object.freeze({roteiros:'https://docs.google.com/spreadsheets/d/1Jiy-g9kC7BJ6lR5Hh5cfgBJSAHmdZDS2BwjqIr0WOOc/edit?usp=sharing',gestor:'https://escola.computex.com.br/escola619/index2.php'});
+ const TEACHER_LINKS=Object.freeze({roteiros:'https://docs.google.com/spreadsheets/d/1Jiy-g9kC7BJ6lR5Hh5cfgBJSAHmdZDS2BwjqIr0WOOc/edit?usp=sharing',gestor:'https://escola.computex.com.br/escola619/index2.php',classroom:'https://classroom.google.com/',sae:'https://sae.digital/'});
  const eventsKey=y=>'cora_calendario_eventos_'+y+'_v1',noticeKey=y=>'cora_portal_draft_notices_'+y;
  const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const dateStr=(date)=>{const d=new Date(date);return Number.isNaN(d.getTime())?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
@@ -328,9 +328,12 @@
   // Área de ferramentas externas da Equipe; SVG provisório do Gestor será trocado pela marca original.
   const roteiroIcon='<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="3" width="14.5" height="18" rx="2"></rect><path d="M8 3v18M11 8h5M11 12h5M11 16h3"></path><path d="m15.9 17.2 3.6-3.6 1.4 1.4-3.6 3.6-2.2.8z"></path></svg>';
   const gestorIcon='<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2 12 4l9 6.2"></path><path d="M5.5 9.8V20h13V9.8"></path><path d="M10 20v-6.5h4V20"></path><path d="M8 10h.01M16 10h.01"></path><path d="M9 6.1V3h6v3.1"></path></svg>';
+  // Abrimos o endereço oficial do Classroom: o atalho "Agenda" depende da conta e da interface Google.
+  const classroomIcon='<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"></rect><path d="M7 3v4M17 3v4M3.5 10h17M8 14h3M8 17h7"></path></svg>';
+  const saeIcon='<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5 12 3l8.5 2.5v13L12 21l-8.5-2.5z"></path><path d="M12 3v18M7 8l2.8 1M7 12l2.8 1M15 9l2.4-1M15 13l2.4-1"></path></svg>';
   const openIcon='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5h6v6M19 5l-9 9"></path><path d="M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"></path></svg>';
   const teacherTools='<section class="cp-teacher-tools" aria-labelledby="cpTeacherToolsTitle">'+
-   '<div class="cp-teacher-tools-head"><div><small>ACESSOS PEDAGÓGICOS</small><h3 id="cpTeacherToolsTitle">Ferramentas do professor</h3></div><span>Roteiros e notas em um só lugar</span></div>'+
+   '<div class="cp-teacher-tools-head"><div><small>ACESSOS PEDAGÓGICOS</small><h3 id="cpTeacherToolsTitle">Ferramentas do professor</h3></div><span>Roteiros, notas, agenda e materiais digitais</span></div>'+
    '<div class="cp-teacher-tools-grid">'+
     '<a class="cp-teacher-tool" href="'+TEACHER_LINKS.roteiros+'" target="_blank" rel="noopener noreferrer" aria-label="Abrir Digitação de roteiros em nova aba">'+
      '<span class="cp-teacher-tool-icon cp-teacher-tool-roteiros" aria-hidden="true">'+roteiroIcon+'</span>'+
@@ -339,6 +342,14 @@
     '<a class="cp-teacher-tool" href="'+TEACHER_LINKS.gestor+'" target="_blank" rel="noopener noreferrer" aria-label="Abrir Gestor Escolar para digitação de notas em nova aba">'+
      '<span class="cp-teacher-tool-icon cp-teacher-tool-gestor" data-tool-icon="gestor" aria-hidden="true">'+gestorIcon+'</span>'+
      '<span class="cp-teacher-tool-copy"><strong>Gestor Escolar</strong><small>Digitação de notas</small></span>'+
+     '<span class="cp-teacher-tool-open" aria-hidden="true">'+openIcon+'</span></a>'+
+    '<a class="cp-teacher-tool" href="'+TEACHER_LINKS.classroom+'" target="_blank" rel="noopener noreferrer" aria-label="Abrir Google Sala de Aula para consultar a agenda das turmas em nova aba">'+
+     '<span class="cp-teacher-tool-icon cp-teacher-tool-classroom" aria-hidden="true">'+classroomIcon+'</span>'+
+     '<span class="cp-teacher-tool-copy"><strong>Agenda do Classroom</strong><small>Atividades e prazos das turmas</small></span>'+
+     '<span class="cp-teacher-tool-open" aria-hidden="true">'+openIcon+'</span></a>'+
+    '<a class="cp-teacher-tool" href="'+TEACHER_LINKS.sae+'" target="_blank" rel="noopener noreferrer" aria-label="Abrir SAE Digital em nova aba">'+
+     '<span class="cp-teacher-tool-icon cp-teacher-tool-sae" aria-hidden="true">'+saeIcon+'</span>'+
+     '<span class="cp-teacher-tool-copy"><strong>SAE Digital</strong><small>Portal e recursos pedagógicos</small></span>'+
      '<span class="cp-teacher-tool-open" aria-hidden="true">'+openIcon+'</span></a>'+
    '</div></section>';
   const flowHeader=showBell?'':'<section class="cp-flow-hero"><div class="cp-flow-hero-text">'+
