@@ -90,14 +90,21 @@
  }
  const loaded={};function loadPage(page){if(window.CORA_OFFICIAL_PAGE_DATA?.[page])return Promise.resolve(window.CORA_OFFICIAL_PAGE_DATA[page]);if(loaded[page])return loaded[page];loaded[page]=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=`./official-page-${String(page).padStart(2,'0')}.js`;s.onload=()=>window.CORA_OFFICIAL_PAGE_DATA?.[page]?resolve(window.CORA_OFFICIAL_PAGE_DATA[page]):reject(new Error('Página ausente'));s.onerror=reject;document.head.append(s)});return loaded[page]}
  async function downloadPdf(){const btn=$('#cpDownloadOfficial'),status=$('#cpPdfProgress');if(btn)btn.disabled=true;try{const pages=[];for(let i=1;i<=14;i++){if(status)status.textContent=`Preparando página ${i}/14...`;const uri=await loadPage(i);pages.push({width:1180,height:664,toDataURL(){return uri}});}const file=window.CoraPDF.fromCanvases(pages,{pageWidth:1180,pageHeight:664,title:'Calendário Cora Coralina 2026'});const url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download='Calendario_Oficial_Cora_Coralina_2026.pdf';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);if(status)status.textContent='PDF preparado.'}catch(e){if(status)status.textContent='Não foi possível preparar o PDF. Tente novamente.'}finally{if(btn)btn.disabled=false}}
- async function start(){document.body.classList.add('portal-loading');
-  try{const s=await api('me');if(s.role){role=s.role;await enter()}else gateway();}
-  catch(e){
-   // Non-disruptive rollout. Existing calendar remains usable until secure Netlify env vars are set.
-   document.body.classList.remove('portal-locked','portal-loading');
-   root.innerHTML='';
-   const bar=document.createElement('div');bar.style.cssText='position:relative;background:#fff5d5;color:#654900;border-bottom:1px solid #f0d88c;padding:9px 16px;font:12px system-ui;text-align:center';bar.textContent='Portal Equipe Pedagógica em preparação: configuração protegida de acesso pendente no Netlify. A Gestão continua no painel anterior.';root.append(bar);
-  }
+ function unavailable(error){
+  document.body.classList.add('portal-locked');
+  document.body.classList.remove('portal-loading');
+  const detail=error?.status===503
+    ? 'O serviço de acesso ainda não reconheceu as credenciais protegidas. É necessário um novo deploy após configurar as variáveis no Netlify.'
+    : 'Não foi possível conectar ao serviço de acesso neste momento. Confira a conexão e tente novamente.';
+  root.innerHTML='<div class="cp-gateway"><div class="cp-login-shell" style="max-width:620px;text-align:center;padding:32px"><h1>Portal Cora Coralina</h1><p style="margin:20px 0">'+safe(detail)+'</p><p style="color:#526982">Por segurança, o painel de Gestão não é exibido sem autenticação.</p><button type="button" class="cp-btn" id="cpTryAgain" style="margin-top:18px">Tentar novamente</button></div></div>';
+  $('#cpTryAgain').onclick=()=>start();
+ }
+ async function start(){
+  document.body.classList.add('portal-loading');
+  try{
+   const s=await api('me');
+   if(s.role){role=s.role;await enter()}else gateway();
+  }catch(e){unavailable(e);}
  }
  start();
 })();
