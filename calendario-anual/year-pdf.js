@@ -53,6 +53,7 @@
     g.fillStyle='#e6ecf4';g.fillRect(48,1680,W-96,2);
     tx(g,'CALENDÁRIO ESCOLAR '+year+'   ·   COLÉGIO CORA CORALINA',51,1711,19,NAVY,'800');
     tx(g,'Versão: '+code+'  ·  '+pageName,51,1740,16,MUTED,'600');
+    tx(g,'Desenvolvimento: PDF Solução Educacional',W-52,1711,15,BLUE,'700','right');
     tx(g,'calendario-anual-cora-2026.netlify.app',W-52,1740,16,MUTED,'500','right');
   }
   function monthSheet(month,year,logo,code){
@@ -145,7 +146,7 @@
     if(items.length>maxRows)tx(g,`+${items.length-maxRows} registros adicionais no calendário`,72,1220,21,BLUE,'700');
     box(g,0,1250,1080,100,NAVY,0);
     tx(g,'CORA CORALINA · CALENDÁRIO ESCOLAR '+year,540,1292,22,'#fff','800','center');
-    tx(g,'Resumo gerado a partir da matriz do ano letivo',540,1322,17,'#cbdcef','500','center');
+    tx(g,'Tecnologia e desenvolvimento: PDF Solução Educacional',540,1322,17,'#cbdcef','500','center');
     return c;
   }
   async function withBusy(id,action){
