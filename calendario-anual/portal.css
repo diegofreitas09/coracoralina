@@ -329,3 +329,19 @@ body.portal-locked { background:#eef3f9; }
 .cp-accounts-panel button:focus-visible,.cp-account-form input:focus-visible{outline:3px solid #8abfde;outline-offset:2px}
 @media(max-width:850px){.cp-account-form{grid-template-columns:1fr 1fr}}
 @media(max-width:540px){.cp-accounts-panel{padding:15px 12px}.cp-account-form{grid-template-columns:1fr;padding:13px}.cp-accounts-head h2{font-size:21px}.cp-account-buttons{width:100%}.cp-account-person{gap:8px}.cp-account-form button{width:100%}.cp-accounts-head .cp-btn{font-size:11px;padding:8px 10px}}
+
+
+/* Gestão: múltiplos segmentos para um mesmo colaborador. */
+.cp-segment-fieldset{grid-column:1/-1;border:1px solid #d8e8f1;border-radius:11px;padding:12px 13px;background:#fff;min-width:0}
+.cp-segment-fieldset legend{font-weight:850;color:#315575;font-size:12px;padding:0 6px}
+.cp-segment-fieldset legend small{font-size:11px;font-weight:650;color:#668397}
+.cp-segment-checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.cp-segment-choice{display:flex!important;flex-direction:row!important;align-items:center;gap:8px!important;border:1px solid #e2e9f1;background:#f9fcff;padding:10px 11px;border-radius:10px;font-size:12px!important;font-weight:750!important;color:#2e5275;cursor:pointer;min-width:0}
+.cp-segment-choice input[type=checkbox]{width:18px!important;height:18px!important;min-height:18px!important;flex:0 0 18px;accent-color:#185d96;margin:0}
+.cp-segment-choice:has(input:checked){background:#eaf5fd;border-color:#8cbbda;color:#164c77}
+.cp-segment-editor{flex:1 1 100%;width:100%;border-top:1px solid #e0e8f2;padding:13px 4px 4px}
+.cp-segment-editor strong{font-size:13px}
+.cp-segment-editor .cp-segment-checks{margin:11px 0}
+.cp-segment-editor>button{border:0;border-radius:9px;padding:11px 15px;background:#185e96;color:#fff;font-size:12px;font-weight:850}
+@media(max-width:780px){.cp-segment-checks{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.cp-segment-checks{grid-template-columns:1fr}.cp-segment-fieldset{padding:10px}}
