@@ -78,8 +78,11 @@
    const importButton=$('carryMonthManual');if(importButton)importButton.hidden=year<=2026;
    const fullYearButton=$('carryWholeYear');if(fullYearButton)fullYearButton.hidden=year<=2026;
    const help=$('yearCarryHelp');if(help)help.textContent=year<=2026?'Ano de referência preservado. Selecione 2027 para iniciar um novo planejamento.':'Reaproveite atividades, projetos e planejamento do mês anterior, com datas revisáveis.';
+   const footer=document.querySelector('main > footer');if(footer){const original=footer.dataset.original||footer.innerHTML;footer.dataset.original=original;footer.innerHTML=original.replace('CALENDÁRIO ANUAL 2026','CALENDÁRIO ANUAL '+year);}
+   const originalSection=$('officialCalendarSection');if(year>2026&&originalSection)originalSection.hidden=true;
    const official=$('officialBanner');
    if(official){
+    official.hidden=year!==2026;
     const label=official.querySelector('.official-banner-copy strong');
     const description=official.querySelector('.official-banner-copy span');
     if(label)label.textContent=year===2026?'Calendário escolar oficial integrado':'Referência institucional · calendário de 2026';
@@ -151,7 +154,8 @@
     '<div class="year-carry-body"><div class="year-carry-options"><label>Usar como referência <select id="carrySourceYear">'+years.map(y=>'<option value="'+y+'">'+y+'</option>').join('')+'</select></label><div class="year-carry-policy"><strong>Como as datas são ajustadas?</strong><span>Datas fixas permanecem no mesmo dia; atividades escolares usam o mesmo dia da semana e a mesma posição no mês. Feriados móveis exigem conferência.</span></div></div>'+
     '<div id="carrySummary" class="year-carry-summary"></div><div id="carryPreview" class="year-carry-preview"></div>'+
     '<label class="year-carry-project"><input id="carryProjects" type="checkbox" checked /> Copiar também os projetos do mês</label>'+
-    '<label class="year-carry-project"><input id="carryPlanning" type="checkbox" checked /> Reaproveitar planejamento pedagógico, quando existir (revisar datas)</label>'+
+    '<label class="year-carry-project"><input id="carryPlanning" type="checkbox" checked /> Reaproveitar planejamento pedagógico, quando existir (revisar datas)</label>'+ 
+    '<label class="year-carry-project"><input id="carryFiles" type="checkbox" checked /> Copiar também os documentos deste mês</label>'+
     '<p class="year-carry-warning">Os registros importados serão marcados como “Em revisão”. Nada será publicado para professores sem conferência da Gestão.</p></div>'+
     '<div class="year-carry-actions"><button type="button" id="carrySkip" class="btn btn-ghost">Começar mês vazio</button><button type="button" id="carryConfirm" class="btn btn-primary">Importar seleção</button></div>';
    chooser.showModal();
@@ -175,7 +179,7 @@
       (target?.verify?'<span class="year-carry-verify">Conferir data</span>':'')+'</label>';
    }).join(''):'<div class="year-carry-empty">Nenhuma atividade encontrada neste mês. Você pode começar do zero ou escolher outra referência.</div>';
  }
- function importSelection(){
+ async function importSelection(){
    if(!chooser.open||openKey!==targetYear+'-'+targetMonth)return;
    const key=EVENT_KEY(targetYear),prior=stored(key,[]),existing=Array.isArray(prior)?prior:[];
    const next=[...existing];let created=0,duplicates=0,skipped=0;
@@ -208,10 +212,11 @@
      }
    }
    localStorage.setItem(FLAG_KEY(targetYear,targetMonth),'imported');
+   const docs=$('carryFiles')?.checked?await window.CoraApp?.copyFilesBetweenYears?.(sourceYear,targetYear,[targetMonth]):null;
    chooser.close();
    window.dispatchEvent(new CustomEvent('cora-data-changed',{detail:{year:targetYear}}));
    putProjects(targetYear,targetMonth);
-   const message=created+' evento(s) importados e marcados para revisão. '+(copiedProjects?copiedProjects+' projeto(s). ':'')+(copiedPlan?'Planejamento reaproveitado. ':'')+(duplicates?duplicates+' já existentes ignorados. ':'')+(skipped?skipped+' data(s) não importadas.':'');
+   const message=(docs?.count?docs.count+' arquivo(s) importados. ':'')+(docs?.error?docs.error+' ':'')+created+' evento(s) importados e marcados para revisão. '+(copiedProjects?copiedProjects+' projeto(s). ':'')+(copiedPlan?'Planejamento reaproveitado. ':'')+(duplicates?duplicates+' já existentes ignorados. ':'')+(skipped?skipped+' data(s) não importadas.':'');
    const alert=$('toast');if(alert){alert.textContent=message;alert.classList.add('visible');setTimeout(()=>alert.classList.remove('visible'),6000);}
  }
 
@@ -263,7 +268,8 @@
    '<div class="year-carry-body"><div class="year-carry-options"><label>Ano de origem<select id="fullSource">'+Array.from({length:year-2026},(_,i)=>year-1-i).map(y=>'<option value="'+y+'">'+y+'</option>').join('')+'</select></label><p class="year-carry-policy">Feriados fixos mantêm o dia. Eventos escolares usam a mesma ocorrência do dia da semana; todas as datas importadas precisam de revisão.</p></div>'+
    '<p id="fullSummary" class="year-carry-summary"></p><div id="fullMonths" class="year-full-months"></div>'+
    '<label class="year-carry-project"><input type="checkbox" id="fullProjects" checked /> Incluir todos os projetos mensais</label>'+
-   '<label class="year-carry-project"><input type="checkbox" id="fullPlanning" checked /> Incluir os planejamentos pedagógicos</label>'+
+   '<label class="year-carry-project"><input type="checkbox" id="fullPlanning" checked /> Incluir os planejamentos pedagógicos</label>'+ 
+   '<label class="year-carry-project"><input type="checkbox" id="fullFiles" checked /> Incluir documentos anexados dos meses selecionados</label>'+
    '<p class="year-carry-warning">Atividades já cadastradas não serão apagadas nem duplicadas. Após importar, clique nos eventos para editar a data e salvar.</p></div>'+
    '<div class="year-carry-actions"><button id="fullCancel" type="button" class="btn btn-ghost">Cancelar</button><button id="fullConfirm" type="button" class="btn btn-primary">Importar ano selecionado</button></div>';
    chooser.showModal();
@@ -275,7 +281,7 @@
    };
    $('fullSource').addEventListener('change',refresh);
    $('fullCancel').addEventListener('click',()=>chooser.close());
-   $('fullConfirm').addEventListener('click',()=>{
+   $('fullConfirm').addEventListener('click',async()=>{
      const from=Number($('fullSource').value),months=[...chooser.querySelectorAll('[data-full-month]:checked')].map(el=>Number(el.dataset.fullMonth));
      if(!months.length){alert('Selecione pelo menos um mês.');return}
      const stats={added:0,duplicates:0,projectCount:0,plans:0};
@@ -285,12 +291,13 @@
          stats.added+=result.added;stats.duplicates+=result.duplicates;stats.projectCount+=result.projectCount;if(result.planCopied)stats.plans++;
        }
      }catch(e){alert(e.message);return}
+     const docs=$('fullFiles').checked?await window.CoraApp?.copyFilesBetweenYears?.(from,year,months):null;
      chooser.close();
      window.dispatchEvent(new CustomEvent('cora-data-changed',{detail:{year,month:CoraYears.month}}));
      window.dispatchEvent(new CustomEvent('cora-projects-changed',{detail:{year,month:CoraYears.month}}));
      window.dispatchEvent(new CustomEvent('cora-planning-copied',{detail:{year,month:CoraYears.month}}));
      putProjects(year,CoraYears.month);
-     const msg='Importação concluída: '+stats.added+' eventos, '+stats.projectCount+' projetos e '+stats.plans+' planejamentos. '+stats.duplicates+' eventos existentes preservados. Confira as datas em revisão.';
+     const msg='Importação concluída: '+stats.added+' eventos, '+stats.projectCount+' projetos, '+stats.plans+' planejamentos e '+(docs?.count||0)+' documentos. '+(docs?.error||'')+' '+stats.duplicates+' eventos existentes preservados. Confira as datas em revisão.';
      const toast=$('toast');if(toast){toast.textContent=msg;toast.classList.add('visible');setTimeout(()=>toast.classList.remove('visible'),7000)}
    });
    refresh();
