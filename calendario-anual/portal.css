@@ -300,3 +300,32 @@ body.portal-locked { background:#eef3f9; }
 @media(max-width:850px){.cp-delivery-stage-grid{grid-template-columns:1fr}.cp-delivery-identity{align-items:stretch}}
 @media(max-width:500px){.cp-delivery-stage{padding:14px 13px 12px}.cp-delivery-stage-step strong{font-size:13px}.cp-delivery-time{font-size:9px;white-space:normal;text-align:right;max-width:98px}.cp-delivery-body h3{font-size:23px}.cp-delivery-identity .cp-btn{width:100%}}
 @media(prefers-reduced-motion:reduce){.cp-delivery-stage.is-focus.needs-action,.cp-delivery-stage.is-focus.needs-action .cp-delivery-alarm{animation:none}.cp-delivery-stage.is-focus{outline:2px solid #d58d36;outline-offset:2px}}
+
+
+/* Controle de acesso individual da Equipe Pedagógica. */
+#coraPortal [hidden]{display:none!important}
+.cp-accounts-panel{max-width:1150px;margin:0 auto;padding:22px 22px 27px;border:1px solid #dce6f0;border-radius:0 0 20px 20px;box-shadow:0 10px 28px #09254218;background:#fff}
+.cp-accounts-head{display:flex;gap:15px;justify-content:space-between;align-items:start}
+.cp-accounts-head small{font-size:10px;letter-spacing:1.2px;color:#386d96;font-weight:900}
+.cp-accounts-head h2{font-size:24px;color:#123c60;margin:5px 0}
+.cp-accounts-head p,.cp-accounts-panel>p{font-size:12px;line-height:1.5;color:#637b91}
+.cp-accounts-panel a{color:#145c94;text-decoration:underline}
+.cp-account-form{display:grid;grid-template-columns:1.2fr 1.2fr 1fr 1fr;gap:12px;align-items:end;padding:17px;border-radius:14px;border:1px solid #d8e8f2;background:#f7fbff;margin:15px 0}
+.cp-account-form label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:850;color:#315575}
+.cp-account-form input,.cp-account-form select{width:100%;min-width:0;min-height:44px;border-radius:9px;padding:9px 10px;background:#fff;border:1px solid #c5d8e8;color:#123c5e}
+.cp-account-form button{grid-column:1/-1;justify-self:start}
+.cp-account-invite{margin:14px 0;border:1px solid #b7d7bc;background:#f2fbf5;padding:15px;border-radius:13px}
+.cp-account-invite strong{display:block;color:#206a42}
+.cp-account-invite p{font-size:12px;color:#527a60}
+.cp-account-invite textarea{display:block;width:100%;min-height:80px;resize:vertical;padding:10px;border:1px solid #bfd6c5;border-radius:9px;color:#1a4831;background:#fff;font-size:12px;overflow-wrap:anywhere;margin:9px 0}
+.cp-account-person{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:14px 12px;border-bottom:1px solid #e0eaf2}
+.cp-account-person>div:first-child{flex:1 1 190px;min-width:0}
+.cp-account-person strong{display:block;color:#1a4263;font-size:14px;margin-bottom:5px}
+.cp-account-person small{display:block;font-size:11px;color:#677f94;overflow-wrap:anywhere}
+.cp-account-status{border-radius:99px;background:#eaf2f8;color:#275c80;padding:7px 10px;font-weight:800;font-size:11px}
+.cp-account-buttons{display:flex;flex-wrap:wrap;gap:6px}
+.cp-account-buttons button{border-radius:8px;border:1px solid #cbdce8;background:#f5f9fc;color:#285575;padding:8px 11px;min-height:36px;font-size:11px;font-weight:800}
+.cp-account-buttons button[data-account-operation="disable"],.cp-account-buttons button[data-account-operation="suspend"]{color:#a13d37;border-color:#e8c4c1;background:#fff9f8}
+.cp-accounts-panel button:focus-visible,.cp-account-form input:focus-visible{outline:3px solid #8abfde;outline-offset:2px}
+@media(max-width:850px){.cp-account-form{grid-template-columns:1fr 1fr}}
+@media(max-width:540px){.cp-accounts-panel{padding:15px 12px}.cp-account-form{grid-template-columns:1fr;padding:13px}.cp-accounts-head h2{font-size:21px}.cp-account-buttons{width:100%}.cp-account-person{gap:8px}.cp-account-form button{width:100%}.cp-accounts-head .cp-btn{font-size:11px;padding:8px 10px}}
