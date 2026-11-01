@@ -210,8 +210,8 @@
     text(g,'CALENDÁRIO',101,514,106,'#fff','800');text(g,'ANUAL',101,650,140,'#fff','800');text(g,String(YEAR),101,818,170,'#a9ceff','800');
     g.fillStyle='#ffffff57';g.fillRect(107,934,1420,2);text(g,'JANEIRO — DEZEMBRO  •  EVENTOS E DOCUMENTOS',106,995,31,'#e6f1ff','700');text(g,'Exportação completa do planejamento escolar',106,1045,24,'#b5d3f5');return c;
   }
-  function headerCanvas(name,sub){const [c,g]=canvasBase();g.fillStyle='#102a4c';g.fillRect(0,0,PAGE_W,155);text(g,'CORA CORALINA  /  CALENDÁRIO ANUAL 2026',76,75,22,'#c8d9ef','700');text(g,name,76,133,48,'#fff','700');const badge=$('#schoolLogo');if(badge?.complete&&badge.naturalWidth){rounded(g,PAGE_W-163,11,112,136,10,'#fff');g.drawImage(badge,PAGE_W-160,13,106,130);}text(g,sub,78,201,25,GREY);return [c,g];}
-  function footerCanvas(g,section='CALENDÁRIO ANUAL 2026'){g.fillStyle='#e4ebf3';g.fillRect(70,1130,PAGE_W-140,2);text(g,section,74,1162,18,GREY,'700');text(g,'COLÉGIO CORA CORALINA',PAGE_W-400,1162,18,GREY,'700');text(g,'Tecnologia: PDF Solução Educacional',PAGE_W-400,1132,15,BLUE,'700');}
+  function headerCanvas(name,sub){const [c,g]=canvasBase();g.fillStyle='#102a4c';g.fillRect(0,0,PAGE_W,155);text(g,'CORA CORALINA  /  CALENDÁRIO ANUAL '+YEAR,76,75,22,'#c8d9ef','700');text(g,name,76,133,48,'#fff','700');const badge=$('#schoolLogo');if(badge?.complete&&badge.naturalWidth){rounded(g,PAGE_W-163,11,112,136,10,'#fff');g.drawImage(badge,PAGE_W-160,13,106,130);}text(g,sub,78,201,25,GREY);return [c,g];}
+  function footerCanvas(g,section='CALENDÁRIO ANUAL '+YEAR){g.fillStyle='#e4ebf3';g.fillRect(70,1130,PAGE_W-140,2);text(g,section,74,1162,18,GREY,'700');text(g,'COLÉGIO CORA CORALINA',PAGE_W-400,1162,18,GREY,'700');text(g,'Tecnologia: PDF Solução Educacional',PAGE_W-400,1132,15,BLUE,'700');}
   function calendarCanvas(month){
     const [c,g]=headerCanvas(`${MONTHS[month].toUpperCase()} ${YEAR}`,`${eventsFor(month).length} evento(s) cadastrado(s)  ·  ${filesFor(month).length} documento(s) anexado(s)`);
     const x0=72, y0=275, w=(PAGE_W-144)/7, h=125;
