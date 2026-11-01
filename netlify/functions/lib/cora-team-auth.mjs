@@ -8,6 +8,8 @@ const STORE='cora-calendar-team-accounts-v1';
 const COOKIE='cora_portal_session';
 const cookieFlags='Path=/calendario-anual/; HttpOnly; Secure; SameSite=Strict';
 const db=()=>getStore(STORE);
+const activity=()=>getStore('cora-calendar-team-activity-v1');
+const deliveries=()=>getStore('cora-calendar-team-deliveries-v1');
 const digest=x=>createHash('sha256').update(String(x||'')).digest('hex');
 const secureEqual=(a,b)=>{
  const aa=Buffer.from(digest(a),'hex'),bb=Buffer.from(digest(b),'hex');
@@ -42,10 +44,10 @@ export async function currentMember(request,secret){
   return r&&r.status==='Ativo'&&r.sessionVersion===p.ver?r:null;
  }catch{return null}
 }
-export function statuses(record,year){
- const result={};
+export async function statuses(record,year){
+ const result={},personal=await deliveries().get(record.id,{type:'json',consistency:'strong'})||{};
  for(let n=1;n<=4;n++){
-  const item=record?.statuses?.[year+'-'+n];
+  const item=personal?.[year+'-'+n];
   if(item&&['entregue','nao_entregou'].includes(item.status))result[n]={status:item.status,updatedAt:item.updatedAt};
  }
  return result;
@@ -63,9 +65,10 @@ export async function loginEmployee(input,secret){
    lockedUntil:count>=7?new Date(Date.now()+10*60*1000).toISOString():'',updatedAt:new Date().toISOString()});
   return error('Conta não autorizada ou credenciais incorretas.',401);
  }
- const updated={...r,failedLogins:0,lockedUntil:'',lastLogin:new Date().toISOString()};
- await db().setJSON(r.id,updated);
- return {ok:true,role:'equipe',member:publicMember(updated),cookie:signedSession(updated,secret)};
+ const validNow=await account(r.id);
+ if(validNow?.status!=='Ativo'||validNow.sessionVersion!==r.sessionVersion)return error('Conta suspensa ou desativada.',401);
+ await activity().setJSON(r.id,{lastLogin:new Date().toISOString()});
+ return {ok:true,role:'equipe',member:publicMember(validNow),cookie:signedSession(validNow,secret)};
 }
 export async function activateEmployee(input,secret){
  const email=emailOf(input.email),code=String(input.code||''),password=String(input.password||'');
@@ -96,7 +99,8 @@ export async function enforceIndividualAccess(){
 export async function listEmployees(){
  const ids=await db().get('member-index',{type:'json',consistency:'strong'})||[];
  const records=await Promise.all((Array.isArray(ids)?ids:[]).slice(0,400).map(account));
- return {members:records.filter(Boolean).map(publicMember).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'))};
+ const members=await Promise.all(records.filter(Boolean).map(async r=>({...publicMember(r),lastLogin:(await activity().get(r.id,{type:'json',consistency:'strong'}))?.lastLogin||''})));
+ return {members:members.sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'))};
 }
 export async function manageEmployee(input,baseUrl){
  const email=emailOf(input.email),operation=String(input.operation||'create');
@@ -136,8 +140,8 @@ export async function markDelivery(member,input,isPublished){
  if(!Number.isInteger(year)||year<2026||year>2099||![1,2,3,4].includes(stage)||!['entregue','nao_entregou'].includes(status))
    return error('Ano, etapa ou situação inválidos.');
  if(!await isPublished(year,stage))return error('Entrega não publicada pela Gestão.',409);
- const now=new Date().toISOString(),updated={...member,statuses:{...(member.statuses||{})}};
- updated.statuses[year+'-'+stage]={status,updatedAt:now};
- await db().setJSON(member.id,updated);
- return {ok:true,name:member.name,stage,status,updatedAt:now,statuses:statuses(updated,year)};
+ const now=new Date().toISOString(),personal=await deliveries().get(member.id,{type:'json',consistency:'strong'})||{};
+ personal[year+'-'+stage]={status,updatedAt:now};
+ await deliveries().setJSON(member.id,personal);
+ return {ok:true,name:member.name,stage,status,updatedAt:now,statuses:await statuses(member,year)};
 }
