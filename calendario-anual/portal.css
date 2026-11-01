@@ -26,6 +26,15 @@ body.portal-locked { background:#eef3f9; }
 .cp-btn {border:0;border-radius:12px;min-height:48px;padding:12px 21px;font-weight:750;background:#164e8b;color:white;}
 .cp-btn.gold {background:#ffcf32;color:#0c305a;}
 .cp-btn.soft {background:#e8f1fb;color:#0d3d78;}
+
+/* Confirmação persistente de rascunho: salvar não significa publicar. */
+.cp-btn.cp-added,.cp-btn.cp-added:hover,.cp-btn.cp-added:focus-visible {
+ background:#16804a;color:#fff;border-color:#11663b;box-shadow:0 3px 10px #14683e2b;
+}
+.cp-btn.cp-added:disabled {opacity:1;cursor:default;}
+.cp-save-feedback {font-size:13px;font-weight:750;color:#16804a;align-self:center;line-height:1.4;}
+.cp-notice-saved {display:inline-block;background:#dff5e8;border:1px solid #a7dec0;color:#14643a;font-size:11px;font-weight:800;padding:4px 7px;border-radius:99px;white-space:nowrap;margin-right:5px;}
+
 .cp-btn:disabled {opacity:.55;cursor:wait;}
 .cp-error {grid-column:1 / -1;color:#9d2332;font-size:13px;min-height:17px;}
 .cp-gateway-foot {background:#f5f8fd;padding:15px 33px;color:#527092;font-size:12px;display:flex;justify-content:space-between;gap:8px;}
