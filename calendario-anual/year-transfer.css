@@ -43,3 +43,18 @@
 .year-carry-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap;border-top:1px solid #e6edf4;padding:16px 25px;background:#f8fbff}
 .year-carry-actions .btn{min-height:44px}
 @media(max-width:750px){.sidebar .year-label{display:block;padding:9px 9px 4px}.sidebar .year-block{display:flex;padding:0 8px 7px}.sidebar #schoolYearSelect{font-size:18px;width:120px}.year-carry-options{grid-template-columns:1fr}.year-carry-body{padding:13px;max-height:65vh}.year-carry-head{padding:16px}.year-carry-head h2{font-size:20px}.year-carry-entry{grid-template-columns:auto 1fr;gap:8px}.year-carry-entry>input[type=date]{grid-column:2}.year-carry-verify{grid-column:2}.year-carry-actions{padding:12px}.year-carry-actions .btn{flex:1}.year-projects-section{padding:13px}}
+
+/* Importação completa e indicação de dados pertencentes ao ano ativo. */
+.year-full-months{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:15px}
+.year-full-months label{display:flex;align-items:center;flex-wrap:wrap;gap:7px;border:1px solid #dce7f2;border-radius:10px;padding:10px;background:#f8fbff;color:#163b61;cursor:pointer}
+.year-full-months input{accent-color:#216eac;width:18px;height:18px}
+.year-full-months strong{font-size:13px}
+.year-full-months small{width:100%;padding-left:25px;color:#647a91;font-size:11px}
+#officialBanner[hidden],#officialCalendarSection[hidden]{display:none!important}
+.plan-synced-events{border:1px solid #c6dbee;background:#f2f8ff;padding:15px;border-radius:12px;margin-bottom:13px}
+.plan-synced-title{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;color:#184974;font-size:13px}
+.plan-synced-title small{font-size:11px;color:#5c7489;line-height:1.5}
+#planSyncedEvents{max-height:240px;overflow-y:auto;display:grid;gap:5px;font-size:12px;color:#1c446a}
+#planSyncedEvents>div{padding:7px 10px;background:#fff;border-radius:7px;border:1px solid #dce9f4}
+#planSyncedEvents em{color:#906112}
+@media(max-width:620px){.year-full-months{grid-template-columns:repeat(2,minmax(0,1fr))}.year-full-months label{padding:9px 7px}}
