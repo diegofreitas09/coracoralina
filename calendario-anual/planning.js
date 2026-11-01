@@ -79,5 +79,5 @@
     $('planMonth').innerHTML=MONTHS.map((x,i)=>`<option value="${i}">${x} de ${YEAR}</option>`).join('');
     fillForm(current);
   });
-  window.addEventListener('cora-planning-copied',e=>{if(Number(e.detail?.year)!==YEAR)return;saveCurrent();readStorage();fillForm(Number(e.detail.month)||0);});
+  window.addEventListener('cora-planning-copied',e=>{if(Number(e.detail?.year)!==YEAR)return;clearTimeout(saveDelay);readStorage();fillForm(Number(e.detail.month)||0);});
 })();
