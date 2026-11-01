@@ -98,7 +98,7 @@
       html += `<button type="button" class="day ${isToday?'today':''} ${list.length?'has-event':''}" data-date="${date}" title="${list.length?escapeHtml(list.map(item=>item.title).join(' • ')):'Adicionar evento em '+day+'/'+(selectedMonth+1)+'/'+YEAR}" aria-label="${day} de ${MONTHS[selectedMonth]}: ${list.length} evento(s)"><span class="date-num">${day}</span>${list.length?`<span class="event-markers" aria-hidden="true">${list.slice(0,3).map(item=>`<i class="event-marker ${item.type==='Reunião'?'marker-meeting':item.type==='Avaliação'?'marker-exam':item.type==='Feriado'?'marker-holiday':'marker-general'}"></i>`).join('')}</span><span class="event-quantity">${list.length} ${list.length===1?'evento':'eventos'}</span>`:''}</button>`;
     }
     $('#calendar').innerHTML = html + '</div>';
-    $('#calendar').querySelectorAll('[data-date]').forEach(button => button.addEventListener('click',() => {const date=button.dataset.date;if(events.some(item=>item.date===date)&&typeof window.coraOpenDayEvents==='function')window.coraOpenDayEvents(date);else openEventModal(date);}));
+    $('#calendar').querySelectorAll('[data-date]').forEach(button => button.addEventListener('click',() => {const date=button.dataset.date;if(eventsFor(selectedMonth).some(item=>item.date===date)&&typeof window.coraOpenDayEvents==='function')window.coraOpenDayEvents(date);else openEventModal(date);}));
   }
   function renderEvents() {
     const list = eventsFor(selectedMonth);
@@ -169,7 +169,7 @@
   async function downloadBackup(){
     try{
       const documents=[];for(const file of allFiles)documents.push({id:file.id,name:file.name,month:file.month,size:file.size,type:file.type,lastModified:file.lastModified,data:await toBase64(file.blob)});
-      downloadBlob(new Blob([JSON.stringify({app:'calendario-anual-cora',year:YEAR,version:3,exportedAt:new Date().toISOString(),events,documents,officialRemoved:[...readRemovedOfficial()],projects:window.CoraYears?.getProjects(YEAR)||[],planning:JSON.parse(localStorage.getItem('cora_planejamento_2026_v1')||'{}'),cardDrafts:JSON.parse(localStorage.getItem('cora_cards_2026_v1')||'{}')})],{type:'application/json'}),`backup-calendario-cora-${YEAR}.json`);
+      downloadBlob(new Blob([JSON.stringify({app:'calendario-anual-cora',year:YEAR,version:3,exportedAt:new Date().toISOString(),events,documents,officialRemoved:[...readRemovedOfficial()],projects:window.CoraYears?.getProjects(YEAR)||[],planning:JSON.parse(localStorage.getItem(`cora_planejamento_${YEAR}_v1`)||'{}'),cardDrafts:JSON.parse(localStorage.getItem(`cora_cards_${YEAR}_v1`)||'{}')})],{type:'application/json'}),`backup-calendario-cora-${YEAR}.json`);
       notify('Backup com eventos, arquivos, planejamentos e cards criado.');
     }catch(error){console.error(error);notify('Falha ao gerar backup.');}
   }
@@ -186,8 +186,8 @@
         const response=await fetch(file.data);const blob=await response.blob();
         await dbRequest('readwrite',store=>store.put({id:file.id||uid(),name:file.name||'documento',month:Math.min(11,Math.max(0,Number(file.month)||0)),size:blob.size,type:file.type||blob.type,lastModified:file.lastModified||Date.now(),blob}));
       }
-      if(data.planning&&typeof data.planning==='object'&&!Array.isArray(data.planning))localStorage.setItem('cora_planejamento_2026_v1',JSON.stringify(data.planning));
-      if(data.cardDrafts&&typeof data.cardDrafts==='object'&&!Array.isArray(data.cardDrafts))localStorage.setItem('cora_cards_2026_v1',JSON.stringify(data.cardDrafts));
+      if(data.planning&&typeof data.planning==='object'&&!Array.isArray(data.planning))localStorage.setItem(`cora_planejamento_${YEAR}_v1`,JSON.stringify(data.planning));
+      if(data.cardDrafts&&typeof data.cardDrafts==='object'&&!Array.isArray(data.cardDrafts))localStorage.setItem(`cora_cards_${YEAR}_v1`,JSON.stringify(data.cardDrafts));
       await refreshFiles();render();window.dispatchEvent(new CustomEvent('cora-backup-restored'));notify('Backup restaurado com sucesso.');
     }catch(error){console.error(error);notify('Backup inválido ou armazenamento insuficiente.');}
   }
