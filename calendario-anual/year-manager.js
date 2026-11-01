@@ -8,9 +8,13 @@
   const save=(key,v)=>localStorage.setItem(key,JSON.stringify(v));
   const $=id=>document.getElementById(id);
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let activeYear=validYear(stored(YEAR_KEY,2026))?Number(stored(YEAR_KEY,2026)):2026;
+  const linkParams=new URLSearchParams(window.location.search);
+  const requestedYear=Number(linkParams.get('year'));
+  let activeYear=validYear(requestedYear)&&linkParams.has('year')?requestedYear:(validYear(stored(YEAR_KEY,2026))?Number(stored(YEAR_KEY,2026)):2026);
   let audience='Todos';
-  let viewMonth=new Date().getFullYear()===activeYear?new Date().getMonth():0;
+  const deeplinkDate=linkParams.get('date')||'';
+  let viewMonth=/^\d{4}-\d{2}-\d{2}$/.test(deeplinkDate)&&Number(deeplinkDate.slice(0,4))===activeYear?Number(deeplinkDate.slice(5,7))-1:(new Date().getFullYear()===activeYear?new Date().getMonth():0);
+  viewMonth=Math.max(0,Math.min(11,viewMonth));
   const years=()=>Array.from(new Set([...Array.from({length:Math.max(7,new Date().getFullYear()-2024+4)},(_,i)=>2024+i),...stored(REGISTER,[]),activeYear])).filter(validYear).map(Number).sort((a,b)=>a-b);
   const eventKey=y=>`cora_calendario_eventos_${y}_v1`;
   const projectKey=y=>`cora_calendario_projetos_${y}_v1`;
