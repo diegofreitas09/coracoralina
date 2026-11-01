@@ -432,6 +432,7 @@
     $('#prevMonth').addEventListener('click',()=>{selectedMonth=(selectedMonth+11)%12;render();});
     $('#nextMonth').addEventListener('click',()=>{selectedMonth=(selectedMonth+1)%12;render();});
     $('#todayMonth').addEventListener('click',()=>{selectedMonth=isCurrentYear()?new Date().getMonth():0;render();});
+    $('#jumpAssessment')?.addEventListener('click',()=>document.getElementById('coraAssessmentPanel')?.scrollIntoView({behavior:'smooth',block:'start'}));
     ['addEventBtn','quickEvent'].forEach(id=>$('#'+id).addEventListener('click',()=>{
       markEventAdded('');
       openEventModal();
