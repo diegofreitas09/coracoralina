@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#102a4c" />
   <meta name="description" content="Calendário Anual do Colégio Cora Coralina: planejamento, eventos e arquivos por mês." />
-  <title>Calendário Anual 2026 | Cora Coralina</title>
+  <title>Calendário Anual · Cora Coralina</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="styles.css?v=confirmacao13" />
+  <link rel="stylesheet" href="year-transfer.css?v=anos19" />
   <link rel="stylesheet" href="studio.css?v=20261101-mes-modelo" />
   <link rel="stylesheet" href="portal.css?v=aniversariantes17" />
   <link rel="stylesheet" href="birthdays.css?v=aniversarios16" />
@@ -18,7 +19,7 @@
   <aside class="sidebar">
     <div class="brand"><img class="brand-mark school-logo" id="schoolLogo" alt="Brasão do Colégio Cora Coralina" /><div><strong>Cora Coralina</strong><small>GESTÃO DO CALENDÁRIO</small></div></div>
     <div class="year-label">ANO LETIVO</div>
-    <div class="year-block"><span>2026</span><span class="year-badge">12 meses</span></div>
+    <div class="year-block"><select id="schoolYearSelect" aria-label="Selecionar ano letivo"><option value="2026">2026</option><option value="2027">2027</option></select><button id="nextSchoolYear" type="button" title="Iniciar próximo ano" aria-label="Iniciar próximo ano">＋</button><span id="sidebarYearCount" class="year-badge">Ano base</span></div>
     <nav id="monthNav" aria-label="Selecionar mês"></nav>
     <div class="sidebar-foot">Planejamento anual • Salvo neste dispositivo</div>
   </aside>
@@ -32,9 +33,9 @@
       </div>
     </header>
     <main class="content">
-      <div class="welcome"><div><div class="eyebrow">PLANEJAMENTO · 2026</div><h1>Calendário Anual <span>2026</span></h1><p>Organize eventos, documentos e atividades mês a mês. Tudo em um só lugar.</p></div><div class="welcome-actions"><button id="addEventBtn" class="btn btn-outline">＋ Novo evento</button><button id="jumpBirthdays" type="button" class="btn btn-ghost">♧ Aniversariantes</button><button id="uploadBtn" class="btn btn-dark">＋ Adicionar arquivos</button></div></div>
+      <div class="welcome"><div><div class="eyebrow">PLANEJAMENTO · 2026</div><h1>Calendário Anual <span id="welcomeYear">2026</span></h1><p>Organize eventos, documentos e atividades mês a mês. Tudo em um só lugar.</p></div><div class="welcome-actions"><button id="addEventBtn" class="btn btn-outline">＋ Novo evento</button><button id="jumpBirthdays" type="button" class="btn btn-ghost">♧ Aniversariantes</button><button id="uploadBtn" class="btn btn-dark">＋ Adicionar arquivos</button></div></div>
       <section class="stats" aria-label="Indicadores"><div class="stat"><div class="stat-icon">▦</div><div><strong id="statMonths">12</strong><span>Meses do ano</span></div></div><div class="stat"><div class="stat-icon">◉</div><div><strong id="statEvents">0</strong><span>Eventos cadastrados</span></div></div><div class="stat"><div class="stat-icon">▤</div><div><strong id="statFiles">0</strong><span>Arquivos organizados</span></div></div><div class="stat"><div class="stat-icon">◎</div><div><strong id="statCurrent">0</strong><span>Atividades no mês</span></div></div></section>
-      <section class="official-banner" aria-label="Calendário institucional de 2026">
+      <section class="official-banner" id="officialBanner" aria-label="Calendário institucional de 2026">
         <div class="official-banner-icon">2026</div>
         <div class="official-banner-copy"><strong>Calendário escolar oficial integrado</strong><span>Consulte as páginas originais, veja as datas principais e baixe o documento completo com capa e anotações.</span></div>
         <div class="official-banner-actions"><button type="button" class="btn btn-outline" id="showOfficialButton">Ver calendário oficial</button><button type="button" class="btn btn-primary" id="downloadOfficialBtn">↓ PDF oficial 2026</button></div>
@@ -42,6 +43,8 @@
       <section class="month-area"><div class="section-heading"><div><div class="eyebrow">VISÃO MENSAL</div><h2 id="currentMonthTitle">Janeiro <small>2026</small></h2></div><div class="month-switch"><button id="prevMonth" aria-label="Mês anterior">‹</button><button id="todayMonth">Outubro de 2026</button><button id="nextMonth" aria-label="Próximo mês">›</button></div></div>
         <div class="panels"><div class="panel calendar-panel"><div class="panel-title"><strong>Calendário de atividades</strong><span class="muted">Clique em um dia para cadastrar</span></div><div class="calendar" id="calendar"></div></div><div class="panel events-panel"><div class="panel-title"><strong>Eventos do mês</strong><button class="text-btn" id="quickEvent">＋ Adicionar</button></div><div id="eventList" class="events-list"></div></div></div>
       </section>
+      <div id="yearCarryTools"><button id="carryMonthManual" type="button">↻ Importar atividades de outro ano para este mês</button><span id="yearCarryHelp">Importe projetos, atividades e planejamentos do mesmo mês, conferindo as novas datas.</span></div>
+      <section id="yearProjects" class="year-projects-section" aria-label="Projetos planejados para o mês"><div class="year-projects-head"><strong id="yearProjectTitle">Projetos do mês</strong><button type="button" id="editMonthProjects">Editar projetos</button></div><div id="yearProjectItems" class="year-project-chips"></div></section>
       <div class="studio-shortcuts" aria-label="Ferramentas do calendário">
         <button type="button" class="shortcut-btn" id="jumpPlanning"><span class="shortcut-icon">▤</span><span><strong>Planejamento pedagógico</strong><small>PDF para reunião da equipe</small></span><span class="shortcut-arrow">→</span></button>
         <button type="button" class="shortcut-btn" id="jumpCards"><span class="shortcut-icon shortcut-gold">▣</span><span><strong>Criador de cards</strong><small>5 modelos da identidade Cora</small></span><span class="shortcut-arrow">→</span></button>
@@ -142,7 +145,8 @@
 <script src="school-brand.js" defer></script>
 <script src="official-calendar-data.js" defer></script>
 <script src="studio-pdf.js" defer></script>
-<script src="app.js?v=aniversarios16" defer></script>
+<script src="year-transfer.js?v=anos19" defer></script>
+<script src="app.js?v=anos19" defer></script>
 <script src="official-calendar-ui.js" defer></script>
 <script src="planning.js" defer></script>
 <script src="birthdays.js?v=aniversarios18" defer></script>
