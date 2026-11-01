@@ -17,15 +17,31 @@
   if(holidaysMonth)holidaysMonth.innerHTML=MONTHS.map((n,i)=>`<option value="${i+1}">${n} de 2026</option>`).join('');
   function getHolidays(month){
     const mm=String(month).padStart(2,'0');
-    let source=window.CORA_OFFICIAL_2026?.events||[];
-    try {
-      const stored=JSON.parse(localStorage.getItem('cora_calendario_eventos_2026_v1')||'null');
-      if(Array.isArray(stored)&&stored.length)source=stored;
+    // Mescla o calendário institucional com os registros salvos, sem descartar
+    // feriados oficiais quando o navegador contém alguns eventos particulares.
+    const merged=new Map();
+    let removed=[];
+    try{removed=JSON.parse(localStorage.getItem('cora_official_2026_removed_v1')||'[]');}catch{}
+    const removedIds=new Set(Array.isArray(removed)?removed:[]);
+    for(const item of (window.CORA_OFFICIAL_2026?.events||[])){
+      if(item?.id&&!removedIds.has(item.id))merged.set(item.id,item);
+    }
+    try{
+      const stored=JSON.parse(localStorage.getItem('cora_calendario_eventos_2026_v1')||'[]');
+      if(Array.isArray(stored))for(const item of stored){
+        if(item?.id)merged.set(item.id,item);
+      }
     }catch{}
     const seen=new Set();
-    return source.filter(item=>item&&String(item.date||'').startsWith(`2026-${mm}-`)&&String(item.type||'').toLowerCase()==='feriado')
-      .sort((a,b)=>a.date.localeCompare(b.date)||a.title.localeCompare(b.title))
-      .filter(item=>{const key=`${item.date}:${item.title}`.toLowerCase();if(seen.has(key))return false;seen.add(key);return true;});
+    return [...merged.values()]
+      .filter(item=>item&&String(item.date||'').startsWith(`2026-${mm}-`)&&String(item.type||'').toLowerCase()==='feriado')
+      .sort((a,b)=>a.date.localeCompare(b.date)||String(a.title).localeCompare(String(b.title)))
+      .filter(item=>{
+        const key=`${item.date}:${holidayLabel(item).toLowerCase()}`;
+        if(seen.has(key))return false;
+        seen.add(key);
+        return true;
+      });
   }
   function holidayLabel(item){
     let s=String(item.title||'Feriado').replace(/\s*[—–-]\s*feriado(?:\s+antecipado)?\s*$/i,'').trim();
@@ -40,8 +56,48 @@
       items:list.map(item=>`${item.date.slice(8,10)}/${item.date.slice(5,7)} – ${holidayLabel(item)}`).join('\n'),
       date:'',time:'Calendário escolar · 2026',place:'Para informações, consulte a coordenação.'};
   }
-  function updateHolidayInfo(){if(!holidaysInfo||!holidaysMonth)return;const month=Number(holidaysMonth.value||11);const n=getHolidays(month).length;holidaysInfo.textContent=n?`${n} ${n===1?'data cadastrada':'datas cadastradas'} no calendário escolar para ${MONTHS[month-1]} de 2026. Todas são incluídas; revise antes de compartilhar.`:`Nenhum feriado cadastrado em ${MONTHS[month-1]} de 2026 no calendário escolar. Você pode acrescentar uma data manualmente.`;}
-  function fillMonth(month){if(template!=='comunicado')return;drafts.comunicado=holidayDraft(month);setForm(drafts.comunicado);saveDraft();updateHolidayInfo();render();}
+  function updateHolidayInfo(){
+    if(!holidaysInfo||!holidaysMonth)return;
+    const month=Math.max(1,Math.min(12,Number(holidaysMonth.value)||11));
+    const n=getHolidays(month).length;
+    holidaysInfo.textContent=n?`${n} ${n===1?'feriado ou data especial':'feriados ou datas especiais'} em ${MONTHS[month-1]} de 2026. Os registros podem ser editados antes de divulgar.`:`Nenhum feriado cadastrado em ${MONTHS[month-1]} de 2026 no calendário escolar. Você pode acrescentar uma data manualmente.`;
+  }
+  function fillMonth(month){
+    if(template!=='comunicado')return;
+    const normalized=Math.max(1,Math.min(12,Number(month)||11));
+    drafts.comunicado=holidayDraft(normalized);
+    setForm(drafts.comunicado);
+    saveDraft();updateHolidayInfo();render();
+  }
+  function calendarMonth(){
+    const button=document.querySelector('#monthNav [data-month].active');
+    const m=button===null?NaN:Number(button.dataset.month);
+    return Number.isInteger(m)&&m>=0&&m<=11?m+1:11;
+  }
+  function ensureComunicadoMonth(){
+    if(template!=='comunicado')return;
+    const selected=Number(holidaysMonth?.value)||calendarMonth();
+    const formValues=getForm();
+    // Migração de rascunhos antigos sem mês, ou com datas de outro mês.
+    const found=[...String(formValues.items||'').matchAll(/(?:^|\n)\s*\d{2}\/(\d{2})\s*[–—-]/g)];
+    const stale=found.length>0&&found.some(m=>Number(m[1])!==selected);
+    if(stale){
+      fillMonth(selected);
+      status(`Comunicado atualizado: ${MONTHS[selected-1]} de 2026.`);
+    }
+  }
+  const LABELS={comunicado:'Comunicado',solidaria:'Campanha solidária',reuniao:'Reunião',cronograma:'Cronograma',avaliacao:'Avaliação de 2ª chamada'};
+  function exportName(extension){
+    const suffix=String(Date.now());
+    const label=template==='comunicado'?`Comunicado_${MONTHS[(Number(holidaysMonth?.value)||11)-1]}_2026`:`${template}_2026`;
+    return `Cora_Coralina_${label}_${suffix}.${extension}`;
+  }
+  function updateExportContext(){
+    const message=template==='comunicado'?`Modelo ativo: COMUNICADO · ${MONTHS[(Number(holidaysMonth?.value)||11)-1].toUpperCase()} DE 2026`:`Modelo ativo: ${LABELS[template].toUpperCase()}`;
+    const target=$('cardExportContext');if(target)target.textContent=message;
+    const png=$('downloadCardPng');if(png)png.textContent=`↓ PNG · ${LABELS[template]}`;
+    const pdf=$('downloadCardPdf');if(pdf)pdf.textContent=`↓ PDF · ${LABELS[template]}`;
+  }
 
   function rounded(g,x,y,w,h,r,fill){g.fillStyle=fill;g.beginPath();g.roundRect(x,y,w,h,r);g.fill()}
   function strokeRound(g,x,y,w,h,r,color,width=3){g.strokeStyle=color;g.lineWidth=width;g.beginPath();g.roundRect(x,y,w,h,r);g.stroke()}
@@ -137,7 +193,7 @@
   function getForm(){const v={};Object.keys(DEFAULTS[template]).forEach(k=>v[k]=String(form.elements.namedItem(k)?.value||''));return v}
   function getDraft(){return drafts[template]||DEFAULTS[template]}
   function setForm(d){for(const name of Object.keys(DEFAULTS[template])){const el=form.elements.namedItem(name);if(el)el.value=d[name]??''}}
-  function render(){const d=getForm();ctx.clearRect(0,0,W,H);try{({comunicado:notice,solidaria:solidarity,reuniao:meeting,cronograma:schedule,avaliacao:assessment}[template]||notice)(ctx,d)}catch(e){console.error(e);drawBase(ctx);text(ctx,'Erro ao visualizar. Revise os campos.',40,130,27,INK)}renderCount++}
+  function render(){const d=getForm();ctx.clearRect(0,0,W,H);try{({comunicado:notice,solidaria:solidarity,reuniao:meeting,cronograma:schedule,avaliacao:assessment}[template]||notice)(ctx,d)}catch(e){console.error(e);drawBase(ctx);text(ctx,'Erro ao visualizar. Revise os campos.',40,130,27,INK)}renderCount++;updateExportContext()}
   function saveDraft(){try{drafts[template]=getForm();localStorage.setItem(ID,JSON.stringify(drafts));$('cardSaveStatus').textContent='Rascunho salvo'}catch{$('cardSaveStatus').textContent='Salvamento indisponível'}}
   function setTemplate(name){if(!DEFAULTS[name])return;saveDraft();template=name;setForm(getDraft());if(holidaysControls)holidaysControls.hidden=name!=='comunicado';if(name==='comunicado')updateHolidayInfo();document.querySelectorAll('[data-template]').forEach(el=>{el.classList.toggle('is-selected',el.dataset.template===name);el.setAttribute('aria-pressed',el.dataset.template===name?'true':'false')});render()}
   function loadImg(str){return new Promise(resolve=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src=str||''})}
@@ -146,16 +202,20 @@
   async function pdfLibrary(){if(window.PDFLib)return window.PDFLib;await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';s.onload=resolve;s.onerror=()=>reject(Error('Biblioteca PDF indisponível'));document.head.append(s)});return window.PDFLib}
   form.addEventListener('submit',event=>event.preventDefault());
   if(holidaysMonth)holidaysMonth.addEventListener('change',()=>fillMonth(holidaysMonth.value));
+  window.addEventListener('cora-month-changed',event=>{
+    const selected=Number(event.detail?.month)+1;
+    if(template==='comunicado'&&selected>=1&&selected<=12&&Number(holidaysMonth?.value)!==selected)fillMonth(selected);
+  });
   $('loadMonthHolidays')?.addEventListener('click',()=>fillMonth(holidaysMonth.value));
   form.addEventListener('input',()=>{saveDraft();render()});
   document.querySelectorAll('[data-template]').forEach(el=>el.addEventListener('click',()=>setTemplate(el.dataset.template)));
   $('resetCard').addEventListener('click',()=>{if(confirm('Restaurar o texto original deste modelo?')){drafts[template]=template==='comunicado'?holidayDraft(holidaysMonth.value):{...DEFAULTS[template]};setForm(drafts[template]);saveDraft();updateHolidayInfo();render()}});
-  $('downloadCardPng').addEventListener('click',async()=>{await assetsReady;saveDraft();render();canvas.toBlob(blob=>{if(blob){download(blob,`Cora_Coralina_Card_${template}_2026.png`);status('Card em PNG baixado com sucesso.')}else status('Falha ao gerar imagem.')},'image/png')});
-  $('downloadCardPdf').addEventListener('click',async()=>{await assetsReady;saveDraft();render();const btn=$('downloadCardPdf');btn.disabled=true;btn.textContent='Gerando PDF...';try{const file=window.CoraPDF.fromCanvases([canvas],{pageWidth:540,pageHeight:675,title:`Card Cora Coralina ${template} 2026`});download(file,`Cora_Coralina_Card_${template}_2026.pdf`);status('Card em PDF baixado com sucesso.')}catch(e){console.error(e);status('PDF indisponível neste navegador. Baixe o PNG e imprima como PDF.')}finally{btn.disabled=false;btn.textContent='↓ Baixar PDF'}});
+  $('downloadCardPng').addEventListener('click',async()=>{await assetsReady;ensureComunicadoMonth();saveDraft();render();const filename=exportName('png');canvas.toBlob(blob=>{if(blob){download(blob,filename);status(`Arquivo gerado: ${LABELS[template]}${template==='comunicado'?' de '+MONTHS[(Number(holidaysMonth?.value)||11)-1]:''}.`)}else status('Falha ao gerar imagem.')},'image/png')});
+  $('downloadCardPdf').addEventListener('click',async()=>{await assetsReady;ensureComunicadoMonth();saveDraft();render();const btn=$('downloadCardPdf');btn.disabled=true;btn.textContent='Gerando PDF...';try{const file=window.CoraPDF.fromCanvases([canvas],{pageWidth:540,pageHeight:675,title:`Card Cora Coralina ${template} 2026`});download(file,exportName('pdf'));status(`PDF gerado: ${LABELS[template]}.`)}catch(e){console.error(e);status('PDF indisponível neste navegador. Baixe o PNG e imprima como PDF.')}finally{btn.disabled=false;updateExportContext()}});
   $('jumpCards').addEventListener('click',()=>$('cardStudio').scrollIntoView({behavior:'smooth',block:'start'}));
   try{const obj=JSON.parse(localStorage.getItem(ID)||'{}');if(obj&&typeof obj==='object'&&!Array.isArray(obj))drafts=obj}catch{}
-  if(!drafts.comunicado){const today=new Date();drafts.comunicado=holidayDraft(today.getFullYear()===2026?today.getMonth()+1:1);}
-  setForm(getDraft());updateHolidayInfo();render();
+  if(!drafts.comunicado||!(Number(drafts.comunicado.month)>=1&&Number(drafts.comunicado.month)<=12)){drafts.comunicado=holidayDraft(calendarMonth());}
+  setForm(getDraft());ensureComunicadoMonth();updateHolidayInfo();render();
   const assetsReady=Promise.all([loadImg(window.CORA_SCHOOL_LOGO||window.CORA_STUDIO_ASSETS?.logo),loadImg(window.CORA_STUDIO_ASSETS?.toys)]).then(([a,b])=>{logo=a;toys=b;render()});
-  window.addEventListener('cora-backup-restored',()=>{try{drafts=JSON.parse(localStorage.getItem(ID)||'{}')||{}}catch{drafts={}}setForm(getDraft());render()});
+  window.addEventListener('cora-backup-restored',()=>{try{drafts=JSON.parse(localStorage.getItem(ID)||'{}')||{}}catch{drafts={}}if(!drafts.comunicado?.month)drafts.comunicado=holidayDraft(calendarMonth());setForm(getDraft());ensureComunicadoMonth();updateHolidayInfo();render()});
 })();
