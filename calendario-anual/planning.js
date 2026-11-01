@@ -18,7 +18,7 @@
     closing:'Agradecemos a dedicação da equipe. Nosso compromisso coletivo transforma a aprendizagem e fortalece a parceria entre escola e família.',includeCalendar:true,includeBirthdays:true
   };
   const emptyPlan={segment:sample.segment,meetingDate:'',meetingTime:'',meetingPlace:'',coordinator:'Equipe de Gestão e Coordenação',projects:'',schedule:'',guidance:'',agenda:'Alinhamento pedagógico\nAvaliações e registros\nOrganização dos próximos eventos',actions:'',birthdays:'',closing:'Contamos com o compromisso e a colaboração de toda a equipe.',includeCalendar:true,includeBirthdays:true};
-  let plans={};let current=10;let saveDelay;
+  let plans={};let current=Number.isInteger(window.CoraYears?.month)?window.CoraYears.month:10;let saveDelay;
   const fields=['segment','meetingDate','meetingTime','meetingPlace','coordinator','projects','schedule','guidance','agenda','actions','birthdays','closing','includeCalendar','includeBirthdays'];
   const SEGMENTS=['Educação Infantil','Fundamental I','Fundamental II','Ensino Médio','Equipe administrativa'];
   const checkboxes=()=>[...document.querySelectorAll('#planSegments [data-segment]')];
@@ -44,14 +44,48 @@
   function prettyBirthday(p){return String(p.day).padStart(2,'0')+'/'+String(p.month).padStart(2,'0')+' - '+String(p.name||'').trim()}
   function lines(str){return String(str||'').split(/\r?\n/).map(s=>s.trim()).filter(Boolean)}
   function eventsFor(month){try{let events=JSON.parse(localStorage.getItem(EVENT_STORAGE)||'[]');return Array.isArray(events)?events.filter(e=>String(e.date||'').startsWith(`${YEAR}-${String(month+1).padStart(2,'0')}-`)).sort((a,b)=>a.date.localeCompare(b.date)):[]}catch{return []}}
-  function readStorage(){try{const obj=JSON.parse(localStorage.getItem(STORAGE)||'{}');plans=obj && typeof obj==='object'&&!Array.isArray(obj)?obj:{}}catch{plans={}}}
+  function readStorage(){
+    try{const obj=JSON.parse(localStorage.getItem(STORAGE)||'{}');plans=obj&&typeof obj==='object'&&!Array.isArray(obj)?obj:{}}catch{plans={}}
+    if(YEAR>2026){
+      let updated=false;
+      for(const [month,plan] of Object.entries(plans)){
+        if(!plan||typeof plan!=='object'||plan.carrySanitized)continue;
+        const copied=Boolean(plan.copiedFromYear)||String(plan.closing||'').includes('Planejamento reaproveitado de');
+        if(!copied)continue;
+        // O calendário do novo ano, e não o texto do planejamento antigo, comanda as datas.
+        plan.schedule='';
+        plan.birthdays='';
+        plan.projects=(window.CoraYears?.getProjects?.(YEAR)?.[Number(month)]||[]).join('\n');
+        if(plan.meetingDate&&!String(plan.meetingDate).startsWith(YEAR+'-'))plan.meetingDate='';
+        plan.closing=String(plan.closing||'').replace(/\s*Planejamento reaproveitado de \d{4}\. Conferir datas, pautas e responsáveis\./g,'');
+        plan.carrySanitized=true;updated=true;
+      }
+      if(updated)try{localStorage.setItem(STORAGE,JSON.stringify(plans))}catch{}
+    }
+  }
   function defaults(month){return {...(YEAR===2026&&month===10?sample:emptyPlan)}}
-  function initMonth(month){if(!plans[month])plans[month]=defaults(month);return plans[month]}
+  function initMonth(month){
+    if(!plans[month])plans[month]=defaults(month);
+    const plan=plans[month];
+    const projects=window.CoraYears?.getProjects?.(YEAR)?.[month]||[];
+    if(YEAR>2026&&projects.length&&!String(plan.projects||'').trim())plan.projects=projects.join('\n');
+    return plan;
+  }
   function store(){try{localStorage.setItem(STORAGE,JSON.stringify(plans));$('planningSaveStatus').textContent='Alterações salvas automaticamente';}catch{$('planningSaveStatus').textContent='Não foi possível salvar no dispositivo';}}
   function readForm(){const obj={};for(const field of fields){const el=form.elements.namedItem(field);obj[field]=field==='segment'?segmentValues().join(' • '):(field==='includeCalendar'||field==='includeBirthdays')?Boolean(el?.checked):el?.value||'';}return obj}
   function fillForm(month){const obj=initMonth(month);for(const field of fields){const el=form.elements.namedItem(field);if(field==='segment')setSegments(obj.segment);else if(el)(field==='includeCalendar'||field==='includeBirthdays')?el.checked=obj[field]!==false:el.value=obj[field]||''}current=month;$('planMonth').value=String(month);renderSummary()}
-  function renderSummary(){const obj=readForm(),e=obj.includeCalendar?eventsFor(current):[];const birthdayPeople=birthdaysByMonth(current);$('planBirthdayPreview').textContent=birthdayPeople.length?birthdayPeople.map(prettyBirthday).join(' · '):'Nenhum aniversariante cadastrado neste mês.';$('planPreviewBirthdays').textContent=obj.includeBirthdays?(birthdayPeople.length?'Aniversariantes: '+birthdayPeople.map(prettyBirthday).join(' · '):'Aniversariantes: nenhum cadastrado'):'Aniversariantes: ocultos neste PDF';$('planPreviewMonth').textContent=MONTHS[current];$('planPreviewSegment').textContent=obj.segment;$('planProjectCount').textContent=lines(obj.projects).length;$('planScheduleCount').textContent=lines(obj.schedule).length;$('planCalendarCount').textContent=e.length;$('planPreviewAgenda').replaceChildren(...lines(obj.agenda).slice(0,7).map(value=>{const d=document.createElement('div');d.textContent=value;return d}));}
-  function saveCurrent(){plans[current]=readForm();store();renderSummary()}
+  function renderSummary(){const obj=readForm(),e=obj.includeCalendar?eventsFor(current):[];const eventsPreview=$('planSyncedEvents');if(eventsPreview)eventsPreview.innerHTML=e.length?e.map(v=>'<div><strong>'+String(v.date).slice(8,10)+'/'+String(v.date).slice(5,7)+'</strong> · '+safe(v.title)+(v.status==='Em revisão'?' <em>(revisar)</em>':'')+'</div>').join(''):'<span>Nenhum evento deste mês. Importe ou cadastre pelo calendário.</span>';const birthdayPeople=birthdaysByMonth(current);$('planBirthdayPreview').textContent=birthdayPeople.length?birthdayPeople.map(prettyBirthday).join(' · '):'Nenhum aniversariante cadastrado neste mês.';$('planPreviewBirthdays').textContent=obj.includeBirthdays?(birthdayPeople.length?'Aniversariantes: '+birthdayPeople.map(prettyBirthday).join(' · '):'Aniversariantes: nenhum cadastrado'):'Aniversariantes: ocultos neste PDF';$('planPreviewMonth').textContent=MONTHS[current];$('planPreviewSegment').textContent=obj.segment;$('planProjectCount').textContent=lines(obj.projects).length;$('planScheduleCount').textContent=lines(obj.schedule).length;$('planCalendarCount').textContent=e.length;$('planPreviewAgenda').replaceChildren(...lines(obj.agenda).slice(0,7).map(value=>{const d=document.createElement('div');d.textContent=value;return d}));}
+  function saveCurrent(){
+    plans[current]=readForm();
+    const currentProjects=lines(plans[current].projects);
+    const list=window.CoraYears?.getProjects?.(YEAR);
+    if(list&&Array.isArray(list[current])&&JSON.stringify(list[current])!==JSON.stringify(currentProjects)){
+      list[current]=currentProjects;
+      window.CoraYears?.saveProjects?.(YEAR,list);
+      window.dispatchEvent(new CustomEvent('cora-projects-changed',{detail:{year:YEAR,month:current}}));
+    }
+    store();renderSummary();
+  }
   function alertUser(msg){const toast=$('toast');if(toast){toast.textContent=msg;toast.classList.add('visible');setTimeout(()=>toast.classList.remove('visible'),4500)}else alert(msg)}
   function download(blob,name){const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),8000)}
   function startImage(url){return new Promise(resolve=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>resolve(null);im.src=url||''})}
@@ -239,10 +273,24 @@
   $('jumpPlanning').addEventListener('click',()=>$('planningStudio').scrollIntoView({behavior:'smooth',block:'start'}));
   window.addEventListener('cora-backup-restored',()=>{readStorage();fillForm(current)});
   window.addEventListener('cora-birthdays-changed',()=>{renderSummary()});
-  window.addEventListener('cora-month-changed',e=>{if(Number(e.detail?.year||YEAR)===YEAR&&Number.isInteger(e.detail?.month))renderSummary();});
+  window.addEventListener('cora-month-changed',e=>{
+    if(Number(e.detail?.year||YEAR)!==YEAR||!Number.isInteger(e.detail?.month))return;
+    const next=Number(e.detail.month);if(next<0||next>11)return;
+    if(next!==current){clearTimeout(saveDelay);saveCurrent();fillForm(next);}
+    else renderSummary();
+  });
+  window.addEventListener('cora-data-changed',e=>{if(Number(e.detail?.year)===YEAR){readStorage();fillForm(current)}});
+  window.addEventListener('cora-events-updated',e=>{if(Number(e.detail?.year)===YEAR)renderSummary();});
+  window.addEventListener('cora-projects-changed',e=>{
+    if(Number(e.detail?.year)!==YEAR)return;
+    const months=window.CoraYears?.getProjects?.(YEAR)||[];
+    const updated=months[current]||[];const input=form.elements.namedItem('projects');
+    if(input&&input.value!==updated.join('\n')){input.value=updated.join('\n');plans[current].projects=input.value;store();}
+    renderSummary();
+  });
   window.addEventListener('cora-year-changed',e=>{
     saveCurrent();YEAR=Number(e.detail.year);STORAGE=`cora_planejamento_${YEAR}_v1`;
-    EVENT_STORAGE=`cora_calendario_eventos_${YEAR}_v1`;current=0;readStorage();$('planMeetingDate').min=YEAR+'-01-01';$('planMeetingDate').max=YEAR+'-12-31';
+    EVENT_STORAGE=`cora_calendario_eventos_${YEAR}_v1`;current=Number(e.detail.month)||0;readStorage();$('planMeetingDate').min=YEAR+'-01-01';$('planMeetingDate').max=YEAR+'-12-31';
     $('planMonth').innerHTML=MONTHS.map((x,i)=>`<option value="${i}">${x} de ${YEAR}</option>`).join('');
     fillForm(current);
   });
