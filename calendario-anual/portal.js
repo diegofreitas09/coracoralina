@@ -112,7 +112,7 @@
    const previous=await api('state',undefined,'year='+year);
    window.CoraBirthdays?.importBaseline?.(previous.publication?.birthdays||[]);
    const birthdays=window.CoraBirthdays?.all?.()||previous.publication?.birthdays||[];
-   const stages=window.CoraStages?.get?.(year)||[];const projects=window.CoraYears?.getProjects?.(year)||[];
+   const stages=(window.CoraStages?.get?.(year)||[]).map(s=>s.needsReview?{number:s.number,start:'',end:''}:s);const projects=window.CoraYears?.getProjects?.(year)||[];
    const res=await api('publish',{year,events,notices:managerNotices,birthdays,stages,projects,config:{defaultLeadDays:leadDays}});
    $('#cpPubStatus').textContent='Publicado: '+new Date(res.updatedAt).toLocaleString('pt-BR');
    const status=res.push?.registered
