@@ -136,7 +136,7 @@ export default async function handler(request){
   if(role!=='equipe'||!member)return answer({error:'Acesso pessoal necessário para cancelar notificações'},403);
   if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Requisição inválida'},400);
   let input;try{input=await request.json()}catch{return answer({error:'Dados inválidos'},400)}
-  return answer(await deleteRegistration(input.subscription),200);
+  return answer(await deleteRegistration(input.subscription,member.id),200);
  }
  if(action==='push-test'&&request.method==='POST'){
   if(role!=='equipe'||!member)return answer({error:'Acesso individual necessário para testar notificações'},403);
