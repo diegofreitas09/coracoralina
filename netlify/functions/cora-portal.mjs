@@ -27,7 +27,20 @@ const cookie=(request)=>{const c=request.headers.get('cookie')||'';const m=c.mat
 const roleOf=(request)=>{const t=cookie(request),parts=t.split('.');if(parts.length!==2)return null;const expected=createHmac('sha256',vars().secret).update(parts[0]).digest('base64url');if(!equal(parts[1],expected))return null;try{const p=JSON.parse(Buffer.from(parts[0],'base64url').toString());return p.exp>Date.now()&&['gestao','equipe'].includes(p.role)?p.role:null}catch{return null}};
 const baseCookie=`Path=/calendario-anual/; HttpOnly; Secure; SameSite=Strict`;
 const str=(v,len=255)=>String(v??'').trim().slice(0,len);
-const cleanEvent=e=>({id:str(e.id,140),date:str(e.date,10),title:str(e.title,170),type:str(e.type,36),notes:str(e.notes,600)});
+const cleanEvent=e=>{
+ const item={id:str(e.id,140),date:str(e.date,10),title:str(e.title,170),type:str(e.type,36),notes:str(e.notes,600)};
+ // Campos de entrega de avaliações mantidos na publicação compartilhada.
+ // Eventos comuns não recebem metadados de alerta obrigatório.
+ if(e.assessmentDelivery===true && /^cora-entrega-avaliacoes-\d{4}-[1-4]$/.test(item.id)){
+  item.assessmentDelivery=true;
+  item.stageNumber=Math.max(1,Math.min(4,Math.trunc(Number(e.stageNumber)||1)));
+  item.leadDays=5;
+  item.deliveryTypes=str(e.deliveryTypes,160);
+  item.fundamentalEmail='coordenacaofundamentalcora@gmail.com';
+  item.medioEmail='coordenacaomediocora@gmail.com';
+ }
+ return item;
+};
 const cleanNotice=e=>({id:str(e.id,120),title:str(e.title,130),body:str(e.body,1800),type:['Informativo','Urgente','Reunião','Avaliação'].includes(e.type)?e.type:'Informativo',publishAt:str(e.publishAt,30),expiresAt:str(e.expiresAt,30),eventDate:str(e.eventDate,10),leadDays:Math.max(0,Math.min(30,Number(e.leadDays)||0))});
 const cleanBirthday=b=>({id:str(b.id,140),name:str(b.name,100),role:str(b.role,85),day:Number(b.day),month:Number(b.month)});
 const validBirthday=b=>b.id&&b.name&&Number.isInteger(b.month)&&b.month>=1&&b.month<=12&&Number.isInteger(b.day)&&b.day>=1&&b.day<=new Date(Date.UTC(2024,b.month,0)).getUTCDate();
