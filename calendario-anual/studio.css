@@ -26,3 +26,15 @@
 @media(max-width:760px){.card-preview-top{flex-wrap:wrap;gap:6px}.card-editor-layout{min-width:0}.card-editor-layout>.studio-form,.card-editor-layout>.card-canvas-wrap{min-width:0}.card-canvas-wrap canvas{max-width:100%}}
 
 #cardExtraDetails[hidden]{display:none!important}
+/* Planejamento pedagógico: segmentos múltiplos e aniversariantes do mês */
+.segment-selection{padding:12px 14px;background:#f6f9fd;border:1px solid #dbe6f1;border-radius:12px;min-width:0}
+.segment-selection>strong{display:block;font-size:12px;color:#23476a;margin-bottom:10px}
+.segment-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.segment-options label{display:flex;align-items:center;gap:8px;margin:0;padding:9px 10px;background:#fff;border:1px solid #dae6f3;border-radius:9px;font-size:12px;font-weight:650;color:#183c62;line-height:1.4;cursor:pointer}
+.segment-options label:has(input:checked){border-color:#61a584;background:#eef9f1;color:#1e6445}
+.segment-options input{flex:0 0 auto;width:17px;height:17px;accent-color:#21834e}
+.planning-birthday-auto{padding:14px 16px;background:#f6fafc;border:1px solid #dbe6f1;border-radius:12px}
+.planning-birthday-auto>.studio-check{margin:0}
+.planning-birthday-preview{margin-top:10px;color:#264c6c;font-size:12px;line-height:1.55}
+.paper-birthday-line{border-left:3px solid #e2b82b;margin:8px 0 16px;padding:5px 9px;color:#1c476f;font-size:12px;line-height:1.4}
+@media(max-width:580px){.segment-options{grid-template-columns:1fr}.segment-selection{padding:11px}.segment-options label{min-height:43px}}
