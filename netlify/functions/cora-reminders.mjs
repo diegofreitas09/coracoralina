@@ -30,7 +30,7 @@ export default async function handler(){
   const pending=[];
   for(const n of data.notices||[]){
    const publishTime=toLocalTime(n.publishAt);
-   if(!Number.isFinite(publishTime)||publishTime>Date.now())continue;
+   if(!Number.isFinite(publishTime)||publishTime>Date.now()||Date.now()-publishTime>7*86400000)continue;
    const id=deliveryId('notice',year,n.id,n.title+'|'+n.body+'|'+n.publishAt);
    pending.push({id,kind:'notice',title:n.title,body:n.body,tag:'notice-'+n.id});
    if(dailyReminder&&n.eventDate&&daysUntil(n.eventDate,day)===Number(n.leadDays||0)){
