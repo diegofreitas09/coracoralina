@@ -74,6 +74,19 @@ export async function activateEmployee(input,secret){
  await db().setJSON(r.id,updated);
  return {ok:true,role:'equipe',member:publicMember(updated),cookie:signedSession(updated,secret)};
 }
+export async function accessPolicy(){
+ const stored=await db().get('access-policy',{type:'json',consistency:'strong'});
+ return {enforced:stored?.enforced===true,updatedAt:stored?.updatedAt||''};
+}
+export async function enforceIndividualAccess(){
+ const index=await db().get('member-index',{type:'json',consistency:'strong'})||[];
+ const accounts=await Promise.all((Array.isArray(index)?index:[]).map(account));
+ const active=accounts.filter(u=>u?.status==='Ativo').length;
+ if(active<1)return error('Ative pelo menos uma conta individual antes de bloquear a senha coletiva.',409);
+ const p={enforced:true,updatedAt:new Date().toISOString(),activeAtCutover:active};
+ await db().setJSON('access-policy',p);
+ return {ok:true,...p};
+}
 export async function listEmployees(){
  const ids=await db().get('member-index',{type:'json',consistency:'strong'})||[];
  const records=await Promise.all((Array.isArray(ids)?ids:[]).slice(0,400).map(account));
