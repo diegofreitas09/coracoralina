@@ -118,44 +118,79 @@
   }catch(e){toast('Não foi possível publicar: '+e.message);}finally{btn.disabled=false;}
  }
  function teamNav(){return `<div class="cp-team-head"><img id="cpTeamLogo" alt="Brasão do Colégio Cora Coralina"><div><small>COLÉGIO CORA CORALINA · AMBIENTE DE CONSULTA</small><h1>Equipe Pedagógica</h1></div><label class="cp-year-label">Ano letivo <select id="cpTeamYear" aria-label="Ano letivo">${availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('')}</select></label><span class="cp-spacer"></span><button class="cp-btn soft" type="button" id="cpEnableAlerts" title="Funciona com aplicativo aberto; push em segundo plano depende de configuração do servidor">Avisos no celular (app aberto)</button><button class="cp-btn cp-bell" id="cpBell" aria-label="Abrir notificações">🔔<em id="cpBellCount" style="display:none">0</em></button><button class="cp-btn" id="cpRefresh">Atualizar</button><button class="cp-btn" id="cpTeamLogout">Sair</button></div>`}
- async function team(){year=2026;if(new URLSearchParams(location.search).get('avisos')==='1')showBell=true;document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpEnableAlerts').onclick=enableLocalNotifications;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};$('#cpTeamYear').onchange=e=>{year=Number(e.target.value)||2026;month=0;showBell=false;tab='resumo';refresh()};await refresh();clearInterval(timer);timer=setInterval(refresh,60000);}
+ async function team(){year=2026;if(new URLSearchParams(location.search).get('avisos')==='1')showBell=true;document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpEnableAlerts').onclick=enableLocalNotifications;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};$('#cpTeamYear').onchange=e=>{year=Number(e.target.value)||2026;month=0;showBell=false;tab='resumo';refresh()};await refresh();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},30000);}
  async function refresh(){try{const result=await api('state',undefined,'year='+year);availableYears=Array.isArray(result.availableYears)?result.availableYears:[2026];data=result.publication;const picker=$('#cpTeamYear');if(picker){picker.innerHTML=availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('');picker.value=String(year)}drawTeam();checkLocalNotifications()}catch(e){if(e.status===401){clearInterval(timer);gateway('Sessão expirada. Entre novamente.');return;}toast('Falha ao atualizar: '+e.message);}}
 
- const localNoticesKey=()=>('cora_team_notified_'+year+'_v1');
+
+ // Marcadores de leitura são separados das notificações entregues ao aparelho.
+ // A versão anterior marcava mensagens como 'notificadas' antes de exibi-las.
+ const deliveredKey=()=>('cora_team_delivered_v2_'+year);
+ let deliveringAlerts=false;
+ function vibrationFeedback(){
+   try{return Boolean(navigator.vibrate&&navigator.vibrate([180,90,180]))}catch{return false}
+ }
  async function showDeviceNotice(title,body,tag){
-  if(!('serviceWorker' in navigator))return false;
-  try{
-   const reg=await navigator.serviceWorker.ready;
-   await reg.showNotification(title,{body,tag,icon:'./app-icon-192.png',badge:'./app-icon-192.png',data:{url:'./?avisos=1'},renotify:false});
-   return true;
-  }catch{return false}
+   if(!('serviceWorker' in navigator)||!('Notification' in window)||Notification.permission!=='granted')return false;
+   try{
+     const registration=await navigator.serviceWorker.ready;
+     await registration.showNotification(String(title).slice(0,150),{
+       body:String(body||'').slice(0,270),tag:'cora-'+tag,icon:'./app-icon-192.png',badge:'./app-icon-192.png',
+       vibrate:[180,90,180],silent:false,renotify:false,data:{url:'./?avisos=1'}
+     });
+     return true;
+   }catch(error){console.warn('Aviso do Android indisponível',error);return false}
  }
  async function enableLocalNotifications(){
-  if(!('Notification' in window)||!('serviceWorker' in navigator)){toast('Este navegador não oferece notificações para o aplicativo.');return}
-  const result=await Notification.requestPermission();
-  if(result!=='granted'){toast('Ative a permissão de notificações nas configurações do aparelho.');return}
-  try{
-   localStorage.setItem('cora_team_device_alerts_enabled','1');
-   const already=new Set(JSON.parse(localStorage.getItem(localNoticesKey())||'[]'));
-   upcoming().forEach(n=>already.add(n.id));
-   localStorage.setItem(localNoticesKey(),JSON.stringify([...already]));
-  }catch{}
-  const ok=await showDeviceNotice('Alertas do Colégio Cora Coralina','Avisos ativos enquanto o aplicativo estiver aberto.','cora-alerts-enabled');
-  toast(ok?'Permissão ativada. Novos avisos serão exibidos no aparelho com o aplicativo aberto.':'Permissão concedida, mas não foi possível exibir o aviso do aparelho.');
+   if(!('Notification' in window)||!('serviceWorker' in navigator)){
+     toast('Este navegador não permite notificações do aplicativo. Abra pelo Chrome e instale o aplicativo.');return
+   }
+   let permission=Notification.permission;
+   if(permission!=='granted'){
+     try{permission=await Notification.requestPermission()}catch{permission='denied'}
+   }
+   if(permission!=='granted'){
+     toast('Notificações bloqueadas. No Android, abra Configurações > Aplicativos > Chrome ou Agenda Cora > Notificações e permita.');
+     return;
+   }
+   try{localStorage.setItem('cora_team_device_alerts_enabled','1')}catch{}
+   vibrationFeedback();
+   const ok=await showDeviceNotice('Teste de alerta — Cora Coralina',
+     'O aviso chegou ao Android. O aparelho vibra se o navegador, o modo de som e o Android permitirem.',
+     'teste-'+Date.now());
+   const button=$('#cpEnableAlerts');if(button)button.textContent='✓ Testar alerta novamente';
+   toast(ok?'Teste enviado à barra de notificações do Android. Confira o som e a vibração do aparelho.':
+     'Permissão concedida, mas a notificação não pôde ser exibida neste aparelho.');
+   await checkLocalNotifications();
  }
  async function checkLocalNotifications(){
-  if(role!=='equipe'||!data||!('Notification' in window)||Notification.permission!=='granted')return;
-  if(localStorage.getItem('cora_team_device_alerts_enabled')!=='1')return;
-  let notified=[];
-  try{notified=JSON.parse(localStorage.getItem(localNoticesKey())||'[]')}catch{}
-  const known=new Set(Array.isArray(notified)?notified:[]);
-  const list=upcoming().filter(a=>!known.has(a.id)).slice(0,3);
-  for(const item of list){
-   if(await showDeviceNotice(item.title,String(item.desc||'Atividade do calendário')+(item.date?' · '+item.date:''),'cora-'+year+'-'+item.id))known.add(item.id);
-  }
-  if(list.length)try{localStorage.setItem(localNoticesKey(),JSON.stringify([...known]))}catch{}
+   if(deliveringAlerts||role!=='equipe'||!data||!('Notification' in window)||Notification.permission!=='granted')return;
+   if(localStorage.getItem('cora_team_device_alerts_enabled')!=='1')return;
+   deliveringAlerts=true;
+   try{
+     let ids=[];
+     try{ids=JSON.parse(localStorage.getItem(deliveredKey())||'[]')}catch{}
+     const known=new Set(Array.isArray(ids)?ids:[]);
+     const now=Date.now();
+     // Avisos recém-publicados ou lembretes ativos. Não bombardear com todo o histórico.
+     const pending=upcoming().filter(a=>{
+       if(!a.unread||known.has(a.id))return false;
+       if(a.kind!=='notice')return true;
+       const source=(data.notices||[]).find(n=>String(n.id)===String(a.id));
+       const published=Date.parse(source?.publishAt||'');
+       return !Number.isFinite(published)||now-published<=7*86400000;
+     }).slice(0,3);
+     let delivered=0;
+     for(const item of pending){
+       if(await showDeviceNotice(item.title,item.desc||item.type||'Comunicado',year+'-'+item.id)){
+         known.add(item.id);delivered++;
+       }
+     }
+     if(delivered){
+       vibrationFeedback();
+       try{localStorage.setItem(deliveredKey(),JSON.stringify([...known].slice(-500)))}catch{}
+     }
+   }finally{deliveringAlerts=false}
  }
-
  function publishedBirthdays(){
   return (Array.isArray(data?.birthdays)?data.birthdays:[])
     .filter(p=>p&&p.name&&Number(p.day)>=1&&Number(p.day)<=31&&Number(p.month)>=1&&Number(p.month)<=12)
@@ -323,6 +358,8 @@
    if(s.role){role=s.role;await enter()}else gateway();
   }catch(e){unavailable(e);}
  }
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&role==='equipe')refresh()});
+ window.addEventListener('focus',()=>{if(role==='equipe'&&!document.hidden)refresh()});
  if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',event=>{
    if(event.data?.type==='cora-open-alerts'&&role==='equipe'){showBell=true;drawTeam()}
  });
