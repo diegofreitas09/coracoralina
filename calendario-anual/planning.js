@@ -74,7 +74,16 @@
   function store(){try{localStorage.setItem(STORAGE,JSON.stringify(plans));$('planningSaveStatus').textContent='Alterações salvas automaticamente';}catch{$('planningSaveStatus').textContent='Não foi possível salvar no dispositivo';}}
   function readForm(){const obj={};for(const field of fields){const el=form.elements.namedItem(field);obj[field]=field==='segment'?segmentValues().join(' • '):(field==='includeCalendar'||field==='includeBirthdays')?Boolean(el?.checked):el?.value||'';}return obj}
   function fillForm(month){const obj=initMonth(month);for(const field of fields){const el=form.elements.namedItem(field);if(field==='segment')setSegments(obj.segment);else if(el)(field==='includeCalendar'||field==='includeBirthdays')?el.checked=obj[field]!==false:el.value=obj[field]||''}current=month;$('planMonth').value=String(month);renderSummary()}
-  function renderSummary(){const obj=readForm(),e=obj.includeCalendar?eventsFor(current):[];const eventsPreview=$('planSyncedEvents');if(eventsPreview)eventsPreview.innerHTML=e.length?e.map(v=>'<div><strong>'+String(v.date).slice(8,10)+'/'+String(v.date).slice(5,7)+'</strong> · '+safe(v.title)+(v.status==='Em revisão'?' <em>(revisar)</em>':'')+'</div>').join(''):'<span>Nenhum evento deste mês. Importe ou cadastre pelo calendário.</span>';const birthdayPeople=birthdaysByMonth(current);$('planBirthdayPreview').textContent=birthdayPeople.length?birthdayPeople.map(prettyBirthday).join(' · '):'Nenhum aniversariante cadastrado neste mês.';$('planPreviewBirthdays').textContent=obj.includeBirthdays?(birthdayPeople.length?'Aniversariantes: '+birthdayPeople.map(prettyBirthday).join(' · '):'Aniversariantes: nenhum cadastrado'):'Aniversariantes: ocultos neste PDF';$('planPreviewMonth').textContent=MONTHS[current];$('planPreviewSegment').textContent=obj.segment;$('planProjectCount').textContent=lines(obj.projects).length;$('planScheduleCount').textContent=lines(obj.schedule).length;$('planCalendarCount').textContent=e.length;$('planPreviewAgenda').replaceChildren(...lines(obj.agenda).slice(0,7).map(value=>{const d=document.createElement('div');d.textContent=value;return d}));}
+  function renderSummary(){
+    let panel=$('planStageSummary');
+    if(!panel){panel=document.createElement('div');panel.id='planStageSummary';panel.className='plan-stage-summary';form.querySelector('.studio-two')?.insertAdjacentElement('afterend',panel);}
+    if(panel){
+      const ranges=window.CoraStages?.get?.(YEAR)||[];
+      const first=YEAR+'-'+String(current+1).padStart(2,'0')+'-01',last=YEAR+'-'+String(current+1).padStart(2,'0')+'-'+String(new Date(YEAR,current+1,0).getDate()).padStart(2,'0');
+      const stages=ranges.filter(p=>p.start&&p.end&&p.start<=last&&p.end>=first);
+      panel.textContent=stages.length?'Etapas do mês: '+stages.map(st=>st.number+'ª etapa · '+st.start.slice(8,10)+'/'+st.start.slice(5,7)+' até '+st.end.slice(8,10)+'/'+st.end.slice(5,7)).join(' · '):'Etapas deste mês: confirme os limites letivos no painel da Gestão.';
+    }
+    const obj=readForm(),e=obj.includeCalendar?eventsFor(current):[];const eventsPreview=$('planSyncedEvents');if(eventsPreview)eventsPreview.innerHTML=e.length?e.map(v=>'<div><strong>'+String(v.date).slice(8,10)+'/'+String(v.date).slice(5,7)+'</strong> · '+safe(v.title)+(v.status==='Em revisão'?' <em>(revisar)</em>':'')+'</div>').join(''):'<span>Nenhum evento deste mês. Importe ou cadastre pelo calendário.</span>';const birthdayPeople=birthdaysByMonth(current);$('planBirthdayPreview').textContent=birthdayPeople.length?birthdayPeople.map(prettyBirthday).join(' · '):'Nenhum aniversariante cadastrado neste mês.';$('planPreviewBirthdays').textContent=obj.includeBirthdays?(birthdayPeople.length?'Aniversariantes: '+birthdayPeople.map(prettyBirthday).join(' · '):'Aniversariantes: nenhum cadastrado'):'Aniversariantes: ocultos neste PDF';$('planPreviewMonth').textContent=MONTHS[current];$('planPreviewSegment').textContent=obj.segment;$('planProjectCount').textContent=lines(obj.projects).length;$('planScheduleCount').textContent=lines(obj.schedule).length;$('planCalendarCount').textContent=e.length;$('planPreviewAgenda').replaceChildren(...lines(obj.agenda).slice(0,7).map(value=>{const d=document.createElement('div');d.textContent=value;return d}));}
   function saveCurrent(){
     plans[current]=readForm();
     const currentProjects=lines(plans[current].projects);
@@ -223,6 +232,12 @@
     room(122);rrect(LEFT,y,RIGHT-LEFT,112,15,'#edf4fb');t('REUNIÃO COM A EQUIPE',LEFT+22,y+37,21,BLUE,'bold');t(`Data: ${fmt(plan.meetingDate)}    •    Horário: ${plan.meetingTime||'A definir'}`,LEFT+22,y+73,23,INK);t(`Local: ${plan.meetingPlace||'A definir'}    •    Coordenação: ${plan.coordinator||'Equipe gestora'}`,LEFT+22,y+98,17,MUTED);y+=148;
     const projects=lines(plan.projects).length?plan.projects:(window.CoraYears?.getProjects?.(YEAR)?.[month]||[]);
     section('Projetos e campanhas do mês',projects);
+    const stages=window.CoraStages?.get?.(YEAR)||[];
+    const firstDate=YEAR+'-'+String(month+1).padStart(2,'0')+'-01';
+    const lastDate=YEAR+'-'+String(month+1).padStart(2,'0')+'-'+String(new Date(YEAR,month+1,0).getDate()).padStart(2,'0');
+    const stagesThisMonth=stages.filter(st=>st.start&&st.end&&st.start<=lastDate&&st.end>=firstDate);
+    const stageDescription=stagesThisMonth.map(st=>st.number+'ª etapa: início '+st.start.split('-').reverse().join('/')+' · fim '+st.end.split('-').reverse().join('/'));
+    section('Etapas letivas · início e encerramento',stageDescription.length?stageDescription:['Datas das etapas pendentes de definição para '+YEAR]);
     birthdayPanel(birthdaysByMonth(month));
     const manualNotes=String(plan.birthdays||'').trim();
     if(manualNotes&&manualNotes!==String(sample.birthdays).trim())section('Comunicados e datas complementares',manualNotes);
@@ -281,6 +296,7 @@
   });
   window.addEventListener('cora-data-changed',e=>{if(Number(e.detail?.year)===YEAR){readStorage();fillForm(current)}});
   window.addEventListener('cora-events-updated',e=>{if(Number(e.detail?.year)===YEAR)renderSummary();});
+  window.addEventListener('cora-stages-updated',e=>{if(Number(e.detail?.year)===YEAR)renderSummary()});
   window.addEventListener('cora-projects-changed',e=>{
     if(Number(e.detail?.year)!==YEAR)return;
     const months=window.CoraYears?.getProjects?.(YEAR)||[];
