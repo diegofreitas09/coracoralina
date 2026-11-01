@@ -1,7 +1,9 @@
 /* Editor de cards — identidade visual do Colégio Cora Coralina. */
 (() => {
   'use strict';
-  const ID='cora_cards_2026_v1',NAVY='#082d5c',DARK='#062246',BLUE='#0778c4',GOLD='#ffcc22',WHITE='#ffffff',INK='#0c315f';
+  let ACTIVE_YEAR=window.CoraYears?.activeYear||2026;
+  let ID=`cora_cards_${ACTIVE_YEAR}_v1`;
+  const NAVY='#082d5c',DARK='#062246',BLUE='#0778c4',GOLD='#ffcc22',WHITE='#ffffff',INK='#0c315f';
   const $=id=>document.getElementById(id),form=$('cardForm'),canvas=$('studioCardCanvas');if(!form||!canvas)return;
   const ctx=canvas.getContext('2d'),W=1080,H=1350;
   const DEFAULTS={
@@ -28,18 +30,18 @@
     let removed=[];
     try{removed=JSON.parse(localStorage.getItem('cora_official_2026_removed_v1')||'[]');}catch{}
     const removedIds=new Set(Array.isArray(removed)?removed:[]);
-    for(const item of (window.CORA_OFFICIAL_2026?.events||[])){
+    for(const item of (ACTIVE_YEAR===2026?(window.CORA_OFFICIAL_2026?.events||[]):[])){
       if(item?.id&&!removedIds.has(item.id))merged.set(item.id,item);
     }
     try{
-      const stored=JSON.parse(localStorage.getItem('cora_calendario_eventos_2026_v1')||'[]');
+      const stored=JSON.parse(localStorage.getItem(`cora_calendario_eventos_${ACTIVE_YEAR}_v1`)||'[]');
       if(Array.isArray(stored))for(const item of stored){
         if(item?.id)merged.set(item.id,item);
       }
     }catch{}
     const seen=new Set();
     return [...merged.values()]
-      .filter(item=>item&&String(item.date||'').startsWith(`2026-${mm}-`)&&String(item.type||'').toLowerCase()==='feriado')
+      .filter(item=>item&&String(item.date||'').startsWith(`${ACTIVE_YEAR}-${mm}-`)&&String(item.type||'').toLowerCase()==='feriado')
       .sort((a,b)=>a.date.localeCompare(b.date)||String(a.title).localeCompare(String(b.title)))
       .filter(item=>{
         const key=`${item.date}:${holidayLabel(item).toLowerCase()}`;
@@ -55,12 +57,12 @@
     let removed=[];
     try{removed=JSON.parse(localStorage.getItem('cora_official_2026_removed_v1')||'[]')}catch{}
     const removedIds=new Set(Array.isArray(removed)?removed:[]);
-    for(const e of (window.CORA_OFFICIAL_2026?.events||[]))if(e?.id&&!removedIds.has(e.id))merged.set(e.id,e);
+    for(const e of (ACTIVE_YEAR===2026?(window.CORA_OFFICIAL_2026?.events||[]):[]))if(e?.id&&!removedIds.has(e.id))merged.set(e.id,e);
     try{
-      const current=JSON.parse(localStorage.getItem('cora_calendario_eventos_2026_v1')||'[]');
+      const current=JSON.parse(localStorage.getItem(`cora_calendario_eventos_${ACTIVE_YEAR}_v1`)||'[]');
       if(Array.isArray(current))for(const e of current)if(e?.id)merged.set(e.id,e);
     }catch{}
-    return [...merged.values()].filter(e=>e&&/^2026-\d{2}-\d{2}$/.test(String(e.date||'')))
+    return [...merged.values()].filter(e=>e&&String(e.date||'').startsWith(ACTIVE_YEAR+'-'))
       .sort((a,b)=>a.date.localeCompare(b.date)||String(a.title||'').localeCompare(String(b.title||'')));
   }
   function normalizeTitle(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
@@ -75,12 +77,12 @@
   }
   function assessmentsInMonth(month,kind){
     const mm=String(Math.min(12,Math.max(1,Number(month)||11))).padStart(2,'0');
-    return allEvents().filter(e=>e.date.startsWith(`2026-${mm}-`) && (kind==='avaliacao'?isSecondCall(e):isGeneralAssessment(e)));
+    return allEvents().filter(e=>e.date.startsWith(`${ACTIVE_YEAR}-${mm}-`) && (kind==='avaliacao'?isSecondCall(e):isGeneralAssessment(e)));
   }
   function assessmentDraft(month,kind){
     const n=Math.max(1,Math.min(12,Number(month)||11)),data=assessmentsInMonth(n,kind);
-    const lines=data.map(e=>`${e.date.slice(8,10)}/${e.date.slice(5,7)}/2026 | ${e.title}`);
-    if(kind==='avaliacao'&&n===11&&!lines.length){
+    const lines=data.map(e=>`${e.date.slice(8,10)}/${e.date.slice(5,7)}/${ACTIVE_YEAR} | ${e.title}`);
+    if(ACTIVE_YEAR===2026&&kind==='avaliacao'&&n===11&&!lines.length){
       // Cronograma da 3ª série compartilhado previamente pela coordenação,
       // não consta no calendário anual consolidado.
       return {...DEFAULTS.avaliacao,month:'11'};
