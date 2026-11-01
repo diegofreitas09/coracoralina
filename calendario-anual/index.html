@@ -9,6 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="studio.css" />
 </head>
 <body>
 <div id="app" class="layout">
@@ -34,7 +35,52 @@
       <section class="month-area"><div class="section-heading"><div><div class="eyebrow">VISÃO MENSAL</div><h2 id="currentMonthTitle">Janeiro <small>2026</small></h2></div><div class="month-switch"><button id="prevMonth" aria-label="Mês anterior">‹</button><button id="todayMonth">Outubro de 2026</button><button id="nextMonth" aria-label="Próximo mês">›</button></div></div>
         <div class="panels"><div class="panel calendar-panel"><div class="panel-title"><strong>Calendário de atividades</strong><span class="muted">Clique em um dia para cadastrar</span></div><div class="calendar" id="calendar"></div></div><div class="panel events-panel"><div class="panel-title"><strong>Eventos do mês</strong><button class="text-btn" id="quickEvent">＋ Adicionar</button></div><div id="eventList" class="events-list"></div></div></div>
       </section>
+      <div class="studio-shortcuts" aria-label="Ferramentas do calendário">
+        <button type="button" class="shortcut-btn" id="jumpPlanning"><span class="shortcut-icon">▤</span><span><strong>Planejamento pedagógico</strong><small>PDF para reunião da equipe</small></span><span class="shortcut-arrow">→</span></button>
+        <button type="button" class="shortcut-btn" id="jumpCards"><span class="shortcut-icon shortcut-gold">▣</span><span><strong>Criador de cards</strong><small>5 modelos da identidade Cora</small></span><span class="shortcut-arrow">→</span></button>
+      </div>
       <section class="files-section"><div class="section-heading"><div><div class="eyebrow">DOCUMENTOS DO MÊS</div><h2>Arquivos de <span id="filesMonthTitle">Janeiro</span></h2><p>Arraste documentos ou selecione arquivos. O app sugere o mês pelo nome do arquivo.</p></div><button class="btn btn-outline" id="secondaryUpload">＋ Importar arquivos</button></div><div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Adicionar documentos"><div class="drop-icon">⇪</div><strong>Arraste seus documentos para cá</strong><span>PDF, Word, Excel e imagens • ou clique para selecionar</span></div><div id="filesList" class="files-list"></div><p class="note">Os arquivos ficam armazenados apenas neste navegador. No PDF completo, PDFs e imagens são incorporados; Word e Excel aparecem no índice e podem ser baixados separadamente.</p></section>
+      <section id="planningStudio" class="studio-section" aria-labelledby="planningHeading">
+        <div class="studio-section-head"><div><div class="eyebrow">GESTÃO PEDAGÓGICA · DOCUMENTOS</div><h2 id="planningHeading">Planejamento para reunião de equipe</h2><p>Prepare a pauta, organize as datas e baixe o planejamento diagramado em PDF, com capa e programação mensal.</p></div><span class="studio-pill">PDF de reunião</span></div>
+        <div class="studio-layout">
+          <form id="planningForm" class="studio-form">
+            <div class="studio-form-heading"><strong>Personalizar o planejamento</strong><span id="planningSaveStatus">Salvo neste dispositivo</span></div>
+            <div class="studio-two"><label>Mês de referência<select id="planMonth" name="month"></select></label><label>Etapas atendidas<select id="planSegment" name="segment"><option>Fundamental II e Ensino Médio</option><option>Educação Infantil</option><option>Fundamental I</option><option>Todas as etapas</option><option>Equipe pedagógica e administrativa</option></select></label></div>
+            <div class="studio-three"><label>Data da reunião<input name="meetingDate" id="planMeetingDate" type="date" min="2026-01-01" max="2026-12-31" /></label><label>Horário<input name="meetingTime" id="planMeetingTime" placeholder="7h30" /></label><label>Local<input name="meetingPlace" id="planMeetingPlace" placeholder="Sala de reuniões" /></label></div>
+            <label>Responsável / coordenação<input name="coordinator" placeholder="Equipe de Gestão e Coordenação" /></label>
+            <label>Projetos e campanhas do mês <span class="field-hint">Um por linha</span><textarea name="projects" rows="5" placeholder="Projeto Valores – Paz..."></textarea></label>
+            <label>Datas e programação do mês <span class="field-hint">Uma atividade por linha, incluindo data</span><textarea name="schedule" rows="8" placeholder="06/11 – Reunião Escola e Família..."></textarea></label>
+            <label>Orientações pedagógicas para professores<textarea name="guidance" rows="4" placeholder="Conferência dos conteúdos, avaliações, registros..."></textarea></label>
+            <label>Pauta da reunião <span class="field-hint">Um tópico por linha</span><textarea name="agenda" rows="4"></textarea></label>
+            <label>Encaminhamentos e responsabilidades<textarea name="actions" rows="4" placeholder="Responsável — ação — prazo"></textarea></label>
+            <label>Aniversariantes e comunicados (opcional)<textarea name="birthdays" rows="3"></textarea></label>
+            <label>Mensagem final (opcional)<textarea name="closing" rows="3"></textarea></label>
+            <label class="studio-check"><input type="checkbox" id="planIncludeCalendar" name="includeCalendar" checked /><span>Incluir automaticamente os eventos cadastrados no calendário deste mês</span></label>
+            <div class="studio-actions"><button type="button" class="btn btn-ghost" id="loadNovemberPlan">Repor modelo de novembro</button><button type="button" class="btn btn-primary" id="downloadPlanning">↓ Baixar planejamento em PDF</button></div>
+          </form>
+          <aside class="studio-preview" aria-label="Prévia do planejamento"><div class="planning-paper"><div class="paper-toptag">COLÉGIO CORA CORALINA · 2026</div><div class="paper-gold"></div><h3>Planejamento <span id="planPreviewMonth">Novembro</span></h3><p id="planPreviewSegment">Fundamental II e Ensino Médio</p><div class="paper-overline">REUNIÃO DE EQUIPE</div><div class="paper-highlights"><div><small>PROJETOS</small><strong id="planProjectCount">0</strong></div><div><small>ATIVIDADES</small><strong id="planScheduleCount">0</strong></div><div><small>EVENTOS DO CALENDÁRIO</small><strong id="planCalendarCount">0</strong></div></div><div class="paper-overline">RESUMO DA PAUTA</div><div id="planPreviewAgenda" class="paper-points"></div><div class="paper-rule"></div><p class="paper-signature">Organização • Alinhamento • Resultados</p></div><p class="studio-advice">Use o planejamento de novembro enviado como ponto de partida. Confira datas e responsáveis antes de compartilhar o PDF com a equipe.</p></aside>
+        </div>
+      </section>
+      <section id="cardStudio" class="studio-section" aria-labelledby="cardHeading">
+        <div class="studio-section-head"><div><div class="eyebrow">COMUNICAÇÃO VISUAL · IDENTIDADE INSTITUCIONAL</div><h2 id="cardHeading">Criador de cards</h2><p>Escolha um dos cinco modelos inspirados nos seus exemplos, edite as informações e baixe a imagem pronta para divulgar.</p></div><span class="studio-pill studio-pill-gold">PNG + PDF</span></div>
+        <div class="template-picker" role="group" aria-label="Escolha um modelo de card">
+          <button type="button" class="template-btn is-selected" data-template="comunicado"><span class="template-icon">!</span><strong>Comunicado</strong><small>Avisos e feriados</small></button>
+          <button type="button" class="template-btn" data-template="solidaria"><span class="template-icon">♡</span><strong>Campanha</strong><small>Ações solidárias</small></button>
+          <button type="button" class="template-btn" data-template="reuniao"><span class="template-icon">▦</span><strong>Reunião</strong><small>Escola e família</small></button>
+          <button type="button" class="template-btn" data-template="cronograma"><span class="template-icon">▤</span><strong>Cronograma</strong><small>Avaliações</small></button>
+          <button type="button" class="template-btn" data-template="avaliacao"><span class="template-icon">✓</span><strong>2ª chamada</strong><small>Resumo de provas</small></button>
+        </div>
+        <div class="studio-layout card-editor-layout"><form id="cardForm" class="studio-form"><div class="studio-form-heading"><strong>Editar informações do card</strong><span id="cardSaveStatus">Rascunho automático</span></div>
+          <label>Título principal<input name="title" maxlength="110" required /></label>
+          <label>Subtítulo / destaque<input name="subtitle" maxlength="160" /></label>
+          <label>Mensagem ou descrição<textarea name="body" rows="4" maxlength="1300"></textarea></label>
+          <label>Itens ou cronograma <span class="field-hint">Um por linha. Para avaliações: DATA | DISCIPLINAS</span><textarea name="items" rows="6" maxlength="2200"></textarea></label>
+          <div class="studio-three"><label>Data<input name="date" placeholder="06/11/2026" maxlength="45" /></label><label>Horário<input name="time" placeholder="18h30" maxlength="45" /></label><label>Local<input name="place" placeholder="Quadra da escola" maxlength="80" /></label></div>
+          <label>Rodapé / assinatura<input name="footer" maxlength="180" /></label>
+          <div class="studio-actions"><button type="button" class="btn btn-ghost" id="resetCard">Restaurar este modelo</button><button type="button" class="btn btn-primary" id="downloadCardPng">↓ Baixar card PNG</button><button type="button" class="btn btn-outline" id="downloadCardPdf">↓ Baixar PDF</button></div>
+          <p class="note">O arquivo PNG sai em 1080 × 1350 pixels. Os modelos são editáveis e os rascunhos ficam salvos somente neste navegador.</p>
+        </form><aside class="card-canvas-wrap"><div class="card-preview-top"><strong>Prévia em tempo real</strong><span>1080 × 1350 px</span></div><canvas id="studioCardCanvas" width="1080" height="1350" aria-label="Prévia visual do card" role="img"></canvas><div class="preview-footer">Paleta institucional azul-marinho, azul e amarelo • Colégio Cora Coralina</div></aside></div>
+      </section>
       <footer>CALENDÁRIO ANUAL 2026 <span>•</span> COLÉGIO CORA CORALINA <span class="footer-right">Organização, planejamento e gestão</span></footer>
     </main>
   </div>
@@ -44,5 +90,9 @@
 <dialog id="eventModal"><form id="eventForm" method="dialog"><div class="modal-head"><h3 id="modalTitle">Novo evento</h3><button type="button" id="closeModal" class="icon-button">✕</button></div><label>Nome do evento<input id="eventTitle" placeholder="Ex.: Reunião de planejamento" required maxlength="170" /></label><div class="form-row"><label>Data<input id="eventDate" type="date" required min="2026-01-01" max="2026-12-31" /></label><label>Categoria<select id="eventType"><option value="Pedagógico">Pedagógico</option><option value="Avaliação">Avaliação</option><option value="Reunião">Reunião</option><option value="Evento">Evento</option><option value="Feriado">Feriado</option><option value="Outros">Outros</option></select></label></div><label>Observações (opcional)<textarea id="eventNotes" rows="3" placeholder="Informações e orientações..."></textarea></label><div class="modal-actions"><button type="button" class="btn btn-ghost" id="cancelEvent">Cancelar</button><button type="submit" class="btn btn-primary">Salvar evento</button></div></form></dialog>
 <div id="toast" role="status" aria-live="polite"></div>
 <script src="app.js" defer></script>
+<script src="studio-assets.js" defer></script>
+<script src="studio-pdf.js" defer></script>
+<script src="planning.js" defer></script>
+<script src="cards.js" defer></script>
 </body>
 </html>
