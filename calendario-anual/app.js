@@ -436,6 +436,45 @@
       saveEvents();render();notify(`Calendário oficial conferido: ${restored} evento(s) restaurado(s).`);
     });
   }
+
+  async function copyFilesBetweenYears(fromYear,toYear,months){
+    if(!('indexedDB' in window))return {count:0,error:'Arquivos não podem ser copiados: armazenamento indisponível.'};
+    const openYearDB=year=>new Promise((resolve,reject)=>{
+      const req=indexedDB.open('cora_calendario_documentos_'+year+'_v1',1);
+      req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('files'))req.result.createObjectStore('files',{keyPath:'id'})};
+      req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+    });
+    const getItems=db=>new Promise((resolve,reject)=>{
+      const r=db.transaction('files','readonly').objectStore('files').getAll();
+      r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error);
+    });
+    let fromDB=null,toDB=null;
+    try{
+      fromDB=await openYearDB(fromYear);toDB=await openYearDB(toYear);
+      const allowed=new Set(months),source=(await getItems(fromDB)).filter(file=>allowed.has(Number(file.month)));
+      const existing=await getItems(toDB);
+      const fingerprint=file=>[file.month,file.name,file.size,file.lastModified].join('|');
+      const present=new Set(existing.map(fingerprint));
+      const pending=source.filter(file=>!present.has(fingerprint(file)));
+      let copied=0;
+      for(const file of pending){
+        await new Promise((resolve,reject)=>{
+          const tx=toDB.transaction('files','readwrite');
+          const cloned={...file,id:uid(),copiedFromYear:fromYear,originFileId:file.id};
+          tx.objectStore('files').put(cloned);
+          tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+        });
+        copied++;
+      }
+      return {count:copied};
+    }catch(e){return {count:0,error:'Não foi possível copiar todos os arquivos: '+String(e.message||e)}}
+    finally{
+      fromDB?.close();toDB?.close();
+      if(YEAR===toYear&&database)try{await refreshFiles();render()}catch{}
+    }
+  }
+  window.CoraApp={copyFilesBetweenYears};
+
   async function switchYear(y){
     if(Number(y)===YEAR)return;
     YEAR=Number(y);STORE=`cora_calendario_eventos_${YEAR}_v1`;FILE_DB=`cora_calendario_documentos_${YEAR}_v1`;OFFICIAL_REMOVED_KEY=`cora_official_${YEAR}_removed_v1`;
