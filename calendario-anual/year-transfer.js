@@ -124,7 +124,7 @@
       const answer=prompt('Projetos de '+MONTHS[month]+' de '+year+' (um por linha):',list[month].join('\n'));
       if(answer===null)return;
       list[month]=answer.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).slice(0,60);
-      if(saveProjects(year,list))putProjects(year,month);
+      if(saveProjects(year,list)){putProjects(year,month);window.dispatchEvent(new CustomEvent('cora-projects-changed',{detail:{year,month}}));}
    });
    window.addEventListener('cora-month-changed',e=>{
      const month=Number(e.detail?.month),year=Number(e.detail?.year)||CoraYears.activeYear;
@@ -303,5 +303,5 @@
    refresh();
  }
 
- window.CoraYearPlanner={targetDate,readEvents,showWizard,showFullYearWizard,importSelection};
+ window.CoraYearPlanner={targetDate,readEvents,showWizard,showFullYearWizard,copyYearMonth,importSelection};
 })();
