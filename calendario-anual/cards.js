@@ -7,10 +7,10 @@
   const $=id=>document.getElementById(id),form=$('cardForm'),canvas=$('studioCardCanvas');if(!form||!canvas)return;
   const ctx=canvas.getContext('2d'),W=1080,H=1350;
   const DEFAULTS={
-    comunicado:{title:'COMUNICADO IMPORTANTE',subtitle:'Feriados de novembro de 2026',body:'Prezadas famílias, confira os feriados e as datas especiais do calendário escolar deste mês:',items:'02/11 – Finados\n15/11 – Proclamação da República\n20/11 – Dia da Consciência Negra',month:'11',date:'',time:'Calendário escolar · 2026',place:'Para informações, consulte a coordenação.',footer:'Colégio Cora Coralina'},
+    comunicado:{title:'COMUNICADO IMPORTANTE',subtitle:'Feriados de novembro de 2026',body:'Prezadas famílias, confira os feriados e as datas especiais do calendário escolar deste mês:',items:'02/11 – Finados\n15/11 – Proclamação da República\n20/11 – Dia da Consciência Negra',month:'11',date:'',time:`Calendário escolar · ${ACTIVE_YEAR}`,place:'Para informações, consulte a coordenação.',footer:'Colégio Cora Coralina'},
     solidaria:{title:'DOE BRINQUEDOS E LIVROS INFANTIS',subtitle:'Campanha Solidária',body:'Compartilhe alegria e novas histórias! Sua doação pode transformar o dia de uma criança.',items:'Brinquedos novos, seminovos e usados em bom estado\nLivros infantis em bom estado de conservação',date:'16/10/2026',time:'Prazo para doações',place:'Entregar na escola',footer:'Colégio Cora Coralina'},
     reuniao:{title:'REUNIÃO ESCOLA E FAMÍLIA',subtitle:'ENTREGA DE RESULTADOS',body:'Um momento importante para conversarmos sobre o desenvolvimento dos nossos alunos e fortalecermos a parceria entre escola e família.',items:'',date:'06/11/2026',time:'18h30',place:'Quadra da escola',footer:'Contamos com a sua presença!'},
-    cronograma:{title:'CRONOGRAMA GERAL DE AVALIAÇÕES',subtitle:'NOVEMBRO DE 2026',body:'Avaliações, simulados, sondagens e provas regulares do calendário escolar.',items:'19/11/2026 | Simulado 04 — início\n23/11/2026 | Avaliações globais e sondagens — 4ª etapa\n24/11/2026 | Avaliações globais e sondagens — 4ª etapa\n25/11/2026 | Avaliações globais e sondagens — 4ª etapa\n26/11/2026 | Avaliações globais e sondagens — 4ª etapa\n27/11/2026 | Avaliações globais e sondagens — 4ª etapa',month:'11',date:'',time:'',place:'',footer:'Colégio Cora Coralina · Cronograma geral 2026'},
+    cronograma:{title:'CRONOGRAMA GERAL DE AVALIAÇÕES',subtitle:'NOVEMBRO DE 2026',body:'Avaliações, simulados, sondagens e provas regulares do calendário escolar.',items:'19/11/2026 | Simulado 04 — início\n23/11/2026 | Avaliações globais e sondagens — 4ª etapa\n24/11/2026 | Avaliações globais e sondagens — 4ª etapa\n25/11/2026 | Avaliações globais e sondagens — 4ª etapa\n26/11/2026 | Avaliações globais e sondagens — 4ª etapa\n27/11/2026 | Avaliações globais e sondagens — 4ª etapa',month:'11',date:'',time:'',place:'',footer:`Colégio Cora Coralina · Cronograma geral ${ACTIVE_YEAR}`},
     avaliacao:{title:'AVALIAÇÃO 2ª CHAMADA',subtitle:'3ª SÉRIE · ENSINO MÉDIO',body:'AP2 – 4ª ETAPA DE 2026',items:'03/11/2026 | História, Literatura e Sociologia\n04/11/2026 | Português e Produção Textual\n05/11/2026 | Química e Biologia\n06/11/2026 | Matemática e Geografia\n09/11/2026 | Inglês e Física',month:'11',date:'',time:'',place:'',footer:'Datas verificadas · Consulte a coordenação sobre horários'}
     ,aniversario:{title:'ANIVERSARIANTES DO MÊS',subtitle:'NOVEMBRO DE 2026',body:'Nossa equipe merece ser celebrada! Parabéns a todos os aniversariantes.',items:'',month:'11',date:'',time:'',place:'',footer:'Colégio Cora Coralina · Juntos por uma educação que transforma!'}
   };
@@ -19,9 +19,9 @@
   const holidaysMonth=$('holidayMonth'),holidaysInfo=$('holidayMonthInfo'),holidaysControls=$('holidayControls');
   const assessmentsMonth=$('assessmentsMonth'),assessmentsInfo=$('assessmentsInfo'),assessmentsControls=$('assessmentControls');
   const birthdayMonth=$('birthdayCardMonth'),birthdayInfo=$('birthdayCardInfo'),birthdayControls=$('birthdayControls');
-  if(holidaysMonth)holidaysMonth.innerHTML=MONTHS.map((n,i)=>`<option value="${i+1}">${n} de 2026</option>`).join('');
-  if(assessmentsMonth)assessmentsMonth.innerHTML=MONTHS.map((n,i)=>`<option value="${i+1}">${n} de 2026</option>`).join('');
-  if(birthdayMonth)birthdayMonth.innerHTML=MONTHS.map((n,i)=>`<option value="${i+1}">${n} de 2026</option>`).join('');
+  if(holidaysMonth)holidaysMonth.innerHTML=MONTHS.map((n,i)=>`<option value="${i+1}">${n} de ${ACTIVE_YEAR}</option>`).join('');
+  if(assessmentsMonth)assessmentsMonth.innerHTML=MONTHS.map((n,i)=>`<option value="${i+1}">${n} de ${ACTIVE_YEAR}</option>`).join('');
+  if(birthdayMonth)birthdayMonth.innerHTML=MONTHS.map((n,i)=>`<option value="${i+1}">${n} de ${ACTIVE_YEAR}</option>`).join('');
   function getHolidays(month){
     const mm=String(month).padStart(2,'0');
     // Mescla o calendário institucional com os registros salvos, sem descartar
@@ -88,14 +88,14 @@
       return {...DEFAULTS.avaliacao,month:'11'};
     }
     if(kind==='avaliacao')return {...DEFAULTS.avaliacao,
-      title:'AVALIAÇÕES DE 2ª CHAMADA',subtitle:`${MONTHS[n-1].toUpperCase()} DE 2026`,
+      title:'AVALIAÇÕES DE 2ª CHAMADA',subtitle:`${MONTHS[n-1].toUpperCase()} DE ${ACTIVE_YEAR}`,
       body:'Somente avaliações de segunda chamada previstas no calendário.',
       items:lines.join('\n'),month:String(n),date:'',time:'',place:'',
       footer:'Confira turmas, disciplinas e horários com a coordenação'};
     return {...DEFAULTS.cronograma,
-      title:'CRONOGRAMA GERAL DE AVALIAÇÕES',subtitle:`${MONTHS[n-1].toUpperCase()} DE 2026`,
+      title:'CRONOGRAMA GERAL DE AVALIAÇÕES',subtitle:`${MONTHS[n-1].toUpperCase()} DE ${ACTIVE_YEAR}`,
       body:'Avaliações, simulados, sondagens e provas regulares do calendário escolar. Não inclui 2ª chamada.',
-      items:lines.join('\n'),month:String(n),date:'',time:'',place:'',footer:'Colégio Cora Coralina · Cronograma geral 2026'};
+      items:lines.join('\n'),month:String(n),date:'',time:'',place:'',footer:`Colégio Cora Coralina · Cronograma geral ${ACTIVE_YEAR}`};
   }
   function updateAssessmentInfo(){
     if(!assessmentsInfo||!assessmentsMonth||(template!=='cronograma'&&template!=='avaliacao'))return;
@@ -113,7 +113,7 @@
     if(template!=='cronograma'&&template!=='avaliacao')return;
     const n=Math.max(1,Math.min(12,Number(month)||11));
     drafts[template]=assessmentDraft(n,template);setForm(drafts[template]);saveDraft();updateAssessmentInfo();render();
-    status(`Modelo ${LABELS[template]} carregado para ${MONTHS[n-1]} de 2026.`);
+    status(`Modelo ${LABELS[template]} carregado para ${MONTHS[n-1]} de ${ACTIVE_YEAR}.`);
   }
   function holidayLabel(item){
     let s=String(item.title||'Feriado').replace(/\s*[—–-]\s*feriado(?:\s+antecipado)?\s*$/i,'').trim();
@@ -123,10 +123,10 @@
   }
   function holidayDraft(month){
     const idx=Math.max(0,Math.min(11,(parseInt(month,10)||1)-1)),m=MONTHS[idx],list=getHolidays(idx+1);
-    return {...DEFAULTS.comunicado,month:String(idx+1),subtitle:`Feriados de ${m} de 2026`,
-      body:`Prezadas famílias, confira os feriados e as datas especiais previstas no calendário escolar de ${m.toLowerCase()} de 2026:`,
+    return {...DEFAULTS.comunicado,month:String(idx+1),subtitle:`Feriados de ${m} de ${ACTIVE_YEAR}`,
+      body:`Prezadas famílias, confira os feriados e as datas especiais previstas no calendário escolar de ${m.toLowerCase()} de ${ACTIVE_YEAR}:`,
       items:list.map(item=>`${item.date.slice(8,10)}/${item.date.slice(5,7)} – ${holidayLabel(item)}`).join('\n'),
-      date:'',time:'Calendário escolar · 2026',place:'Para informações, consulte a coordenação.'};
+      date:'',time:`Calendário escolar · ${ACTIVE_YEAR}`,place:'Para informações, consulte a coordenação.'};
   }
   function updateHolidayInfo(){
     if(!holidaysInfo||!holidaysMonth)return;
@@ -155,18 +155,18 @@
     const stale=found.length>0&&found.some(m=>Number(m[1])!==selected);
     if(stale){
       fillMonth(selected);
-      status(`Comunicado atualizado: ${MONTHS[selected-1]} de 2026.`);
+      status(`Comunicado atualizado: ${MONTHS[selected-1]} de ${ACTIVE_YEAR}.`);
     }
   }
   const LABELS={comunicado:'Comunicado',solidaria:'Campanha solidária',reuniao:'Reunião',cronograma:'Cronograma geral',avaliacao:'2ª chamada',aniversario:'Aniversariantes do mês'};
   function exportName(extension){
     const suffix=String(Date.now());
     const month=Number(monthSelect()?.value)||11;
-    const label=template==='comunicado'?`Comunicado_${MONTHS[(month||11)-1]}_2026`:(template==='cronograma'||template==='avaliacao')?`${template==='cronograma'?'Cronograma_Geral':'Segunda_Chamada'}_${MONTHS[(month||11)-1]}_2026` :template==='aniversario'?`Aniversariantes_${MONTHS[(month||11)-1]}_2026`:`${template}_2026`;
+    const label=template==='comunicado'?`Comunicado_${MONTHS[(month||11)-1]}_${ACTIVE_YEAR}`:(template==='cronograma'||template==='avaliacao')?`${template==='cronograma'?'Cronograma_Geral':'Segunda_Chamada'}_${MONTHS[(month||11)-1]}_${ACTIVE_YEAR}` :template==='aniversario'?`Aniversariantes_${MONTHS[(month||11)-1]}_${ACTIVE_YEAR}`:`${template}_${ACTIVE_YEAR}`;
     return `Cora_Coralina_${label}_${suffix}.${extension}`;
   }
   function updateExportContext(){
-    const message=template==='comunicado'?`Modelo ativo: COMUNICADO · ${MONTHS[(Number(holidaysMonth?.value)||11)-1].toUpperCase()} DE 2026`: (template==='cronograma'||template==='avaliacao')?`Modelo ativo: ${LABELS[template].toUpperCase()} · ${MONTHS[(Number(assessmentsMonth?.value)||11)-1].toUpperCase()} DE 2026`:template==='aniversario'?`Modelo ativo: ANIVERSARIANTES · ${MONTHS[(Number(birthdayMonth?.value)||11)-1].toUpperCase()} DE 2026`:`Modelo ativo: ${LABELS[template].toUpperCase()}`;
+    const message=template==='comunicado'?`Modelo ativo: COMUNICADO · ${MONTHS[(Number(holidaysMonth?.value)||11)-1].toUpperCase()} DE ${ACTIVE_YEAR}`: (template==='cronograma'||template==='avaliacao')?`Modelo ativo: ${LABELS[template].toUpperCase()} · ${MONTHS[(Number(assessmentsMonth?.value)||11)-1].toUpperCase()} DE ${ACTIVE_YEAR}`:template==='aniversario'?`Modelo ativo: ANIVERSARIANTES · ${MONTHS[(Number(birthdayMonth?.value)||11)-1].toUpperCase()} DE ${ACTIVE_YEAR}`:`Modelo ativo: ${LABELS[template].toUpperCase()}`;
     const target=$('cardExportContext');if(target)target.textContent=message;
     const png=$('downloadCardPng');if(png)png.textContent=`↓ PNG · ${LABELS[template]}`;
     const pdf=$('downloadCardPdf');if(pdf)pdf.textContent=`↓ PDF · ${LABELS[template]}`;
@@ -277,7 +277,7 @@
     for(let y=0;y<H-100;y+=46){g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke();}
     g.fillStyle=GOLD;g.fillRect(0,0,W,10);
     emblem(g,455,29,170,196);
-    boxedText(g,'CALENDÁRIO PEDAGÓGICO · 2026',175,234,730,36,{size:23,min:20,weight:'800',align:'center',color:'#306294',maxLines:1});
+    boxedText(g,'CALENDÁRIO PEDAGÓGICO · '+ACTIVE_YEAR,175,234,730,36,{size:23,min:20,weight:'800',align:'center',color:'#306294',maxLines:1});
     rounded(g,72,287,936,152,29,GOLD);
     const title=String(d.title||'').trim();
     const cardTitle=/^CRONOGRAMA GERAL DE AVALIAÇÕES$/i.test(title)?'CRONOGRAMA GERAL\nDE AVALIAÇÕES':title;
@@ -304,7 +304,7 @@
       boxedText(g,description||'Atividade a definir',341,y+5,660,rowHeight-10,{size:rowHeight>=78?29:24,min:17,weight:'700',align:'left',maxLines:rowHeight<75?2:3});
     });
     g.fillStyle=INK;g.fillRect(0,1251,W,99);
-    boxedText(g,d.footer||'Colégio Cora Coralina · 2026',70,1273,940,50,{size:27,min:19,align:'center',color:WHITE,weight:'700',maxLines:2});
+    boxedText(g,d.footer||'Colégio Cora Coralina · '+ACTIVE_YEAR,70,1273,940,50,{size:27,min:19,align:'center',color:WHITE,weight:'700',maxLines:2});
     const pages=Math.max(1,Math.ceil(parseItems(d.items).length/8));
     if(pages>1)boxedText(g,`Página ${page+1} de ${pages}`,815,42,208,32,{size:21,min:18,align:'right',color:INK,weight:'700',maxLines:1});
   }
@@ -342,7 +342,7 @@
   function birthdayEntries(n){return window.CoraBirthdays?.byMonth(Math.max(1,Math.min(12,Number(n)||11)))||[];}
   function birthdayDraft(month){
     const n=Math.max(1,Math.min(12,Number(month)||calendarMonth()));
-    return {...DEFAULTS.aniversario,month:String(n),subtitle:`${MONTHS[n-1].toUpperCase()} DE 2026`,
+    return {...DEFAULTS.aniversario,month:String(n),subtitle:`${MONTHS[n-1].toUpperCase()} DE ${ACTIVE_YEAR}`,
       items:birthdayEntries(n).map(p=>`${String(p.day).padStart(2,'0')}/${String(p.month).padStart(2,'0')} | ${p.name}${p.role?' — '+p.role:''}`).join('\n')};
   }
   function updateBirthdayInfo(){
@@ -417,7 +417,7 @@
   document.querySelectorAll('[data-template]').forEach(el=>el.addEventListener('click',()=>setTemplate(el.dataset.template)));
   $('resetCard').addEventListener('click',()=>{if(confirm('Restaurar o texto original deste modelo?')){drafts[template]=template==='comunicado'?holidayDraft(holidaysMonth.value):(template==='cronograma'||template==='avaliacao')?assessmentDraft(assessmentsMonth.value,template):template==='aniversario'?birthdayDraft(birthdayMonth.value):{...DEFAULTS[template]};setForm(drafts[template]);saveDraft();updateHolidayInfo();if(template==='cronograma'||template==='avaliacao')updateAssessmentInfo();if(template==='aniversario')updateBirthdayInfo();render()}});
   $('downloadCardPng').addEventListener('click',async()=>{await assetsReady;ensureComunicadoMonth();saveDraft();render();const filename=exportName('png');pngCanvas(createExportPages()).toBlob(blob=>{if(blob){download(blob,filename);status(`Arquivo gerado: ${LABELS[template]}${template==='comunicado'?' de '+MONTHS[(Number(holidaysMonth?.value)||11)-1]:''}.`)}else status('Falha ao gerar imagem.')},'image/png')});
-  $('downloadCardPdf').addEventListener('click',async()=>{await assetsReady;ensureComunicadoMonth();saveDraft();render();const btn=$('downloadCardPdf');btn.disabled=true;btn.textContent='Gerando PDF...';try{const file=window.CoraPDF.fromCanvases(createExportPages(),{pageWidth:540,pageHeight:675,title:`Card Cora Coralina ${template} 2026`});download(file,exportName('pdf'));status(`PDF gerado: ${LABELS[template]}.`)}catch(e){console.error(e);status('PDF indisponível neste navegador. Baixe o PNG e imprima como PDF.')}finally{btn.disabled=false;updateExportContext()}});
+  $('downloadCardPdf').addEventListener('click',async()=>{await assetsReady;ensureComunicadoMonth();saveDraft();render();const btn=$('downloadCardPdf');btn.disabled=true;btn.textContent='Gerando PDF...';try{const file=window.CoraPDF.fromCanvases(createExportPages(),{pageWidth:540,pageHeight:675,title:`Card Cora Coralina ${template} ${ACTIVE_YEAR}`});download(file,exportName('pdf'));status(`PDF gerado: ${LABELS[template]}.`)}catch(e){console.error(e);status('PDF indisponível neste navegador. Baixe o PNG e imprima como PDF.')}finally{btn.disabled=false;updateExportContext()}});
   $('jumpCards').addEventListener('click',()=>$('cardStudio').scrollIntoView({behavior:'smooth',block:'start'}));
   try{const obj=JSON.parse(localStorage.getItem(ID)||'{}');if(obj&&typeof obj==='object'&&!Array.isArray(obj))drafts=obj}catch{}
   if(!drafts.comunicado||!(Number(drafts.comunicado.month)>=1&&Number(drafts.comunicado.month)<=12)){drafts.comunicado=holidayDraft(calendarMonth());}
