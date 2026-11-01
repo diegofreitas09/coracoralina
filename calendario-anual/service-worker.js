@@ -1,4 +1,4 @@
-const CACHE = 'cora-calendario-multianual-v7';
+const CACHE = 'cora-calendario-multianual-v8';
 const ASSETS = ['./','./index.html','./styles.css','./app.js','./studio.css','./studio-assets.js','./school-brand.js','./official-calendar-data.js','./official-calendar-ui.js','./studio-pdf.js','./planning.js','./cards.js','./icon.svg','./manifest.webmanifest','./calendar-integrations.js','./calendar-integrations.css','./year-manager.js','./year-manager.css','./year-pdf.js','./agenda-oficial-2026.ics'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
