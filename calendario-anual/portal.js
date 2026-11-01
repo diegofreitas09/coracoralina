@@ -406,7 +406,7 @@
        '<span class="cp-delivery-time '+(active?'is-active':'')+'">'+(active?'Etapa em andamento':ended?'Prazo encerrado':'Prazo programado')+'</span></div>'+
        '<div class="cp-delivery-body"><div><small>ENTREGA À COORDENAÇÃO</small><h3>'+fmt(e.date)+'</h3><p>'+safe(e.deliveryTypes||'AP2 / AD / AR')+'</p></div>'+
        '<div class="cp-delivery-personal '+(value==='entregue'?'done':value==='nao_entregou'?'late':'pending')+'">'+
-       '<span class="cp-delivery-alarm" aria-hidden="true">'+(value==='entregue'?'✓':'♧')+'</span>'+
+       '<span class="cp-delivery-alarm" aria-hidden="true">'+(value==='entregue'?'✓':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg>')+'</span>'+
        '<div><small>MINHA SITUAÇÃO</small><strong>'+heading+'</strong><p>'+(identified?'Informado pelo professor'+detail:'Identifique-se acima para registrar')+'</p></div></div></div>'+
        '<div class="cp-delivery-action-row"><button type="button" class="cp-delivery-action is-submit" data-cp-delivery-status="entregue" data-cp-delivery-stage="'+stage+'" '+(!identified?'disabled':'')+' aria-pressed="'+(value==='entregue')+'">✓ Entregue</button>'+
        '<button type="button" class="cp-delivery-action is-missing" data-cp-delivery-status="nao_entregou" data-cp-delivery-stage="'+stage+'" '+(!identified?'disabled':'')+' aria-pressed="'+(value==='nao_entregou')+'">Não entregou</button></div>'+
