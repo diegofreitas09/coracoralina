@@ -1,11 +1,29 @@
-const CACHE='cora-calendar-notificacoes-v35';
+const CACHE='cora-calendar-push-flow-v40';
 const ASSETS=['./','./index.html','./styles.css','./year-transfer.css','./year-transfer.js','./stages.js','./app.js','./studio.css','./portal.css','./portal.js','./birthdays.css','./birthdays.js','./official-calendar-data.js','./cards.js','./manifest.webmanifest','./app-icon-192.png','./app-icon-512.png','./app-icon-maskable-512.png','./install-pwa.js','./install-pwa.css'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS).catch(()=>{})).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||new URL(e.request.url).origin!==location.origin)return;const url=new URL(e.request.url);if(url.pathname.includes('/api')||url.pathname.includes('/.netlify/functions/'))return;if(e.request.mode==='navigate'||/\.(?:js|css)$/.test(url.pathname)){e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{if(r.ok){let cp=r.clone();caches.open(CACHE).then(c=>c.put(e.request,cp)).catch(()=>{})}return r}).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(h=>h||fetch(e.request)));});
+
+self.addEventListener('push',event=>{
+ let item={};
+ try{item=event.data?.json()||{}}catch{
+  try{item={title:'Novo aviso · Cora Coralina',body:event.data?.text()||''}}catch{}
+ }
+ const year=Number(item.year)||2026;
+ const title=String(item.title||'Colégio Cora Coralina').slice(0,160);
+ const body=String(item.body||'Novo comunicado da Gestão').slice(0,350);
+ const url='./?avisos=1&ano='+year;
+ const tag=String(item.tag||'cora-'+Date.now()).slice(0,120);
+ event.waitUntil(self.registration.showNotification(title,{
+  body,icon:'./app-icon-192.png',badge:'./app-icon-192.png',tag,
+  vibrate:[220,100,220],silent:false,renotify:true,
+  timestamp:Date.now(),data:{url,year}
+ }));
+});
+
 self.addEventListener('notificationclick',event=>{
  event.notification.close();
- const url=new URL('./?avisos=1',self.registration.scope).href;
+ const url=new URL(event.notification.data?.url||'./?avisos=1',self.registration.scope).href;
  event.waitUntil((async()=>{
   const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
   const present=windows.find(client=>client.url.startsWith(self.registration.scope));
