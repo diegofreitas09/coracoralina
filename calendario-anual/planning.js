@@ -67,18 +67,57 @@
     function room(px){if(y+px>BOTTOM)newPage()}
     function paragraph(textvalue,{size=24,color=INK,indent=0,bold=false,gap=12}={}){const l=wrap(textvalue,RIGHT-LEFT-indent,size,bold?'bold':'normal');for(const line of l){room(size+21);t(line,LEFT+indent,y+size,size,color,bold?'bold':'normal');y+=size+11}y+=gap}
     function section(title,values){const arr=Array.isArray(values)?values:lines(values);if(!arr.length)return;room(110);rrect(LEFT,y,RIGHT-LEFT,48,8,'#eaf2fa');rrect(LEFT,y,11,48,5,GOLD);t(title.toUpperCase(),LEFT+30,y+34,22,BLUE,'bold');y+=68;for(const value of arr){room(42);rrect(LEFT+6,y+14,8,8,4,GOLD);paragraph(value,{indent:27,size:23,gap:9})}y+=16}
+    function birthdayPanel(people){
+      if(!plan.includeBirthdays)return;
+      const visible=people.slice(0,16);
+      const rows=Math.ceil(visible.length/2),height=Math.max(258,64+rows*37);
+      room(height+25);
+      rrect(LEFT,y,700,height,11,'#f7fbff');
+      g.strokeStyle='#a6bbd1';g.lineWidth=2;g.strokeRect(LEFT,y,700,height);
+      t('ANIVERSARIANTES DO MÊS',LEFT+20,y+35,21,BLUE,'bold');
+      if(!visible.length)t('Nenhum aniversariante cadastrado neste mês.',LEFT+20,y+92,21,MUTED);
+      else visible.forEach((person,i)=>{
+        const column=i%2,row=Math.floor(i/2),x=LEFT+19+column*338,z=y+78+row*37;
+        const caption=prettyBirthday(person);
+        g.font='bold 18px Arial, sans-serif';
+        let short=caption;
+        while(short.length>4&&g.measureText(short).width>315)short=short.slice(0,-2)+'…';
+        t(short,x,z,18,INK,'bold');
+      });
+      const right=LEFT+719,top=y;
+      rrect(right,top,RIGHT-right,height,13,'#eaf2fb');
+      rrect(right,top,RIGHT-right,53,10,BLUE);
+      t(MONTHS[month].toUpperCase(),right+22,top+36,24,'#fff','bold');
+      const firstDay=new Date(YEAR,month,1).getDay(),totalDays=new Date(YEAR,month+1,0).getDate();
+      const cols=7,blockW=(RIGHT-right-24)/cols,dayY=top+80;
+      ['D','S','T','Q','Q','S','S'].forEach((name,i)=>t(name,right+14+i*blockW,dayY,16,MUTED,'bold'));
+      const birthdays=new Set(visible.map(person=>Number(person.day)));
+      for(let d=1;d<=totalDays;d++){
+        const index=firstDay+d-1,col=index%7,row=Math.floor(index/7);
+        const x=right+10+col*blockW,z=dayY+27+row*27;
+        if(birthdays.has(d))rrect(x-4,z-18,blockW-2,24,5,'#ffe699');
+        t(String(d),x,z,16,INK,birthdays.has(d)?'bold':'normal');
+      }
+      y+=height+25;
+      if(people.length>16)section('Outros aniversariantes do mês',people.slice(16).map(prettyBirthday));
+    }
     newPage();
-    t(`Planejamento de ${MONTHS[month]} de ${YEAR}`,LEFT,y+52,45,BLUE,'bold');y+=74;
-    paragraph(plan.segment,{size:27,color:MUTED,gap:16});
+    t(`PLANEJAMENTO DE ${MONTHS[month].toUpperCase()}`,LEFT,y+49,43,BLUE,'bold');y+=71;
+    rrect(LEFT,y,RIGHT-LEFT,52,5,'#dcecf2');
+    t(`PROGRAMAÇÃO DO MÊS DE ${MONTHS[month].toUpperCase()} – ${YEAR}`,LEFT+22,y+35,22,BLUE,'bold');
+    y+=69;
+    paragraph(plan.segment,{size:26,color:MUTED,gap:15});
     const fmt=s=>/^\d{4}-\d\d-\d\d$/.test(s||'')?s.split('-').reverse().join('/'):'Não informada';
+    const projects=lines(plan.projects).length?plan.projects:(window.CoraYears?.getProjects?.(YEAR)?.[month]||[]);
+    section('Datas importantes e projetos do mês',projects);
+    birthdayPanel(birthdaysByMonth(month));
     room(122);rrect(LEFT,y,RIGHT-LEFT,112,15,'#edf4fb');t('REUNIÃO COM A EQUIPE',LEFT+22,y+37,21,BLUE,'bold');t(`Data: ${fmt(plan.meetingDate)}    •    Horário: ${plan.meetingTime||'A definir'}`,LEFT+22,y+73,23,INK);t(`Local: ${plan.meetingPlace||'A definir'}    •    Coordenação: ${plan.coordinator||'Equipe gestora'}`,LEFT+22,y+98,17,MUTED);y+=148;
-    section('Projetos e ações institucionais',plan.projects);
     section('Programação mensal e datas importantes',plan.schedule);
     if(plan.includeCalendar){const ev=eventsFor(month).map(event=>`${event.date.slice(8,10)}/${event.date.slice(5,7)} – ${event.title}${event.notes?' — '+event.notes:''}`);section('Eventos cadastrados no calendário',ev)}
     section('Orientações pedagógicas',plan.guidance);
     section('Pauta da reunião',plan.agenda);
     section('Encaminhamentos e responsabilidades',plan.actions);
-    section('Aniversariantes e comunicados',plan.birthdays);
+    if(plan.birthdays&&plan.birthdays!==sample.birthdays)section('Comunicados e datas complementares',plan.birthdays);
     section('Mensagem de encerramento',plan.closing);
     room(150);y+=16;g.fillStyle='#dce6ef';g.fillRect(LEFT,y,RIGHT-LEFT,2);y+=42;t('Responsável pela reunião:',LEFT,y,21,INK,'bold');g.strokeStyle='#b8c7d7';g.lineWidth=2;g.beginPath();g.moveTo(LEFT+340,y+6);g.lineTo(RIGHT,y+6);g.stroke();
     for(let i=0;i<pages.length;i++){const p=pages[i],ctx=p.getContext('2d');ctx.fillStyle='#e7edf3';ctx.fillRect(LEFT,1661,RIGHT-LEFT,2);ctx.font='bold 17px Arial';ctx.fillStyle=MUTED;ctx.fillText(`CORA CORALINA · PLANEJAMENTO DE ${MONTHS[month].toUpperCase()} ${YEAR}`,LEFT,1697);ctx.fillText(`${i+1} / ${pages.length}`,1080,1697);ctx.textAlign='right';ctx.font='bold 15px Arial';ctx.fillStyle='#607e9e';ctx.fillText('Tecnologia: PDF Solução Educacional',RIGHT,1730);ctx.textAlign='left'}
