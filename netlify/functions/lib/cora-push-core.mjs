@@ -39,10 +39,11 @@ export async function saveRegistration(subscription,owner){
  await store().setJSON('registrations',next);
  return {active:true,devices:next.length};
 }
-export async function deleteRegistration(subscription){
+export async function deleteRegistration(subscription,userId){
  if(!subscription?.endpoint)return {active:false};
+ if(!/^member-[a-f0-9]{64}$/.test(String(userId||'')))throw new Error('Conta pessoal necessária');
  const id=fingerprint(subscription);
- const all=await registrations(),filtered=all.filter(s=>s.id!==id);
+ const all=await registrations(),filtered=all.filter(s=>!(s.id===id&&s.userId===userId));
  await store().setJSON('registrations',filtered);
  return {active:false,devices:filtered.length};
 }
