@@ -169,8 +169,8 @@
   async function downloadBackup(){
     try{
       const documents=[];for(const file of allFiles)documents.push({id:file.id,name:file.name,month:file.month,size:file.size,type:file.type,lastModified:file.lastModified,data:await toBase64(file.blob)});
-      downloadBlob(new Blob([JSON.stringify({app:'calendario-anual-cora',year:YEAR,version:3,exportedAt:new Date().toISOString(),events,documents,officialRemoved:[...readRemovedOfficial()],projects:window.CoraYears?.getProjects(YEAR)||[],planning:JSON.parse(localStorage.getItem(`cora_planejamento_${YEAR}_v1`)||'{}'),cardDrafts:JSON.parse(localStorage.getItem(`cora_cards_${YEAR}_v1`)||'{}')})],{type:'application/json'}),`backup-calendario-cora-${YEAR}.json`);
-      notify('Backup com eventos, arquivos, planejamentos e cards criado.');
+      downloadBlob(new Blob([JSON.stringify({app:'calendario-anual-cora',year:YEAR,version:3,exportedAt:new Date().toISOString(),events,documents,officialRemoved:[...readRemovedOfficial()],projects:window.CoraYears?.getProjects(YEAR)||[],planning:JSON.parse(localStorage.getItem(`cora_planejamento_${YEAR}_v1`)||'{}'),cardDrafts:JSON.parse(localStorage.getItem(`cora_cards_${YEAR}_v1`)||'{}'),birthdays:JSON.parse(localStorage.getItem('cora_aniversariantes_v1')||'[]')})],{type:'application/json'}),`backup-calendario-cora-${YEAR}.json`);
+      notify('Backup com eventos, arquivos, planejamentos, aniversariantes e cards criado.');
     }catch(error){console.error(error);notify('Falha ao gerar backup.');}
   }
   async function restoreBackup(f){
@@ -188,6 +188,7 @@
       }
       if(data.planning&&typeof data.planning==='object'&&!Array.isArray(data.planning))localStorage.setItem(`cora_planejamento_${YEAR}_v1`,JSON.stringify(data.planning));
       if(data.cardDrafts&&typeof data.cardDrafts==='object'&&!Array.isArray(data.cardDrafts))localStorage.setItem(`cora_cards_${YEAR}_v1`,JSON.stringify(data.cardDrafts));
+      if(Array.isArray(data.birthdays)){const valid=data.birthdays.filter(p=>p&&typeof p.name==='string'&&Number(p.month)>=1&&Number(p.month)<=12&&Number(p.day)>=1&&Number(p.day)<=31).map(p=>({id:String(p.id||uid()),name:p.name.slice(0,100),role:String(p.role||'').slice(0,85),day:Number(p.day),month:Number(p.month)}));localStorage.setItem('cora_aniversariantes_v1',JSON.stringify(valid));}
       await refreshFiles();render();window.dispatchEvent(new CustomEvent('cora-backup-restored'));notify('Backup restaurado com sucesso.');
     }catch(error){console.error(error);notify('Backup inválido ou armazenamento insuficiente.');}
   }
