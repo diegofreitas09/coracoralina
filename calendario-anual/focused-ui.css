@@ -79,3 +79,13 @@ body.is-managing #manageToggle{background:#123b67;color:white}
   .events-list{max-height:400px}
 }
 @media(max-width:370px){.year-hub-controls{grid-template-columns:1fr}.year-hub-controls label:last-child{grid-column:auto}.focus-actions .btn{font-size:11px;padding:8px}}
+
+/* Assinatura de tecnologia: discreta e legível sem competir com a escola */
+.pdf-brand-credit{display:flex;align-items:center;gap:8px;margin:9px 0 0;color:#426080;font-size:11px;font-weight:750}
+.pdf-brand-credit .pdf-brand-monogram{background:#163c68;color:#fff;font-size:10px;letter-spacing:.45px;font-weight:900;padding:5px 6px;border-radius:5px}
+.pdf-brand-credit small{display:block;font-size:9px;color:#8293a7;font-weight:500;line-height:1.2}
+.cora-platform-footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#7f90a4}
+.cora-platform-footer .footer-right{float:none!important;margin:0}
+.cora-platform-footer strong{color:#235780}
+.sidebar-foot strong{font-weight:750;color:#e3ecf9}
+@media(max-width:780px){.pdf-brand-credit{margin-top:10px;font-size:11px}.cora-platform-footer{font-size:10px;line-height:1.6}}
