@@ -13,7 +13,7 @@
  const stored=(key,fallback)=>{try{const value=JSON.parse(localStorage.getItem(key)||'null');return value??fallback}catch{return fallback}};
  const save=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));return true}catch{return false}};
  const getYear=()=>Math.max(2026,Math.min(2099,Number(localStorage.getItem(YEAR_KEY))||2026));
- const getMonth=()=>{const n=Number(localStorage.getItem(MONTH_KEY));return Number.isInteger(n)&&n>=0&&n<=11?n:0};
+ const getMonth=()=>{const raw=localStorage.getItem(MONTH_KEY);if(raw===null)return getYear()===new Date().getFullYear()?new Date().getMonth():0;const n=Number(raw);return Number.isInteger(n)&&n>=0&&n<=11?n:0};
  const makeProjects=()=>Array.from({length:12},()=>[]);
  const getProjects=y=>{
    const value=stored(PROJECT_KEY(y),null);
@@ -90,7 +90,8 @@
    const list=$('yearProjectItems');if(list)list.innerHTML=projects.length?projects.map(n=>'<span class="year-project-chip">'+esc(n)+'</span>').join(''):'<span class="year-project-empty">Nenhum projeto definido para este mês.</span>';
  }
  function mount(){
-   syncYearLayout();
+   syncYearLayout();putProjects(CoraYears.activeYear,CoraYears.month);
+   if(CoraYears.activeYear>2026&&!localStorage.getItem(FLAG_KEY(CoraYears.activeYear,CoraYears.month))&&!readEvents(CoraYears.activeYear,CoraYears.month).length)showWizard(CoraYears.activeYear,CoraYears.month,false);
    $('schoolYearSelect')?.addEventListener('change',()=>{
       const newYear=Number($('schoolYearSelect').value);
       if(newYear===CoraYears.activeYear)return;
