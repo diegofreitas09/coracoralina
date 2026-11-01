@@ -188,13 +188,10 @@
   const button=$('#cpEnableAlerts');
   if(button){button.disabled=true;button.textContent='Conectando...'}
   try{
-   await registerDeviceForPush();
+   const subscription=await registerDeviceForPush();
    updatePushButton(true);
-   vibrationFeedback();
-   const ok=await showDeviceNotice('Notificações ativadas · Cora Coralina',
-    'Celular inscrito para receber comunicados da Gestão, mesmo quando o aplicativo estiver fechado.',
-    'teste-ativacao-'+Date.now());
-   toast(ok?'Celular cadastrado! Novas publicações poderão chegar com o app fechado.':'Celular cadastrado no servidor. Confira as permissões de notificações do Android.');
+   const result=await api('push-test',{subscription:subscription.toJSON()});
+   toast(result.sent?'Teste de push enviado pelo servidor. Confira a notificação no Android.':'Não foi possível confirmar o envio de teste.');
   }catch(e){
    toast('Não foi possível ativar o push: '+String(e?.message||e));
    updatePushButton(false);
