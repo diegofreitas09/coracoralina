@@ -1,0 +1,55 @@
+.year-hub,.projects-hub,.summary-hub{background:#fff;border:1px solid #dfe9f3;border-radius:18px;padding:22px;margin:0 0 28px;box-shadow:0 5px 20px #09284c0b}
+.year-hub{border-top:5px solid #255fa7;background:linear-gradient(145deg,#fff 65%,#f0f6fd)}
+.year-hub-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.year-hub h2,.projects-hub h2,.summary-hub h2{margin:7px 0;font-size:25px;letter-spacing:-.7px;color:#112c4e}
+.year-hub h2 span{color:#276ab5}
+.year-hub p,.projects-hub p,.summary-hub p{color:#657d98;font-size:13px;margin:5px 0 10px;line-height:1.6}
+.year-model-label{background:#eff5fc;color:#275c98;border-radius:20px;padding:7px 12px;font-size:11px;font-weight:800;white-space:nowrap}
+.year-hub-controls,.summary-controls{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin-top:16px}
+.year-hub-controls label,.summary-controls label{font-size:12px;color:#44617e;font-weight:800;min-width:155px;display:flex;flex-direction:column;gap:6px}
+.year-hub-controls select,.summary-controls select,.clone-year-dialog select,.clone-year-dialog input[type=number]{border:1px solid #c9d9e9;border-radius:9px;background:#fff;color:#18395c;padding:11px 12px;min-height:43px;font:inherit}
+.year-hub-controls #yearSelect{font-size:16px;font-weight:850;min-width:135px}
+.year-hub-bottom{display:flex;flex-wrap:wrap;align-items:center;gap:10px;color:#476580;font-size:12px;margin-top:15px}
+.year-hub-bottom strong{background:#e5effb;color:#235c9f;padding:7px 10px;border-radius:10px}
+.year-data-note{display:block;margin-top:11px;font-size:11px;color:#8796a5;line-height:1.5}
+.projects-hub{border-left:5px solid #dba832}
+.projects-hub-body{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:17px}
+.projects-hub-body>div:first-child{background:#f2f6fc;border:1px solid #e1ebf5;border-radius:14px;padding:13px}
+.projects-hub-body ul{margin:0;padding:0 0 0 23px;color:#275078;font-size:13px;line-height:1.9;min-height:80px}
+.projects-hub-body li{overflow-wrap:anywhere}
+.projects-count{font-size:11px;color:#7086a0;font-weight:700;margin-left:8px}
+.projects-hub-body label{display:block;font-size:12px;font-weight:800;color:#315274;margin-bottom:8px}
+.projects-hub-body textarea{display:block;width:100%;min-height:120px;border:1px solid #c9d8e8;border-radius:11px;padding:12px;font-size:13px;resize:vertical;color:#213f61;margin-bottom:11px}
+.projects-hub-body .btn{white-space:normal}
+.summary-hub{border-left:5px solid #2b70bd}
+.summary-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:17px}
+.summary-actions .btn{white-space:normal}
+.clone-year-dialog{width:min(620px,calc(100vw - 24px));max-height:90vh;overflow:auto;border:1px solid #d8e4f1;border-radius:19px;padding:24px;color:#1e3c5b;box-shadow:0 20px 60px #0004}
+.clone-year-dialog::backdrop{background:#09203db0}
+.clone-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.clone-dialog-head h3{font-size:21px;margin:0;color:#11345f}
+.clone-year-dialog p{color:#6f8298;line-height:1.6;font-size:13px}
+.clone-year-dialog label{display:block;font-size:12px;font-weight:800;color:#375b7d;margin:13px 0}
+.clone-year-dialog select,.clone-year-dialog input[type=number]{display:block;width:100%;margin-top:6px}
+.clone-dialog-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.clone-checkbox{display:flex!important;align-items:center;gap:9px}
+.clone-checkbox input{width:18px;height:18px}
+.clone-warning{padding:13px 15px;background:#fdf8e8;border-radius:12px;border:1px solid #f4e5a9;color:#78622e!important}
+#cloneError{color:#b1283a;font-weight:700}
+.review-event{background:#fff1d2;color:#896317!important;font-size:10px!important;padding:3px 7px;margin-top:5px;border-radius:5px;font-weight:750}
+.summary-card-preview{display:none}
+.official-banner[hidden],#officialBannerSection[hidden]{display:none!important}
+@media(max-width:750px){
+.year-hub,.projects-hub,.summary-hub{padding:16px;margin-bottom:20px}
+.year-hub-head{flex-direction:column;gap:5px}
+.year-hub h2,.projects-hub h2,.summary-hub h2{font-size:21px}
+.year-hub-controls,.summary-controls{display:grid;grid-template-columns:1fr 1fr;align-items:stretch;gap:10px}
+.year-hub-controls label,.summary-controls label{min-width:0}
+.year-hub-controls #createYearBtn{grid-column:span 2}
+.year-hub-controls #audienceView{max-width:100%}
+.projects-hub-body{grid-template-columns:1fr;gap:10px}
+.summary-actions{display:grid;grid-template-columns:1fr 1fr}
+.summary-actions .btn{font-size:12px;line-height:1.3;min-height:55px}
+.clone-year-dialog{padding:16px}
+}
+@media(max-width:400px){.summary-actions{grid-template-columns:1fr}.year-hub-controls{grid-template-columns:1fr}.year-hub-controls #createYearBtn{grid-column:1}.clone-dialog-grid{grid-template-columns:1fr}}
