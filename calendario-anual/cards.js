@@ -10,13 +10,16 @@
     reuniao:{title:'REUNIÃO ESCOLA E FAMÍLIA',subtitle:'ENTREGA DE RESULTADOS',body:'Um momento importante para conversarmos sobre o desenvolvimento dos nossos alunos e fortalecermos a parceria entre escola e família.',items:'',date:'06/11/2026',time:'18h30',place:'Quadra da escola',footer:'Contamos com a sua presença!'},
     cronograma:{title:'CRONOGRAMA GERAL DE AVALIAÇÕES',subtitle:'NOVEMBRO DE 2026',body:'Avaliações, simulados, sondagens e provas regulares do calendário escolar.',items:'19/11/2026 | Simulado 04 — início\n23/11/2026 | Avaliações globais e sondagens — 4ª etapa\n24/11/2026 | Avaliações globais e sondagens — 4ª etapa\n25/11/2026 | Avaliações globais e sondagens — 4ª etapa\n26/11/2026 | Avaliações globais e sondagens — 4ª etapa\n27/11/2026 | Avaliações globais e sondagens — 4ª etapa',month:'11',date:'',time:'',place:'',footer:'Colégio Cora Coralina · Cronograma geral 2026'},
     avaliacao:{title:'AVALIAÇÃO 2ª CHAMADA',subtitle:'3ª SÉRIE · ENSINO MÉDIO',body:'AP2 – 4ª ETAPA DE 2026',items:'03/11/2026 | História, Literatura e Sociologia\n04/11/2026 | Português e Produção Textual\n05/11/2026 | Química e Biologia\n06/11/2026 | Matemática e Geografia\n09/11/2026 | Inglês e Física',month:'11',date:'',time:'',place:'',footer:'Datas verificadas · Consulte a coordenação sobre horários'}
+    ,aniversario:{title:'ANIVERSARIANTES DO MÊS',subtitle:'NOVEMBRO DE 2026',body:'Nossa equipe merece ser celebrada! Parabéns a todos os aniversariantes.',items:'',month:'11',date:'',time:'',place:'',footer:'Colégio Cora Coralina · Juntos por uma educação que transforma!'}
   };
   let drafts={},template='comunicado',logo=null,toys=null,renderCount=0;
   const MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const holidaysMonth=$('holidayMonth'),holidaysInfo=$('holidayMonthInfo'),holidaysControls=$('holidayControls');
   const assessmentsMonth=$('assessmentsMonth'),assessmentsInfo=$('assessmentsInfo'),assessmentsControls=$('assessmentControls');
+  const birthdayMonth=$('birthdayCardMonth'),birthdayInfo=$('birthdayCardInfo'),birthdayControls=$('birthdayControls');
   if(holidaysMonth)holidaysMonth.innerHTML=MONTHS.map((n,i)=>`<option value="${i+1}">${n} de 2026</option>`).join('');
   if(assessmentsMonth)assessmentsMonth.innerHTML=MONTHS.map((n,i)=>`<option value="${i+1}">${n} de 2026</option>`).join('');
+  if(birthdayMonth)birthdayMonth.innerHTML=MONTHS.map((n,i)=>`<option value="${i+1}">${n} de 2026</option>`).join('');
   function getHolidays(month){
     const mm=String(month).padStart(2,'0');
     // Mescla o calendário institucional com os registros salvos, sem descartar
@@ -153,7 +156,7 @@
       status(`Comunicado atualizado: ${MONTHS[selected-1]} de 2026.`);
     }
   }
-  const LABELS={comunicado:'Comunicado',solidaria:'Campanha solidária',reuniao:'Reunião',cronograma:'Cronograma geral',avaliacao:'2ª chamada'};
+  const LABELS={comunicado:'Comunicado',solidaria:'Campanha solidária',reuniao:'Reunião',cronograma:'Cronograma geral',avaliacao:'2ª chamada',aniversario:'Aniversariantes do mês'};
   function exportName(extension){
     const suffix=String(Date.now());
     const month=template==='comunicado'?Number(holidaysMonth?.value):Number(assessmentsMonth?.value);
@@ -333,17 +336,56 @@
     fitted(g,d.footer,540,1295,952,{size:26,min:19});
   }
 
-  function monthSelect(){return template==='comunicado'?holidaysMonth:(template==='cronograma'||template==='avaliacao')?assessmentsMonth:null}
+
+  function birthdayEntries(n){return window.CoraBirthdays?.byMonth(Math.max(1,Math.min(12,Number(n)||11)))||[];}
+  function birthdayDraft(month){
+    const n=Math.max(1,Math.min(12,Number(month)||calendarMonth()));
+    return {...DEFAULTS.aniversario,month:String(n),subtitle:`${MONTHS[n-1].toUpperCase()} DE 2026`,
+      items:birthdayEntries(n).map(p=>`${String(p.day).padStart(2,'0')}/${String(p.month).padStart(2,'0')} | ${p.name}${p.role?' — '+p.role:''}`).join('\n')};
+  }
+  function updateBirthdayInfo(){
+    if(!birthdayMonth||!birthdayInfo)return;
+    const n=Math.max(1,Math.min(12,Number(birthdayMonth.value)||11)),count=birthdayEntries(n).length;
+    birthdayInfo.textContent=`${count} ${count===1?'aniversariante cadastrado':'aniversariantes cadastrados'} em ${MONTHS[n-1]}. Altere o cadastro da Gestão para incluir ou corrigir pessoas.`;
+    if(template==='aniversario')$('cardItemsHint').textContent='Um por linha: DD/MM | Nome — Função. Lista editável.';
+  }
+  function fillBirthdayCard(month){
+    if(template!=='aniversario')return;
+    const n=Math.max(1,Math.min(12,Number(month)||calendarMonth()));
+    drafts.aniversario=birthdayDraft(n);setForm(drafts.aniversario);saveDraft();updateBirthdayInfo();render();
+  }
+  function birthdayCard(g,d,page=0){
+    drawBase(g,'#f8fbff');
+    rounded(g,0,0,W,446,0,gradient(g,0,446,'#082a56','#1763a5'));
+    g.fillStyle=GOLD;g.fillRect(0,0,W,11);
+    emblem(g,457,25,166,195);
+    boxedText(g,d.title,80,243,920,92,{size:61,min:37,weight:'900',color:WHITE,align:'center',maxLines:2});
+    rounded(g,240,344,600,70,34,GOLD);
+    boxedText(g,d.subtitle,260,350,560,55,{size:37,min:23,weight:'900',align:'center',maxLines:2});
+    for(let i=0;i<18;i++){const x=30+i*57,y=470+(i*113)%710;g.fillStyle=i%2?'#ffce3375':'#90bde475';g.beginPath();g.arc(x,y,4,0,Math.PI*2);g.fill();}
+    boxedText(g,d.body,70,467,940,86,{size:29,min:20,weight:'600',align:'center',maxLines:3});
+    const rows=parseItems(d.items).slice(page*7,page*7+7);
+    if(!rows.length){rounded(g,84,645,912,188,24,'#e5f1fd');boxedText(g,'Nenhum aniversariante cadastrado neste mês',135,681,810,103,{size:34,min:24,weight:'700',align:'center',maxLines:3});}
+    const fills=['#eaf4ff','#fff4db','#edf7f0','#eaf4ff','#f5efff','#fff4db','#eaf4ff'];
+    rows.forEach((line,i)=>{const [date,label]=splitItem(line),y=563+i*93;rounded(g,65,y,949,86,17,fills[i]);rounded(g,79,y+11,148,62,13,INK);
+      boxedText(g,date,88,y+18,130,45,{size:30,min:23,color:WHITE,weight:'800',align:'center',maxLines:1});
+      boxedText(g,label,245,y+8,747,70,{size:30,min:18,weight:'750',color:INK,align:'left',maxLines:2});
+    });
+    rounded(g,38,1236,1004,83,21,INK);
+    boxedText(g,d.footer,62,1246,950,55,{size:29,min:18,color:WHITE,align:'center',weight:'700',maxLines:2});
+  }
+
+  function monthSelect(){return template==='comunicado'?holidaysMonth:(template==='cronograma'||template==='avaliacao')?assessmentsMonth:template==='aniversario'?birthdayMonth:null}
   function getForm(){const v={};Object.keys(DEFAULTS[template]).forEach(k=>{const el=k==='month'?monthSelect():form.elements.namedItem(k);v[k]=String(el?.value||'')});return v}
   function getDraft(){return drafts[template]||DEFAULTS[template]}
   function setForm(d){for(const name of Object.keys(DEFAULTS[template])){const el=name==='month'?monthSelect():form.elements.namedItem(name);if(el)el.value=d[name]??''}}
-  function pageCount(){const number=parseItems(getForm().items).length;return template==='cronograma'?Math.max(1,Math.ceil(number/8)):template==='avaliacao'?Math.max(1,Math.ceil(number/6)):1}
-  function render(){const d=getForm();ctx.clearRect(0,0,W,H);try{({comunicado:notice,solidaria:solidarity,reuniao:meeting,cronograma:schedule,avaliacao:assessment}[template]||notice)(ctx,d)}catch(e){console.error(e);drawBase(ctx);text(ctx,'Erro ao visualizar. Revise os campos.',40,130,27,INK)}renderCount++;updateExportContext();const hint=$('cardPagesInfo');if(hint)hint.textContent=pageCount()>1?`Prévia: página 1 de ${pageCount()}. PDF terá todas as páginas; PNG terá as páginas reunidas em uma imagem.`:''}
+  function pageCount(){const number=parseItems(getForm().items).length;return template==='cronograma'?Math.max(1,Math.ceil(number/8)):template==='avaliacao'?Math.max(1,Math.ceil(number/6)):template==='aniversario'?Math.max(1,Math.ceil(number/7)):1}
+  function render(){const d=getForm();ctx.clearRect(0,0,W,H);try{({comunicado:notice,solidaria:solidarity,reuniao:meeting,cronograma:schedule,avaliacao:assessment,aniversario:birthdayCard}[template]||notice)(ctx,d)}catch(e){console.error(e);drawBase(ctx);text(ctx,'Erro ao visualizar. Revise os campos.',40,130,27,INK)}renderCount++;updateExportContext();const hint=$('cardPagesInfo');if(hint)hint.textContent=pageCount()>1?`Prévia: página 1 de ${pageCount()}. PDF terá todas as páginas; PNG terá as páginas reunidas em uma imagem.`:''}
   function saveDraft(){try{drafts[template]=getForm();localStorage.setItem(ID,JSON.stringify(drafts));$('cardSaveStatus').textContent='Rascunho salvo'}catch{$('cardSaveStatus').textContent='Salvamento indisponível'}}
   function setTemplate(name){if(!DEFAULTS[name])return;saveDraft();template=name;
     if((name==='cronograma'||name==='avaliacao')&&!drafts[name])drafts[name]=assessmentDraft(calendarMonth(),name);
     setForm(getDraft());if(holidaysControls)holidaysControls.hidden=name!=='comunicado';if(assessmentsControls)assessmentsControls.hidden=name!=='cronograma'&&name!=='avaliacao';if(name==='comunicado'){updateHolidayInfo();const hint=$('cardItemsHint');if(hint)hint.textContent='No comunicado, os feriados do mês podem ser editados.';}if(name==='cronograma'||name==='avaliacao')updateAssessmentInfo();const detailFields=$('cardExtraDetails');if(detailFields)detailFields.hidden=(name==='cronograma'||name==='avaliacao');document.querySelectorAll('[data-template]').forEach(el=>{el.classList.toggle('is-selected',el.dataset.template===name);el.setAttribute('aria-pressed',el.dataset.template===name?'true':'false')});render()}
-  function createExportPages(){const pages=[];const n=pageCount(),d=getForm(),fn=template==='cronograma'?schedule:template==='avaliacao'?assessment:null;
+  function createExportPages(){const pages=[];const n=pageCount(),d=getForm(),fn=template==='cronograma'?schedule:template==='avaliacao'?assessment:template==='aniversario'?birthdayCard:null;
     if(!fn)return [canvas];
     for(let i=0;i<n;i++){const c=document.createElement('canvas');c.width=W;c.height=H;fn(c.getContext('2d'),d,i);pages.push(c)}
     return pages;
