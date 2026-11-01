@@ -9,6 +9,7 @@
     solidaria:{title:'DOE BRINQUEDOS E LIVROS INFANTIS',subtitle:'Campanha Solidária',body:'Compartilhe alegria e novas histórias! Sua doação pode transformar o dia de uma criança.',items:'Brinquedos novos, seminovos e usados em bom estado\nLivros infantis em bom estado de conservação',date:'16/10/2026',time:'Prazo para doações',place:'Entregar na escola',footer:'Colégio Cora Coralina'},
     reuniao:{title:'REUNIÃO ESCOLA E FAMÍLIA',subtitle:'ENTREGA DE RESULTADOS',body:'Um momento importante para conversarmos sobre o desenvolvimento dos nossos alunos e fortalecermos a parceria entre escola e família.',items:'',date:'06/11/2026',time:'18h30',place:'Quadra da escola',footer:'Contamos com a sua presença!'},
     cronograma:{title:'AVALIAÇÃO DE 2ª CHAMADA',subtitle:'AP2 · 4ª ETAPA · 6º ANO',body:'Cronograma de avaliações — confira as disciplinas de cada dia.',items:'03/11/2026 | História / Interpretação Textual\n04/11/2026 | Gramática / Produção Textual\n05/11/2026 | Geografia / Ciências\n06/11/2026 | Matemática\n09/11/2026 | Inglês / Filosofia',date:'',time:'',place:'',footer:'Colégio Cora Coralina · 2026'},
+    avaliacoes:{title:'CALENDÁRIO DE AVALIAÇÕES',subtitle:'4ª ETAPA · ANO LETIVO 2026',body:'Confira as datas das avaliações previstas no calendário escolar. As disciplinas e os horários devem ser confirmados no cronograma de cada turma.',items:'26 a 30/10 | Avaliações parciais · 4ª etapa\n19/11 | Simulado 04 — início\n23 a 27/11 | Avaliações globais · 4ª etapa\n14 a 18/12 | Provas de recomposição',date:'',time:'',place:'',footer:'Calendário oficial 2026 · Confirme as datas com a coordenação'},
     avaliacao:{title:'AVALIAÇÃO 2ª CHAMADA',subtitle:'3ª SÉRIE · ENSINO MÉDIO',body:'AP2 – 4ª ETAPA DE 2026',items:'03/11/2026 | História, Literatura e Sociologia\n04/11/2026 | Português e Produção Textual\n05/11/2026 | Química e Biologia\n06/11/2026 | Matemática e Geografia\n09/11/2026 | Inglês e Física',date:'',time:'',place:'',footer:'Datas verificadas · Consulte a coordenação sobre horários'}
   };
   let drafts={},template='comunicado',logo=null,toys=null,renderCount=0;
@@ -34,10 +35,39 @@
   function meeting(g,d){drawBase(g,'#fcfeff');g.fillStyle=INK;g.beginPath();g.moveTo(0,0);g.lineTo(300,0);g.quadraticCurveTo(185,250,0,256);g.fill();g.strokeStyle=GOLD;g.lineWidth=10;g.beginPath();g.moveTo(327,0);g.quadraticCurveTo(205,246,0,279);g.stroke();emblem(g,414,38,233,276);multiline(g,d.title,W/2,432,960,{size:72,lineHeight:81,align:'center',maxLines:3});rounded(g,135,520,810,92,30,GOLD);fitted(g,d.subtitle.toUpperCase(),W/2,584,766,{size:48,min:28});multiline(g,d.body,W/2,692,927,{size:36,lineHeight:50,weight:'600',align:'center',maxLines:5});rounded(g,63,922,955,231,32,'#e7f1fc');const data=[['DATA',d.date||'A definir'],['HORÁRIO',d.time||'A definir'],['LOCAL',d.place||'A definir']];data.forEach(([label,val],i)=>{const x=83+i*311;if(i)g.fillStyle=GOLD,g.fillRect(x-13,962,3,150);text(g,label,x+142,991,28,INK,'800','center');multiline(g,val,x+145,1051,280,{size:36,lineHeight:39,weight:'800',align:'center',maxLines:2})});multiline(g,d.footer,W/2,1245,960,{size:43,color:INK,weight:'italic',align:'center',maxLines:2});wave(g,true)}
   function schedule(g,d){drawBase(g,'#fcfeff');g.strokeStyle='#d7e7f8';g.lineWidth=1;for(let x=0;x<W;x+=40){g.beginPath();g.moveTo(x,0);g.lineTo(x,H);g.stroke()}for(let y=0;y<H;y+=40){g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke()}emblem(g,442,22,195,244);rounded(g,72,282,935,119,29,GOLD);multiline(g,d.title,W/2,361,894,{size:58,lineHeight:58,color:INK,weight:'900',align:'center',maxLines:2});rounded(g,200,419,680,77,31,INK);fitted(g,d.subtitle,W/2,471,643,{size:41,min:24,color:WHITE});multiline(g,d.body,W/2,564,920,{size:24,lineHeight:28,color:INK,align:'center',maxLines:2,weight:'600'});const arr=parseItems(d.items).slice(0,6);const fills=['#e5e0ff','#fee0e6','#def6e8','#fff1bf','#d9ebff','#e6e2fa'];const rowHeight=Math.min(118,Math.floor(630/Math.max(arr.length,1)));arr.forEach((v,i)=>{const y=645+i*(rowHeight+7);rounded(g,45,y,990,rowHeight,17,WHITE);rounded(g,45,y,220,rowHeight,17,fills[i]);strokeRound(g,45,y,990,rowHeight,17,'#dfebf6',2);const [day,label]=splitItem(v);fitted(g,day,154,y+rowHeight/2+11,202,{size:29,min:18,align:'center'});multiline(g,label,292,y+rowHeight/2-9,720,{size:27,lineHeight:29,color:INK,weight:'700',maxLines:2})});g.fillStyle=INK;g.fillRect(0,1269,W,81);footer(g,d.footer||'Cora Coralina 2026',WHITE)}
   function assessment(g,d){drawBase(g,'#f4f7ff');rounded(g,13,13,1054,245,23,INK);text(g,'COLÉGIO CORA CORALINA',40,66,27,WHITE,'700');multiline(g,d.title,545,114,990,{size:58,lineHeight:65,color:WHITE,weight:'900',align:'center',maxLines:2});rounded(g,350,172,720,74,21,GOLD);fitted(g,d.subtitle.toUpperCase(),710,220,670,{size:42,min:21,color:INK});fitted(g,d.body,W/2,306,940,{size:29,min:18});const arr=parseItems(d.items).slice(0,6);const fills=['#fbe6e9','#e5f2ff','#e4f8e8','#fff1cb','#eee5ff','#e2f2f4'];const rowh=Math.min(162,Math.floor(810/Math.max(arr.length,1)));arr.forEach((v,i)=>{const y=350+i*(rowh+9);const [date,disc]=splitItem(v);rounded(g,28,y,1024,rowh,18,WHITE);rounded(g,28,y,332,rowh,18,fills[i]);calendarIcon(g,54,y+Math.max(15,(rowh-74)/2),74,['#e95465','#2588c5','#37a96a','#dca000','#9657b3'][i%5]);fitted(g,date,245,y+rowh/2+13,217,{size:31,min:20});multiline(g,disc,407,y+rowh/2-13,630,{size:30,lineHeight:34,maxLines:2,weight:'700'})});rounded(g,35,1240,1010,84,19,'#e4edfd');fitted(g,d.footer,540,1295,952,{size:26,min:19})}
+  function regularAssessments(g,d){
+    drawBase(g,'#f7faff');
+    g.fillStyle=INK;g.fillRect(0,0,W,245);
+    g.fillStyle=GOLD;g.fillRect(0,245,W,10);
+    emblem(g,58,34,134,169);
+    text(g,'COLÉGIO CORA CORALINA',218,93,29,WHITE,'800');
+    text(g,'CALENDÁRIO ESCOLAR  •  2026',219,142,23,'#c9dcf2','700');
+    rounded(g,219,160,350,47,14,'#ffffff1e');
+    text(g,'AVALIAÇÕES E SIMULADOS',236,191,21,GOLD,'800');
+    multiline(g,d.title,W/2,349,972,{size:68,lineHeight:76,color:INK,weight:'900',align:'center',maxLines:2});
+    rounded(g,152,428,776,67,22,GOLD);
+    fitted(g,d.subtitle.toUpperCase(),W/2,472,726,{size:31,min:21});
+    const bodyEnd=multiline(g,d.body,W/2,541,954,{size:26,lineHeight:36,weight:'500',align:'center',maxLines:4});
+    const arr=parseItems(d.items).slice(0,6);
+    const firstY=Math.max(685,bodyEnd+25);
+    const available=1234-firstY;
+    const rowGap=13;
+    const rowH=Math.min(112,Math.floor((available-(Math.max(arr.length,1)-1)*rowGap)/Math.max(arr.length,1)));
+    arr.forEach((v,i)=>{
+      const y=firstY+i*(rowH+rowGap),pair=splitItem(v),date=pair[0],disc=pair[1]||'Confira a programação';
+      rounded(g,52,y,976,rowH,16,WHITE);strokeRound(g,52,y,976,rowH,16,'#d8e6f4',2);
+      rounded(g,52,y,275,rowH,16,i%2===0?'#e4f1fd':'#ebeffa');
+      fitted(g,date,191,y+rowH/2+11,247,{size:31,min:19,align:'center'});
+      multiline(g,disc,354,y+rowH/2-12,643,{size:29,lineHeight:32,maxLines:2,weight:'700'});
+    });
+    g.fillStyle=INK;g.fillRect(0,1251,W,99);
+    g.fillStyle=GOLD;g.fillRect(0,1251,W,6);
+    fitted(g,d.footer||'COLÉGIO CORA CORALINA',W/2,1313,980,{size:24,min:17,color:WHITE});
+  }
   function getForm(){const v={};Object.keys(DEFAULTS[template]).forEach(k=>v[k]=String(form.elements.namedItem(k)?.value||''));return v}
   function getDraft(){return drafts[template]||DEFAULTS[template]}
   function setForm(d){for(const name of Object.keys(DEFAULTS[template])){const el=form.elements.namedItem(name);if(el)el.value=d[name]??''}}
-  function render(){const d=getForm();ctx.clearRect(0,0,W,H);try{({comunicado:notice,solidaria:solidarity,reuniao:meeting,cronograma:schedule,avaliacao:assessment}[template]||notice)(ctx,d)}catch(e){console.error(e);drawBase(ctx);text(ctx,'Erro ao visualizar. Revise os campos.',40,130,27,INK)}renderCount++}
+  function render(){const d=getForm();ctx.clearRect(0,0,W,H);try{({comunicado:notice,solidaria:solidarity,reuniao:meeting,cronograma:schedule,avaliacoes:regularAssessments,avaliacao:assessment}[template]||notice)(ctx,d)}catch(e){console.error(e);drawBase(ctx);text(ctx,'Erro ao visualizar. Revise os campos.',40,130,27,INK)}renderCount++}
   function saveDraft(){try{drafts[template]=getForm();localStorage.setItem(ID,JSON.stringify(drafts));$('cardSaveStatus').textContent='Rascunho salvo'}catch{$('cardSaveStatus').textContent='Salvamento indisponível'}}
   function setTemplate(name){if(!DEFAULTS[name])return;saveDraft();template=name;setForm(getDraft());document.querySelectorAll('[data-template]').forEach(el=>{el.classList.toggle('is-selected',el.dataset.template===name);el.setAttribute('aria-pressed',el.dataset.template===name?'true':'false')});render()}
   function loadImg(str){return new Promise(resolve=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src=str||''})}
