@@ -72,7 +72,7 @@ export default async function handler(request){
   if(input.birthdays!==undefined&&(!Array.isArray(input.birthdays)||input.birthdays.length>500))return answer({error:'Lista de aniversariantes inválida'},400);
   const previous=await store.get('published-2026',{type:'json',consistency:'strong'});
   const baseBirthdays=input.birthdays===undefined?(Array.isArray(previous?.birthdays)?previous.birthdays:DEFAULT_BIRTHDAYS):input.birthdays.map(cleanBirthday).filter(validBirthday);
-  const migrated=migrateBirthdays({...previous,birthdays:baseBirthdays});
+  const migrated=migrateBirthdays({...previous,birthdaySeedVersion:previous?.birthdaySeedVersion,birthdays:baseBirthdays});
   const birthdays=migrated.birthdays.filter((b,i,a)=>a.findIndex(p=>p.id===b.id)===i).sort((a,b)=>a.month-b.month||a.day-b.day||a.name.localeCompare(b.name,'pt-BR'));
   const state={year:YEAR,updatedAt:new Date().toISOString(),events,notices,birthdays,birthdaySeedVersion:BIRTHDAY_SEED_VERSION,config:{defaultLeadDays:Math.max(0,Math.min(30,Number(input.config?.defaultLeadDays)||3))}};
   await store.setJSON('published-2026',state);
