@@ -72,3 +72,7 @@
 .stage-message{font-size:12px;color:#61758c;margin:9px 0 0}
 @media(max-width:790px){.stage-timeline{grid-template-columns:repeat(2,minmax(0,1fr))}.stage-edit{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:440px){.stage-timeline,.stage-edit{grid-template-columns:1fr}}
+
+.day.has-stage-boundary{outline:2px solid #e2a81f;outline-offset:-3px;background:#fff9e8}
+.day .stage-mark{display:block;color:#825810;font-size:10px;font-weight:800;line-height:1.2;margin-top:3px;text-align:left}
+.cp-team-head #cpEnableAlerts{white-space:nowrap}
