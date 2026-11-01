@@ -356,8 +356,13 @@
     const contents=events.filter(e=>e.type==='Entrega de conteúdo').sort((a,b)=>a.date.localeCompare(b.date));
     const fmt=d=>d?d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(0,4):'A definir';
     const fundamental='coordenacaofundamentalcora@gmail.com',medio='coordenacaomediocora@gmail.com';
-    content='<div class="cp-main-heading"><h2>Entregas pedagógicas · '+year+'</h2></div><p class="cp-muted">Envie os arquivos para a coordenação do seu segmento. O lembrete aparece na Central de Alertas a partir de cinco dias antes do prazo.</p>'+
-     (rows.length?rows.map(e=>'<article class="cp-deadline-card"><small>'+safe(e.stageNumber)+'ª etapa · '+fmt(e.date)+'</small><h3>Entrega até '+fmt(e.date)+'</h3><p><strong>Avaliações:</strong> '+safe(e.deliveryTypes||'AP2 / AD / AR')+'</p><p><strong>Ensino Fundamental:</strong> <a href="mailto:'+fundamental+'">'+fundamental+'</a></p><p><strong>Ensino Médio:</strong> <a href="mailto:'+medio+'">'+medio+'</a></p><p class="cp-deadline-count">Lembrete: 5 dias antes da entrega</p></article>').join(''):'<p class="cp-muted">A Gestão ainda não publicou os prazos de entrega de '+year+'.</p>')+
+     const today=dateStr(new Date());
+     content='<div class="cp-main-heading"><h2>Entregas pedagógicas · '+year+'</h2></div><p class="cp-muted">Histórico completo dos prazos deste ano, inclusive as datas já encerradas. Os prazos confirmados são mantidos para consulta pela equipe.</p>'+
+      (rows.length?'<p class="cp-deadline-total"><strong>'+rows.length+'</strong> entrega(s) de avaliações registrada(s) no ano</p>':'')+
+      (rows.length?rows.map(e=>{
+       const past=e.date<today;
+       return '<article class="cp-deadline-card"><small>'+safe(e.stageNumber)+'ª etapa · '+fmt(e.date)+(past?' · PRAZO ENCERRADO':' · PRAZO PROGRAMADO')+'</small><h3>Entrega das avaliações · '+fmt(e.date)+'</h3><p><strong>Avaliações:</strong> '+safe(e.deliveryTypes||'AP2 / AD / AR')+'</p><p><strong>Ensino Fundamental:</strong> <a href="mailto:'+fundamental+'">'+fundamental+'</a></p><p><strong>Ensino Médio:</strong> <a href="mailto:'+medio+'">'+medio+'</a></p><p class="cp-deadline-count">'+(past?'Registro histórico · prazo transcorrido':'Lembrete automático cinco dias antes da entrega')+'</p></article>';
+      }).join(''):'<p class="cp-muted">Nenhuma entrega de avaliação publicada para '+year+'.</p>')+
      '<div class="cp-main-heading" style="margin-top:23px"><h2>Entrega de conteúdos à coordenação</h2></div>'+
      (contents.length?contents.map(e=>'<article class="cp-deadline-card"><small>'+fmt(e.date)+'</small><h3>'+safe(e.title)+'</h3><p>'+safe(e.notes||'Conteúdo pedagógico programado para entrega')+'</p><p class="cp-deadline-count">Lembrete: 5 dias antes</p></article>').join(''):'<p class="cp-muted">Nenhuma entrega de conteúdo publicada para este ano.</p>');
   }else if(tab==='etapas'){
