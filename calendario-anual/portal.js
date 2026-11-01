@@ -118,8 +118,8 @@
    toast(`Publicado ${year} para a equipe: ${res.counts.events} eventos, ${res.counts.notices} avisos e ${res.counts.birthdays??birthdays.length} aniversariantes.`);
   }catch(e){toast('Não foi possível publicar: '+e.message);}finally{btn.disabled=false;}
  }
- function teamNav(){return `<div class="cp-team-head"><img id="cpTeamLogo" alt="Brasão do Colégio Cora Coralina"><div><small>COLÉGIO CORA CORALINA · AMBIENTE DE CONSULTA</small><h1>Equipe Pedagógica</h1></div><label class="cp-year-label">Ano letivo <select id="cpTeamYear" aria-label="Ano letivo">${availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('')}</select></label><span class="cp-spacer"></span><button class="cp-btn soft" type="button" id="cpEnableAlerts" title="Funciona com aplicativo aberto; push em segundo plano depende de configuração do servidor">Avisos no celular (app aberto)</button><button class="cp-btn cp-bell" id="cpBell" aria-label="Abrir notificações">🔔<em id="cpBellCount" style="display:none">0</em></button><button class="cp-btn" id="cpRefresh">Atualizar</button><button class="cp-btn" id="cpTeamLogout">Sair</button></div>`}
- async function team(){year=2026;if(new URLSearchParams(location.search).get('avisos')==='1')showBell=true;document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpEnableAlerts').onclick=enableLocalNotifications;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};$('#cpTeamYear').onchange=e=>{year=Number(e.target.value)||2026;month=0;showBell=false;tab='resumo';refresh()};await refresh();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},30000);}
+ function teamNav(){return `<div class="cp-team-head"><img id="cpTeamLogo" alt="Brasão do Colégio Cora Coralina"><div><small>COLÉGIO CORA CORALINA · AMBIENTE DE CONSULTA</small><h1>Equipe Pedagógica</h1></div><label class="cp-year-label">Ano letivo <select id="cpTeamYear" aria-label="Ano letivo">${availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('')}</select></label><span class="cp-spacer"></span><button class="cp-btn soft" type="button" id="cpEnableAlerts" title="Ativar notificações mesmo com o aplicativo fechado">Ativar notificações</button><button class="cp-btn cp-bell" id="cpBell" aria-label="Abrir notificações">🔔<em id="cpBellCount" style="display:none">0</em></button><button class="cp-btn" id="cpRefresh">Atualizar</button><button class="cp-btn" id="cpTeamLogout">Sair</button></div>`}
+ async function team(){year=2026;if(new URLSearchParams(location.search).get('avisos')==='1')showBell=true;document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpEnableAlerts').onclick=enableLocalNotifications;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};$('#cpTeamYear').onchange=e=>{year=Number(e.target.value)||2026;month=0;showBell=false;tab='resumo';refresh()};await refresh();void confirmDevicePush();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},30000);}
  async function refresh(){try{const result=await api('state',undefined,'year='+year);availableYears=Array.isArray(result.availableYears)?result.availableYears:[2026];data=result.publication;
     const newNoticeIds=new Set(activeNotices().map(n=>String(n.id)));
     const knownIds=seenPublicationIds.get(year);
@@ -152,27 +152,71 @@
      return true;
    }catch(error){console.warn('Aviso do Android indisponível',error);return false}
  }
+
+ const urlBase64ToUint8=base64=>{
+  const padding='='.repeat((4-base64.length%4)%4);
+  const raw=atob((base64+padding).replace(/-/g,'+').replace(/_/g,'/'));
+  return Uint8Array.from(raw,ch=>ch.charCodeAt(0));
+ };
+ async function registerDeviceForPush(){
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){
+   throw new Error('Este navegador não oferece Web Push. Abra o app instalado pelo Chrome do Android.');
+  }
+  let permission=Notification.permission;
+  if(permission!=='granted')permission=await Notification.requestPermission();
+  if(permission!=='granted')throw new Error('Notificações bloqueadas nas permissões do Android.');
+  const config=await api('push-key');
+  if(!config?.publicKey)throw new Error('O servidor de notificações ainda não está pronto.');
+  const reg=await navigator.serviceWorker.ready;
+  let subscription=await reg.pushManager.getSubscription();
+  if(subscription){
+   const k=subscription.options?.applicationServerKey;
+   if(k){
+    const existing=btoa(String.fromCharCode(...new Uint8Array(k))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    if(existing!==config.publicKey){await subscription.unsubscribe();subscription=null}
+   }
+  }
+  if(!subscription)subscription=await reg.pushManager.subscribe({
+   userVisibleOnly:true,applicationServerKey:urlBase64ToUint8(config.publicKey)
+  });
+  await api('push-register',{subscription:subscription.toJSON()});
+  localStorage.setItem('cora_team_push_active','1');
+  localStorage.setItem('cora_team_device_alerts_enabled','1');
+  return subscription;
+ }
  async function enableLocalNotifications(){
-   if(!('Notification' in window)||!('serviceWorker' in navigator)){
-     toast('Este navegador não permite notificações do aplicativo. Abra pelo Chrome e instale o aplicativo.');return
-   }
-   let permission=Notification.permission;
-   if(permission!=='granted'){
-     try{permission=await Notification.requestPermission()}catch{permission='denied'}
-   }
-   if(permission!=='granted'){
-     toast('Notificações bloqueadas. No Android, abra Configurações > Aplicativos > Chrome ou Agenda Cora > Notificações e permita.');
-     return;
-   }
-   try{localStorage.setItem('cora_team_device_alerts_enabled','1')}catch{}
+  const button=$('#cpEnableAlerts');
+  if(button){button.disabled=true;button.textContent='Conectando...'}
+  try{
+   await registerDeviceForPush();
+   updatePushButton(true);
    vibrationFeedback();
-   const ok=await showDeviceNotice('Teste de alerta — Cora Coralina',
-     'O aviso chegou ao Android. O aparelho vibra se o navegador, o modo de som e o Android permitirem.',
-     'teste-'+Date.now());
-   const button=$('#cpEnableAlerts');if(button)button.textContent='✓ Testar alerta novamente';
-   toast(ok?'Teste enviado à barra de notificações do Android. Confira o som e a vibração do aparelho.':
-     'Permissão concedida, mas a notificação não pôde ser exibida neste aparelho.');
-   await checkLocalNotifications();
+   const ok=await showDeviceNotice('Notificações ativadas · Cora Coralina',
+    'Celular inscrito para receber comunicados da Gestão, mesmo quando o aplicativo estiver fechado.',
+    'teste-ativacao-'+Date.now());
+   toast(ok?'Celular cadastrado! Novas publicações poderão chegar com o app fechado.':'Celular cadastrado no servidor. Confira as permissões de notificações do Android.');
+  }catch(e){
+   toast('Não foi possível ativar o push: '+String(e?.message||e));
+   updatePushButton(false);
+  }finally{if(button)button.disabled=false}
+ }
+ function updatePushButton(active){
+  const button=$('#cpEnableAlerts');if(!button)return;
+  button.classList.toggle('cp-push-active',Boolean(active));
+  button.textContent=active?'✓ Notificações ativas':'Ativar notificações';
+  button.title=active?'Este aparelho está inscrito para receber avisos publicados pela Gestão.':'Autorize o Android para receber avisos com o aplicativo fechado.';
+ }
+ async function confirmDevicePush(){
+  if(role!=='equipe')return;
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)){updatePushButton(false);return}
+  try{
+   const reg=await navigator.serviceWorker.ready;
+   const sub=await reg.pushManager.getSubscription();
+   if(sub&&Notification.permission==='granted'){
+    await api('push-register',{subscription:sub.toJSON()});
+    localStorage.setItem('cora_team_push_active','1');updatePushButton(true);
+   }else updatePushButton(false);
+  }catch{updatePushButton(false)}
  }
  async function checkLocalNotifications(){
    if(deliveringAlerts||role!=='equipe'||!data||!('Notification' in window)||Notification.permission!=='granted')return;
