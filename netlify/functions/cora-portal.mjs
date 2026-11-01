@@ -5,6 +5,8 @@ import { getStore } from '@netlify/blobs';
 
 const COOKIE='cora_portal_session';
 const YEAR=2026;
+// Aniversariantes de novembro do planejamento institucional; apenas dia/mês, nunca o ano de nascimento.
+const DEFAULT_BIRTHDAYS=[{"id":"cora-nov-nadja","name":"Nadja","role":"Professora","day":1,"month":11},{"id":"cora-nov-emanuel","name":"Prof. Emanuel","role":"Professor","day":10,"month":11},{"id":"cora-nov-ana-paula","name":"Ana Paula","role":"","day":10,"month":11},{"id":"cora-nov-aparecida","name":"Aparecida","role":"","day":16,"month":11},{"id":"cora-nov-mikael","name":"Mikael","role":"","day":16,"month":11},{"id":"cora-nov-mendonca","name":"Mendonça","role":"","day":21,"month":11},{"id":"cora-nov-ruth","name":"Ruth","role":"","day":25,"month":11},{"id":"cora-nov-john","name":"John","role":"","day":26,"month":11}];
 const HEADERS={'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'};
 const answer=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{...HEADERS,...extra}});
 const vars=()=>({gestao:process.env.CORA_GESTAO_PASSWORD,equipe:process.env.CORA_EQUIPE_PASSWORD,secret:process.env.CORA_SESSION_SECRET});
@@ -19,6 +21,8 @@ const baseCookie=`Path=/calendario-anual/; HttpOnly; Secure; SameSite=Strict`;
 const str=(v,len=255)=>String(v??'').trim().slice(0,len);
 const cleanEvent=e=>({id:str(e.id,140),date:str(e.date,10),title:str(e.title,170),type:str(e.type,36),notes:str(e.notes,600)});
 const cleanNotice=e=>({id:str(e.id,120),title:str(e.title,130),body:str(e.body,1800),type:['Informativo','Urgente','Reunião','Avaliação'].includes(e.type)?e.type:'Informativo',publishAt:str(e.publishAt,30),expiresAt:str(e.expiresAt,30),eventDate:str(e.eventDate,10),leadDays:Math.max(0,Math.min(30,Number(e.leadDays)||0))});
+const cleanBirthday=b=>({id:str(b.id,140),name:str(b.name,100),role:str(b.role,85),day:Number(b.day),month:Number(b.month)});
+const validBirthday=b=>b.id&&b.name&&Number.isInteger(b.month)&&b.month>=1&&b.month<=12&&Number.isInteger(b.day)&&b.day>=1&&b.day<=new Date(Date.UTC(2024,b.month,0)).getUTCDate();
 const validISO=s=>/^2026-\d\d-\d\d$/.test(s)&&!Number.isNaN(Date.parse(s+'T12:00:00Z'));
 export default async function handler(request){
  const url=new URL(request.url),action=url.searchParams.get('action')||'me';
@@ -39,7 +43,10 @@ export default async function handler(request){
  const store=getStore('cora-calendar-publications');
  if(action==='state'&&request.method==='GET'){
   const state=await store.get('published-2026',{type:'json',consistency:'strong'});
-  return answer({role,publication:state||null});
+  // Migração não destrutiva: publicações antigas não têm campo birthdays.
+  // A lista institucional aparece à equipe mesmo antes da primeira republicação.
+  const birthList=Array.isArray(state?.birthdays)?state.birthdays:DEFAULT_BIRTHDAYS;
+  return answer({role,publication:state?{...state,birthdays:birthList}:{year:YEAR,updatedAt:new Date().toISOString(),events:[],notices:[],birthdays:birthList,config:{defaultLeadDays:3}}});
  }
  if(action==='publish'&&request.method==='POST'){
   if(role!=='gestao')return answer({error:'Apenas a Gestão pode publicar.'},403);
@@ -49,9 +56,13 @@ export default async function handler(request){
   if(!Array.isArray(input.events)||!Array.isArray(input.notices)||input.events.length>5000||input.notices.length>300)return answer({error:'Dados inválidos'},400);
   const events=input.events.map(cleanEvent).filter(e=>validISO(e.date)&&e.id&&e.title);
   const notices=input.notices.map(cleanNotice).filter(n=>n.id&&n.title);
-  const state={year:YEAR,updatedAt:new Date().toISOString(),events,notices,config:{defaultLeadDays:Math.max(0,Math.min(30,Number(input.config?.defaultLeadDays)||3))}};
+  if(input.birthdays!==undefined&&(!Array.isArray(input.birthdays)||input.birthdays.length>500))return answer({error:'Lista de aniversariantes inválida'},400);
+  const previous=await store.get('published-2026',{type:'json',consistency:'strong'});
+  const birthdays=(input.birthdays===undefined?(Array.isArray(previous?.birthdays)?previous.birthdays:DEFAULT_BIRTHDAYS):input.birthdays.map(cleanBirthday).filter(validBirthday))
+    .filter((b,i,a)=>a.findIndex(p=>p.id===b.id)===i).sort((a,b)=>a.month-b.month||a.day-b.day||a.name.localeCompare(b.name,'pt-BR'));
+  const state={year:YEAR,updatedAt:new Date().toISOString(),events,notices,birthdays,config:{defaultLeadDays:Math.max(0,Math.min(30,Number(input.config?.defaultLeadDays)||3))}};
   await store.setJSON('published-2026',state);
-  return answer({ok:true,updatedAt:state.updatedAt,counts:{events:events.length,notices:notices.length}});
+  return answer({ok:true,updatedAt:state.updatedAt,counts:{events:events.length,notices:notices.length,birthdays:birthdays.length}});
  }
  return answer({error:'Recurso inexistente'},404);
 }
