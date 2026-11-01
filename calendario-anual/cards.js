@@ -112,7 +112,7 @@
   function fillAssessments(month){
     if(template!=='cronograma'&&template!=='avaliacao')return;
     const n=Math.max(1,Math.min(12,Number(month)||11));
-    drafts[template]=assessmentDraft(n,template);setForm(drafts[template]);saveDraft();updateAssessmentInfo();render();
+    drafts[template]={...assessmentDraft(n,template),__linkedCalendar:true};setForm(drafts[template]);saveDraft();updateAssessmentInfo();render();
     status(`Modelo ${LABELS[template]} carregado para ${MONTHS[n-1]} de ${ACTIVE_YEAR}.`);
   }
   function holidayLabel(item){
@@ -137,7 +137,7 @@
   function fillMonth(month){
     if(template!=='comunicado')return;
     const normalized=Math.max(1,Math.min(12,Number(month)||11));
-    drafts.comunicado=holidayDraft(normalized);
+    drafts.comunicado={...holidayDraft(normalized),__linkedCalendar:true};
     setForm(drafts.comunicado);
     saveDraft();updateHolidayInfo();render();
   }
@@ -395,9 +395,9 @@
   function setForm(d){for(const name of Object.keys(DEFAULTS[template])){const el=name==='month'?monthSelect():form.elements.namedItem(name);if(el)el.value=d[name]??''}}
   function pageCount(){const number=parseItems(getForm().items).length;return template==='cronograma'?Math.max(1,Math.ceil(number/8)):template==='avaliacao'?Math.max(1,Math.ceil(number/6)):template==='aniversario'?Math.max(1,Math.ceil(number/7)):1}
   function render(){const d=getForm();ctx.clearRect(0,0,W,H);try{({comunicado:notice,solidaria:solidarity,reuniao:meeting,cronograma:schedule,avaliacao:assessment,aniversario:birthdayCard}[template]||notice)(ctx,d)}catch(e){console.error(e);drawBase(ctx);text(ctx,'Erro ao visualizar. Revise os campos.',40,130,27,INK)}renderCount++;updateExportContext();const hint=$('cardPagesInfo');if(hint)hint.textContent=pageCount()>1?`Prévia: página 1 de ${pageCount()}. PDF terá todas as páginas; PNG terá as páginas reunidas em uma imagem.`:''}
-  function saveDraft(){try{drafts[template]=getForm();localStorage.setItem(ID,JSON.stringify(drafts));$('cardSaveStatus').textContent='Rascunho salvo'}catch{$('cardSaveStatus').textContent='Salvamento indisponível'}}
+  function saveDraft(){try{drafts[template]={...getForm(),__linkedCalendar:drafts[template]?.__linkedCalendar??false};localStorage.setItem(ID,JSON.stringify(drafts));$('cardSaveStatus').textContent='Rascunho salvo'}catch{$('cardSaveStatus').textContent='Salvamento indisponível'}}
   function setTemplate(name){if(!DEFAULTS[name])return;saveDraft();template=name;
-    if((name==='cronograma'||name==='avaliacao')&&!drafts[name])drafts[name]=assessmentDraft(calendarMonth(),name);
+    if((name==='cronograma'||name==='avaliacao')&&!drafts[name])drafts[name]={...assessmentDraft(calendarMonth(),name),__linkedCalendar:true};
     if(name==='aniversario'&&!drafts[name])drafts.aniversario=birthdayDraft(calendarMonth());
     setForm(getDraft());if(holidaysControls)holidaysControls.hidden=name!=='comunicado';if(assessmentsControls)assessmentsControls.hidden=name!=='cronograma'&&name!=='avaliacao';if(birthdayControls)birthdayControls.hidden=name!=='aniversario';if(name==='comunicado'){updateHolidayInfo();const hint=$('cardItemsHint');if(hint)hint.textContent='No comunicado, os feriados do mês podem ser editados.';}if(name==='cronograma'||name==='avaliacao')updateAssessmentInfo();if(name==='aniversario')updateBirthdayInfo();const detailFields=$('cardExtraDetails');if(detailFields)detailFields.hidden=(name==='cronograma'||name==='avaliacao'||name==='aniversario');document.querySelectorAll('[data-template]').forEach(el=>{el.classList.toggle('is-selected',el.dataset.template===name);el.setAttribute('aria-pressed',el.dataset.template===name?'true':'false')});render()}
   function createExportPages(){const pages=[];const n=pageCount(),d=getForm(),fn=template==='cronograma'?schedule:template==='avaliacao'?assessment:template==='aniversario'?birthdayCard:null;
@@ -426,7 +426,7 @@
     if(template==='aniversario'&&selected>=1&&selected<=12&&Number(birthdayMonth?.value)!==selected)fillBirthdayCard(selected);
   });
   $('loadMonthHolidays')?.addEventListener('click',()=>fillMonth(holidaysMonth.value));
-  form.addEventListener('input',()=>{saveDraft();render()});
+  form.addEventListener('input',event=>{if(event.target?.name==='items'&&drafts[template])drafts[template].__linkedCalendar=false;saveDraft();render()});
   document.querySelectorAll('[data-template]').forEach(el=>el.addEventListener('click',()=>setTemplate(el.dataset.template)));
   $('resetCard').addEventListener('click',()=>{if(confirm('Restaurar o texto original deste modelo?')){drafts[template]=template==='comunicado'?holidayDraft(holidaysMonth.value):(template==='cronograma'||template==='avaliacao')?assessmentDraft(assessmentsMonth.value,template):template==='aniversario'?birthdayDraft(birthdayMonth.value):newYearDefault(template,calendarMonth());setForm(drafts[template]);saveDraft();updateHolidayInfo();if(template==='cronograma'||template==='avaliacao')updateAssessmentInfo();if(template==='aniversario')updateBirthdayInfo();render()}});
   $('downloadCardPng').addEventListener('click',async()=>{await assetsReady;ensureComunicadoMonth();saveDraft();render();const filename=exportName('png');pngCanvas(createExportPages()).toBlob(blob=>{if(blob){download(blob,filename);status(`Arquivo gerado: ${LABELS[template]}${template==='comunicado'?' de '+MONTHS[(Number(holidaysMonth?.value)||11)-1]:''}.`)}else status('Falha ao gerar imagem.')},'image/png')});
@@ -446,6 +446,21 @@
   
   setForm(getDraft());ensureComunicadoMonth();updateHolidayInfo();render();
   const assetsReady=Promise.all([loadImg(window.CORA_SCHOOL_LOGO||window.CORA_STUDIO_ASSETS?.logo),loadImg(window.CORA_STUDIO_ASSETS?.toys)]).then(([a,b])=>{logo=a;toys=b;render()});
+  function refreshLinkedCards(event){
+    if(event.detail?.year&&Number(event.detail.year)!==ACTIVE_YEAR)return;
+    let touched=false;
+    for(const type of ['comunicado','cronograma','avaliacao']){
+      const old=drafts[type];if(!old?.__linkedCalendar)continue;
+      const month=Math.max(1,Math.min(12,Number(old.month)||calendarMonth()));
+      const newer=type==='comunicado'?holidayDraft(month):assessmentDraft(month,type);
+      drafts[type]={...old,items:newer.items,subtitle:newer.subtitle,month:String(month),__linkedCalendar:true};
+      if(template===type){setForm(drafts[type]);touched=true;}
+    }
+    try{localStorage.setItem(ID,JSON.stringify(drafts))}catch{}
+    if(touched)render();
+  }
+  window.addEventListener('cora-data-changed',refreshLinkedCards);
+  window.addEventListener('cora-events-updated',refreshLinkedCards);
   window.addEventListener('cora-year-changed',event=>{
     saveDraft();
     const newYear=Number(event.detail?.year);
@@ -456,9 +471,9 @@
       if(control)control.innerHTML=MONTHS.map((name,i)=>`<option value="${i+1}">${name} de ${ACTIVE_YEAR}</option>`).join('');
     }
     const month=Math.max(1,Math.min(12,Number(event.detail?.month)+1||1));
-    if(!drafts.comunicado)drafts.comunicado=holidayDraft(month);
-    if(!drafts.cronograma)drafts.cronograma=assessmentDraft(month,'cronograma');
-    if(!drafts.avaliacao)drafts.avaliacao=ACTIVE_YEAR===2026?{...DEFAULTS.avaliacao}:assessmentDraft(month,'avaliacao');
+    if(!drafts.comunicado)drafts.comunicado={...holidayDraft(month),__linkedCalendar:true};
+    if(!drafts.cronograma)drafts.cronograma={...assessmentDraft(month,'cronograma'),__linkedCalendar:true};
+    if(!drafts.avaliacao)drafts.avaliacao=ACTIVE_YEAR===2026?{...DEFAULTS.avaliacao}:{...assessmentDraft(month,'avaliacao'),__linkedCalendar:true};
     if(!drafts.aniversario)drafts.aniversario=birthdayDraft(month);
     setForm(getDraft());updateHolidayInfo();updateAssessmentInfo();updateBirthdayInfo();render();
   });
