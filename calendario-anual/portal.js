@@ -296,6 +296,36 @@
   const sections=[['resumo','Visão Geral'],['calendario','Calendário '+year],['etapas','Etapas letivas'],['avaliacoes','Avaliações e Simulados'],['aniversarios','🎂 Aniversariantes'],['avisos','Avisos'],['pdf','PDF Anual']];
   const tabs=`<div class="cp-tabs">${sections.map(([id,label])=>`<button class="${tab===id?'active':''}" data-cp-tab="${id}">${label}</button>`).join('')}</div>`;
   const alertPrompt=!showBell&&unread?'<button type="button" id="cpUnreadPrompt" class="cp-unread-banner">🔔 '+unread+' alerta(s) não lido(s) · Toque para ver os recados da Gestão</button>':'';
+
+  const fmtStage=date=>date?date.slice(8,10)+'/'+date.slice(5,7):'A definir';
+  const stageList=Array.isArray(data?.stages)?data.stages:[];
+  const todayISO=dateStr(new Date());
+  const currentStage=stageList.find(st=>st.start&&st.end&&todayISO>=st.start&&todayISO<=st.end);
+  const closestStage=currentStage||stageList.find(st=>st.start&&st.start>todayISO)||stageList.find(st=>st.start);
+  const flowStages=[1,2,3,4].map(n=>{
+   const st=stageList.find(x=>Number(x.number)===n)||{};
+   const active=st.start&&st.end&&todayISO>=st.start&&todayISO<=st.end;
+   return '<button type="button" class="cp-flow-stage '+(active?'active':'')+'" data-cp-stage="'+n+'">'+
+    '<span class="cp-flow-stage-num">0'+n+'</span><strong>'+n+'ª etapa</strong>'+
+    '<span class="cp-flow-stage-date"><small>Início</small>'+fmtStage(st.start)+'</span>'+
+    '<span class="cp-flow-stage-date"><small>Fim</small>'+fmtStage(st.end)+'</span>'+
+    (active?'<em>Em andamento</em>':'')+'</button>';
+  }).join('');
+  const quickLinks=[['calendario','▦','Calendário','Atividades e projetos'],['avaliacoes','✓','Avaliações','Provas e simulados'],
+    ['avisos','✉','Comunicados','Orientações da Gestão'],['pdf','↓','PDF anual','Documento completo']].map(item=>
+    '<button type="button" class="cp-flow-link" data-cp-tab="'+item[0]+'"><span class="cp-flow-icon">'+item[1]+'</span>'+
+    '<span><strong>'+item[2]+'</strong><small>'+item[3]+'</small></span><b>›</b></button>').join('');
+  const flowHeader=showBell?'':'<section class="cp-flow-hero"><div class="cp-flow-hero-text">'+
+   '<small>COLÉGIO CORA CORALINA · EQUIPE PEDAGÓGICA</small><h2>Seu ano letivo, organizado.</h2>'+
+   '<p>Uma visão clara das atividades, avaliações e informações da Gestão para '+year+'.</p>'+
+   '<div class="cp-flow-tags"><span>'+events.length+' atividades</span><span>'+assess.length+' avaliações</span><span>'+notes.length+' comunicados</span></div></div>'+
+   '<div class="cp-flow-feature"><small>ETAPAS DO ANO · '+year+'</small><strong>'+(closestStage?closestStage.number+'ª etapa':'Períodos letivos')+'</strong>'+
+   '<span>'+(closestStage?fmtStage(closestStage.start)+' até '+fmtStage(closestStage.end):'A definir pela Gestão')+'</span>'+
+   '<button type="button" data-cp-tab="etapas">Consultar etapas ›</button></div></section>'+
+   '<div class="cp-flow-links">'+quickLinks+'</div>'+
+   '<section class="cp-flow-stage-section"><div class="cp-flow-stage-title"><div><small>PLANEJAMENTO · '+year+'</small>'+
+   '<h3>Início e fim das etapas</h3></div><span>Consulte antes de planejar avaliações</span></div>'+
+   '<div class="cp-flow-stage-grid">'+flowStages+'</div></section>';
   let content='';
   if(!data){content='<div class="cp-paper"><h2>Nenhuma publicação disponível</h2><p class="cp-muted">A Gestão ainda não publicou o calendário e os comunicados para a equipe. O conteúdo ficará disponível aqui após a primeira publicação.</p></div>'}
   else if(showBell){content=`<div class="cp-bell-panel"><div class="cp-main-heading"><div class="cp-alert-heading-left"><button type="button" class="cp-btn soft cp-back-alert" id="cpBackFromBell" aria-label="Voltar à Equipe Pedagógica">← Voltar</button><h2>🔔 Central de alertas</h2></div><button class="cp-btn soft" id="cpMarkRead">Marcar como lidos</button></div>${alertList.length?alertList.map(a=>`<article class="cp-alert-entry ${a.unread?'unread':''}"><time>${safe(String(a.date||'').slice(0,10))}</time><div><small>${a.kind==='notice'?'Comunicado da Gestão':a.kind==='reminder'?'Lembrete programado':'Evento próximo'}</small><strong>${safe(a.title)}</strong><p>${safe(a.desc||'')}</p>${a.unread?'<span class="cp-tag cp-tag-new">Novo · não lido</span>':''}</div><button class="cp-btn soft" type="button" data-cp-read="${safe(a.id)}">✓ Lido</button></article>`).join(''):'<p class="cp-muted">Nenhuma atividade ou aviso exige atenção no período configurado.</p>'}</div>`;}
@@ -331,8 +361,9 @@
   else if(year===2026) content=`<div class="cp-main-heading"><h2>Calendário anual oficial 2026</h2><select id="cpMonthPicker" aria-label="Mês do PDF">${MONTHS.map((m,i)=>`<option value="${i}" ${month===i?'selected':''}>${m} de ${year}</option>`).join('')}</select></div><div class="cp-pdf-sample"><div class="cp-paper"><img class="cp-pdf-image" id="cpPdfMonth" alt="Página do calendário oficial do mês selecionado"><p class="cp-muted">Visualização do documento institucional; conteúdo somente para consulta.</p></div><div class="cp-paper"><h3>Calendário oficial para download</h3><p class="cp-muted">Arquivo com capa, 12 meses e anotações, em formato PDF. Selecione o mês para visualizar a página correspondente.</p><button class="cp-btn gold" id="cpDownloadOfficial">↓ Baixar calendário completo (PDF)</button><p class="cp-status" id="cpPdfProgress"></p></div></div>`;
   else content=`<div class="cp-main-heading"><h2>Calendário anual ${year}</h2></div><div class="cp-paper"><h3>Documento publicado pela Gestão</h3><p>Inclui os 12 meses de ${year}, com atividades, etapas e projetos publicados.</p><button class="cp-btn gold" id="cpDownloadPublished">↓ Baixar PDF anual ${year}</button><p class="cp-status" id="cpPdfProgress"></p></div>`;
 
-  here.innerHTML=`${showBell?'':`<div class="cp-overview"><div class="cp-metric"><small>Atividades publicadas</small><strong>${events.length}</strong></div><div class="cp-metric"><small>Avaliações e simulados</small><strong>${assess.length}</strong></div><div class="cp-metric"><small>Avisos disponíveis</small><strong>${notes.length}</strong></div></div>${tabs}`}${alertPrompt}${content}<p class="cp-updated">Última publicação da Gestão: ${data?new Date(data.updatedAt).toLocaleString('pt-BR'):'ainda não publicada'} · Atualização automática enquanto o aplicativo estiver aberto.</p>`;
+  here.innerHTML=`${flowHeader}${showBell?'':`<div class="cp-overview"><div class="cp-metric"><small>Atividades publicadas</small><strong>${events.length}</strong></div><div class="cp-metric"><small>Avaliações e simulados</small><strong>${assess.length}</strong></div><div class="cp-metric"><small>Avisos disponíveis</small><strong>${notes.length}</strong></div></div>${tabs}`}${alertPrompt}${content}<p class="cp-updated">Última publicação da Gestão: ${data?new Date(data.updatedAt).toLocaleString('pt-BR'):'ainda não publicada'} · Atualização automática enquanto o aplicativo estiver aberto.</p>`;
   here.querySelectorAll('[data-cp-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.cpTab;showBell=false;drawTeam()});
+  here.querySelectorAll('[data-cp-stage]').forEach(b=>b.onclick=()=>{selectedStage=Number(b.dataset.cpStage)||0;tab='etapas';showBell=false;drawTeam()});
   $('#cpMonthPicker')?.addEventListener('change',e=>{month=Number(e.target.value);drawTeam()});
   $('#cpStagePicker')?.addEventListener('change',e=>{selectedStage=Number(e.target.value)||0;drawTeam()});
   $('#cpBackFromBell')?.addEventListener('click',()=>{showBell=false;drawTeam();});
