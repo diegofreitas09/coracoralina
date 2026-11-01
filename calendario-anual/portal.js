@@ -46,10 +46,11 @@
  function logo(){return window.CORA_SCHOOL_LOGO||window.CORA_STUDIO_ASSETS?.logo||''}
  function gateway(error=''){
   document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');role='';
-  root.innerHTML=`<div class="cp-gateway"><div class="cp-login-shell"><div class="cp-login-head"><img id="cpGatewayLogo" alt="Brasão Cora Coralina"><div><small>COLÉGIO CORA CORALINA · PDF SOLUÇÃO EDUCACIONAL</small><h1>Portal do Calendário Escolar</h1><p>Selecione seu ambiente de trabalho</p></div></div><div class="cp-role-grid"><button type="button" class="cp-role ${chosen==='gestao'?'active':''}" data-cp-role="gestao"><span class="cp-role-icon">⚙</span><strong>Gestão</strong><span>Organizar o ano, editar eventos e publicar avisos para toda a equipe</span></button><button type="button" class="cp-role ${chosen==='equipe'?'active':''}" data-cp-role="equipe"><span class="cp-role-icon">▦</span><strong>Equipe Pedagógica</strong><span>Consultar o calendário, receber alertas e baixar os materiais publicados</span></button></div><form id="cpLoginForm" class="cp-auth"><div id="cpEmailWrap" ${chosen==='gestao'?'hidden':''}><label for="cpEmail">E-mail individual do colaborador</label><input type="email" id="cpEmail" autocomplete="username" placeholder="professor@exemplo.com" ${chosen==='equipe'?'required':''}></div><label id="cpLegacyWrap" class="cp-legacy-option" ${chosen==='gestao'||individualRequired?'hidden':''}><input type="checkbox" id="cpUseLegacy"> Usar senha coletiva temporária (migração)</label><div><label for="cpPassword">Senha pessoal · <span id="cpRoleLabel">${chosen==='gestao'?'Gestão':'Equipe Pedagógica'}</span></label><input type="password" id="cpPassword" autocomplete="current-password" required placeholder="Digite sua senha"></div><button type="submit" class="cp-btn">Entrar no painel</button><p class="cp-error" role="alert">${safe(error)}</p></form><div class="cp-gateway-foot"><span>A Gestão publica · a Equipe acompanha</span><span>Calendário 2026 · Acesso restrito</span></div></div></div>`;
+  root.innerHTML=`<div class="cp-gateway"><div class="cp-login-shell"><div class="cp-login-head"><img id="cpGatewayLogo" alt="Brasão Cora Coralina"><div><small>COLÉGIO CORA CORALINA · PDF SOLUÇÃO EDUCACIONAL</small><h1>Portal do Calendário Escolar</h1><p>Selecione seu ambiente de trabalho</p></div></div><div class="cp-role-grid"><button type="button" class="cp-role ${chosen==='gestao'?'active':''}" data-cp-role="gestao"><span class="cp-role-icon">⚙</span><strong>Gestão</strong><span>Organizar o ano, editar eventos e publicar avisos para toda a equipe</span></button><button type="button" class="cp-role ${chosen==='equipe'?'active':''}" data-cp-role="equipe"><span class="cp-role-icon">▦</span><strong>Equipe Pedagógica</strong><span>Consultar o calendário, receber alertas e baixar os materiais publicados</span></button></div><form id="cpLoginForm" class="cp-auth"><div id="cpEmailWrap" ${chosen==='gestao'?'hidden':''}><label for="cpEmail">E-mail individual do colaborador</label><input type="email" id="cpEmail" autocomplete="username" placeholder="professor@exemplo.com" ${chosen==='equipe'?'required':''}></div><label id="cpLegacyWrap" class="cp-legacy-option" ${chosen==='gestao'||individualRequired?'hidden':''}><input type="checkbox" id="cpUseLegacy"> Usar senha coletiva temporária (migração)</label><div><label for="cpPassword">Senha pessoal · <span id="cpRoleLabel">${chosen==='gestao'?'Gestão':'Equipe Pedagógica'}</span></label><input type="password" id="cpPassword" autocomplete="current-password" required placeholder="Digite sua senha"></div><button type="submit" class="cp-btn">Entrar no painel</button><div id="cpFirstAccessWrap" class="cp-first-access" ${chosen==='gestao'?'hidden':''}><button type="button" id="cpFirstAccess">Primeiro acesso? Ativar convite</button><small>Seu acesso precisa ser criado pela Gestão. O cadastro na planilha, sozinho, não gera senha.</small></div><p class="cp-error" role="alert">${safe(error)}</p></form><div class="cp-gateway-foot"><span>A Gestão publica · a Equipe acompanha</span><span>Calendário 2026 · Acesso restrito</span></div></div></div>`;
   $('#cpGatewayLogo').src=logo();
-  root.querySelectorAll('[data-cp-role]').forEach(b=>b.onclick=()=>{chosen=b.dataset.cpRole;root.querySelectorAll('[data-cp-role]').forEach(x=>x.classList.toggle('active',x===b));$('#cpRoleLabel').textContent=chosen==='gestao'?'Gestão':'Equipe Pedagógica';$('#cpEmailWrap').hidden=chosen==='gestao';$('#cpLegacyWrap').hidden=chosen==='gestao'||individualRequired;$('#cpUseLegacy').checked=false;$('#cpEmail').required=chosen==='equipe';(chosen==='equipe'?$('#cpEmail'):$('#cpPassword')).focus()});
+  root.querySelectorAll('[data-cp-role]').forEach(b=>b.onclick=()=>{chosen=b.dataset.cpRole;root.querySelectorAll('[data-cp-role]').forEach(x=>x.classList.toggle('active',x===b));$('#cpRoleLabel').textContent=chosen==='gestao'?'Gestão':'Equipe Pedagógica';$('#cpEmailWrap').hidden=chosen==='gestao';$('#cpLegacyWrap').hidden=chosen==='gestao'||individualRequired;$('#cpUseLegacy').checked=false;$('#cpFirstAccessWrap').hidden=chosen==='gestao';$('#cpEmail').required=chosen==='equipe';(chosen==='equipe'?$('#cpEmail'):$('#cpPassword')).focus()});
   $('#cpUseLegacy').onchange=()=>{const collective=$('#cpUseLegacy').checked;$('#cpEmailWrap').hidden=collective;$('#cpEmail').required=!collective};
+  $('#cpFirstAccess').onclick=()=>activationGateway(true);
    $('#cpLoginForm').onsubmit=async e=>{e.preventDefault();const btn=$('#cpLoginForm button[type=submit]');btn.disabled=true;try{const r=await api('login',{role:chosen,email:chosen==='equipe'&&!$('#cpUseLegacy').checked?$('#cpEmail').value.trim():'',password:$('#cpPassword').value});role=r.role;await enter();}catch(err){gateway((err.message||'Credenciais inválidas.')+' '+(err.status===503?'Contate a administração.':''));}finally{btn.disabled=false;}};
  }
  async function logout(){teacherProfile=null;try{await api('logout',{})}catch{}clearInterval(timer);timer=null;gateway();}
@@ -63,13 +64,13 @@
   root.insertAdjacentHTML('beforeend','<section id="cpAccountsPanel" class="cp-accounts-panel cp-hidden">'+
    '<div class="cp-accounts-head"><div><small>SEGURANÇA E COLABORADORES</small><h2>Acessos individuais</h2><p>Convites exclusivos, suspensão imediata e bloqueio de ex-funcionários.</p></div><button class="cp-btn soft" id="cpAccountsClose" type="button">Fechar</button></div>'+
    '<p><a href="https://docs.google.com/spreadsheets/d/1tnOgWrN04AMiK88lkCCePeP3iOJ0AHnbN_91SpK5kyA/edit" target="_blank" rel="noopener noreferrer">Abrir planilha Cora Família · Acessos Calendário</a></p>'+
-   '<p class="cp-muted">A planilha é o cadastro administrativo. Para bloquear de verdade, use Suspender ou Desativar neste painel.</p>'+
+   '<div class="cp-invite-howto"><strong>Como o professor recebe a senha?</strong><p><b>1.</b> A Gestão cadastra o e-mail aqui (a planilha sozinha não cria a conta). <b>2.</b> Gere o convite e envie o link ao professor. <b>3.</b> O professor abre o link e cria uma senha pessoal. <b>4.</b> A conta muda de Pendente para Ativo. <b>Não existe envio automático de e-mail.</b></p></div>'+
    '<form id="cpAccountCreate" class="cp-account-form"><label>Nome completo<input name="name" required minlength="5" maxlength="100"></label><label>E-mail individual<input name="email" type="email" required></label>'+
    '<label>Função<select name="profile"><option>Professor</option><option>Coordenação</option><option>Funcionário</option></select></label>'+
    '<fieldset class="cp-segment-fieldset"><legend>Segmentos de atuação <small>(marque todos)</small></legend>'+segmentCheckboxes()+'</fieldset>'+
    '<button class="cp-btn" type="submit">Criar acesso e convite</button></form>'+
-   '<div id="cpAccountInvite" class="cp-account-invite" hidden><strong>Convite pessoal · válido por 7 dias</strong><p>Envie somente ao colaborador por um canal seguro. Nunca publique em grupos.</p>'+
-   '<textarea id="cpAccountInviteUrl" readonly rows="3"></textarea><button type="button" id="cpCopyInvite" class="cp-btn soft">Copiar convite</button></div>'+
+   '<div id="cpAccountInvite" class="cp-account-invite" hidden><strong>Convite gerado · aguardando envio</strong><p>O sistema gerou o link de ativação, mas <b>não enviou nenhum e-mail ainda</b>. Escolha uma das opções e entregue o convite apenas ao professor autorizado. Validade: 7 dias.</p>'+
+   '<textarea id="cpAccountInviteUrl" readonly rows="3" aria-label="Link de ativação individual"></textarea><div class="cp-invite-buttons"><button type="button" id="cpCopyInvite" class="cp-btn soft">Copiar link de ativação</button><a id="cpEmailInvite" href="#" class="cp-btn" target="_self">Preparar e-mail de convite</a></div><p class="cp-invite-email-notice" id="cpInviteEmailNotice">Preparar e-mail abre o aplicativo de e-mail; você ainda precisa tocar em Enviar.</p></div>'+
    '<div class="cp-account-cutover"><strong id="cpCutoverTitle">Acesso coletivo em migração</strong><p id="cpCutoverDescription">Cadastre e ative as contas antes de exigir login individual para toda a escola.</p><button id="cpEnforceIndividual" type="button" class="cp-btn gold">Exigir login individual para todos</button></div>'+
    '<p role="status" id="cpAccountsStatus" aria-live="polite"></p><div id="cpAccountsList"></div></section>');
   $('#cpPublishNow').insertAdjacentHTML('beforebegin','<button id="cpAccountsOpen" class="cp-btn soft" type="button">Acessos da equipe</button>');
@@ -84,7 +85,10 @@
   };
   $('#cpCopyInvite').onclick=async()=>{
     const link=$('#cpAccountInviteUrl').value;
-    try{await navigator.clipboard.writeText(link);toast('Convite copiado. Envie somente ao colaborador autorizado.')}catch{window.prompt('Copie o convite:',link)}
+    try{await navigator.clipboard.writeText(link);toast('Link copiado. Envie ao professor por mensagem ou e-mail.')}catch{window.prompt('Copie este link e envie ao professor:',link)}
+  };
+  $('#cpEmailInvite').onclick=()=>{
+    $('#cpInviteEmailNotice').textContent='Abra o aplicativo de e-mail, confira o destinatário e toque em Enviar. Se nada abrir, copie o link acima e envie manualmente.';
   };
   $('#cpAccountCreate').onsubmit=async event=>{
     event.preventDefault();const form=event.currentTarget,button=form.querySelector('button');button.disabled=true;
@@ -92,7 +96,7 @@
       const input=Object.fromEntries(new FormData(form).entries());input.segments=selectedSegments(form);
       if(!validSelectedSegments(input.segments))throw new Error('Marque um ou mais segmentos; Todos deve ser usado sozinho.');
       const result=await api('accounts',{...input,operation:'create'});
-      showInvite(result.inviteUrl);form.reset();await loadAccounts();
+      showInvite(result.inviteUrl,result.member?.email);form.reset();await loadAccounts();
     }catch(error){$('#cpAccountsStatus').textContent=error.message}finally{button.disabled=false}
   };
   $('#cpAccountsList').onclick=async event=>{
@@ -112,7 +116,7 @@
         if(!validSelectedSegments(input.segments))throw new Error('Marque um ou mais segmentos; Todos deve ser usado sozinho.');
       }
       const result=await api('accounts',input);
-      if(result.inviteUrl)showInvite(result.inviteUrl);
+      if(result.inviteUrl)showInvite(result.inviteUrl,result.member?.email);
       await loadAccounts();
     }catch(error){$('#cpAccountsStatus').textContent=error.message}finally{btn.disabled=false}
   };
@@ -169,9 +173,14 @@
 
  }
  function renderNoticeRows(){const area=$('#cpNoticeRows');if(!area)return;area.innerHTML=managerNotices.length?managerNotices.map(n=>`<div class="cp-notice-row"><span><span class="cp-notice-saved">✓ Adicionado</span> <strong>${safe(n.title)}</strong> · ${safe(n.type)} · ${safe(n.publishAt).replace('T',' ')}${n.eventDate?' · Evento '+safe(n.eventDate):''}</span><button class="cp-btn soft" data-cp-remove="${safe(n.id)}">Excluir</button></div>`).join(''):'<p class="cp-muted">Nenhum aviso criado. O calendário oficial ainda pode ser publicado.</p>';area.querySelectorAll('[data-cp-remove]').forEach(b=>b.onclick=()=>{managerNotices=managerNotices.filter(n=>n.id!==b.dataset.cpRemove);localStorage.setItem(noticeKey(year),JSON.stringify(managerNotices));renderNoticeRows()});}
- function showInvite(link){
+ function showInvite(link,email=''){
   $('#cpAccountInvite').hidden=false;$('#cpAccountInviteUrl').value=link;
-  $('#cpAccountsStatus').textContent='Convite gerado. Compartilhe o link individualmente. O professor criará a senha pessoal.';
+  const mailSubject='Colégio Cora Coralina — ativação do Calendário';
+  const mailBody='Olá!\n\nA Gestão do Colégio Cora Coralina autorizou seu acesso individual à Equipe Pedagógica do Calendário Anual.\n\nAbra o link abaixo, confira seu e-mail e defina uma senha pessoal com pelo menos 10 caracteres, letras e números:\n\n'+link+'\n\nO convite vale por 7 dias e pode ser usado apenas uma vez. Não compartilhe este link.\n\nAtenciosamente,\nCoordenação Pedagógica';
+  $('#cpEmailInvite').href='mailto:'+encodeURIComponent(email)+'?subject='+encodeURIComponent(mailSubject)+'&body='+encodeURIComponent(mailBody);
+  $('#cpInviteEmailNotice').textContent='Nenhum e-mail foi enviado automaticamente. Use Preparar e-mail e confirme o envio, ou copie o link.';
+  $('#cpAccountsStatus').textContent='Convite gerado para '+email+'. Agora envie o link; a conta só ficará Ativa quando o professor criar a senha.';
+  $('#cpAccountInvite').scrollIntoView({behavior:'smooth',block:'center'});
  }
  async function loadAccounts(){
   const list=$('#cpAccountsList');if(!list)return;
@@ -186,7 +195,7 @@
      const operations=member.status==='Ativo'?['suspend','disable','reinvite']:member.status==='Suspenso'?['enable','disable','reinvite']:member.status==='Desativado'?['enable']:['reinvite','disable'];
      const labels={suspend:'Suspender',disable:'Desativar',enable:'Reativar',reinvite:'Reemitir convite'};
      return '<div class="cp-account-person"><div><strong>'+safe(member.name)+'</strong><small>'+safe(member.email)+' · '+safe(member.profile)+' · '+safe(member.segment)+'</small></div>'+
-      '<span class="cp-account-status">'+safe(member.status)+'</span><div class="cp-account-buttons">'+operations.map(action=>
+      '<span class="cp-account-status">'+(member.status==='Pendente'?'Aguardando ativação':safe(member.status))+'</span><div class="cp-account-buttons">'+operations.map(action=>
        '<button type="button" data-account-operation="'+action+'" data-account-email="'+safe(member.email)+'">'+labels[action]+'</button>').join('')+
        '<button type="button" data-account-operation="editSegments" data-account-email="'+safe(member.email)+'">Editar segmentos</button></div>'+
        '<div class="cp-segment-editor" hidden><strong>Segmentos de atuação</strong>'+segmentCheckboxes(member.segments||[])+
@@ -194,22 +203,34 @@
     }).join(''):'<p class="cp-muted">Ainda não há colaboradores cadastrados.</p>';
   }catch(error){list.textContent='Erro ao consultar colaboradores: '+error.message}
  }
- function activationGateway(){
-  const params=new URLSearchParams(location.hash.slice(1)),code=params.get('ativar'),email=params.get('email')||'';
-  if(!code)return false;
-  history.replaceState(null,'',location.pathname+location.search);
+ function activationGateway(manual=false){
+  const params=new URLSearchParams(location.hash.slice(1)),initialCode=params.get('ativar')||'',email=params.get('email')||'';
+  if(!initialCode&&!manual)return false;
   role='';document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');
-  root.innerHTML='<div class="cp-gateway"><div class="cp-login-shell"><div class="cp-login-head"><img id="cpActivationLogo" alt="Colégio Cora Coralina"><div><small>CONVITE AUTORIZADO</small><h1>Ativar minha conta</h1><p>Crie uma senha pessoal. O convite é de uso único.</p></div></div>'+
+  root.innerHTML='<div class="cp-gateway"><div class="cp-login-shell"><div class="cp-login-head"><img id="cpActivationLogo" alt="Colégio Cora Coralina"><div><small>PRIMEIRO ACESSO · EQUIPE PEDAGÓGICA</small><h1>Ativar minha conta</h1><p>Use o link ou código fornecido pela Gestão e crie sua senha pessoal.</p></div></div>'+
+   '<div class="cp-activation-help"><strong>Como ativar</strong><p>1. A Gestão cadastra seu e-mail e gera um convite. 2. Abra o link recebido ou cole abaixo o link/código. 3. Crie sua senha pessoal. O e-mail cadastrado na planilha, sozinho, não libera o acesso.</p></div>'+
    '<form id="cpActivationForm" class="cp-auth"><label>E-mail autorizado<input id="cpActivationEmail" type="email" autocomplete="username" required></label>'+
-   '<label>Senha pessoal: mínimo de 10 caracteres com letras e números<input id="cpActivationPassword" type="password" minlength="10" maxlength="120" autocomplete="new-password" required></label>'+
-   '<button class="cp-btn" type="submit">Ativar acesso</button><p id="cpActivationError" class="cp-error" role="alert"></p></form></div></div>';
+   '<label>Link ou código de convite<input id="cpActivationCode" type="text" autocomplete="off" required spellcheck="false" placeholder="Cole o link recebido da Gestão"></label>'+
+   '<label>Nova senha pessoal (mínimo 10 caracteres, com letras e números)<input id="cpActivationPassword" type="password" minlength="10" maxlength="120" autocomplete="new-password" required></label>'+
+   '<button class="cp-btn" type="submit">Criar minha senha e ativar conta</button><p id="cpActivationError" class="cp-error" role="alert"></p></form>'+
+   '<div class="cp-activation-footer"><button id="cpBackToLogin" type="button" class="cp-btn soft">Voltar ao login</button></div></div></div>';
   $('#cpActivationLogo').src=logo();$('#cpActivationEmail').value=email;
+  $('#cpActivationCode').value=initialCode;
+  $('#cpBackToLogin').onclick=()=>{history.replaceState(null,'',location.pathname+location.search);chosen='equipe';gateway()};
   $('#cpActivationForm').onsubmit=async event=>{
-   event.preventDefault();const btn=$('#cpActivationForm button');btn.disabled=true;
+   event.preventDefault();const button=$('#cpActivationForm button');button.disabled=true;
    try{
-    const response=await api('activate',{email:$('#cpActivationEmail').value,code,password:$('#cpActivationPassword').value});
+    const raw=$('#cpActivationCode').value.trim();
+    let code=raw;
+    if(raw.includes('#ativar=')){
+      const hash=raw.slice(raw.indexOf('#')+1);
+      code=new URLSearchParams(hash).get('ativar')||'';
+    }
+    if(!code)throw new Error('Não encontrei o código no convite. Solicite outro link à Gestão.');
+    const response=await api('activate',{email:$('#cpActivationEmail').value.trim(),code,password:$('#cpActivationPassword').value});
+    history.replaceState(null,'',location.pathname+location.search);
     role=response.role;chosen='equipe';await enter();
-   }catch(error){$('#cpActivationError').textContent=error.message;btn.disabled=false}
+   }catch(error){$('#cpActivationError').textContent=error.message||'Não foi possível ativar. Confira e-mail e convite.';button.disabled=false}
   };
   return true;
  }
