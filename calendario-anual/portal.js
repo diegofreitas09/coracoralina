@@ -169,15 +169,39 @@
  const isAssessment=e=>/avaliaç|avaliação|simulado|sondagem|recomposiç|prova/i.test(`${e.title} ${e.type||''}`);
  function filteredEvents(){return (data?.events||[]).filter(e=>String(e.date||'').startsWith(year+'-')).sort((a,b)=>a.date.localeCompare(b.date))}
  function activeNotices(){const now=new Date();return (data?.notices||[]).filter(n=>{const start=n.publishAt?new Date(n.publishAt):null;const end=n.expiresAt?new Date(n.expiresAt):null;return (!start||start<=now)&&(!end||end>=now)}).sort((a,b)=>String(b.publishAt||'').localeCompare(String(a.publishAt||'')))}
- function upcoming(){const today=new Date();today.setHours(0,0,0,0);const dmax=Number(data?.config?.defaultLeadDays??3);let read=[];try{read=JSON.parse(localStorage.getItem('cora_team_seen_alerts_'+year)||'[]')}catch{}const seen=new Set(Array.isArray(read)?read:[]);
-  const events=filteredEvents().filter(e=>{const date=new Date(e.date+'T12:00:00'),delta=Math.ceil((date-today)/86400000);return delta>=0&&delta<=dmax}).map(e=>({id:'event-'+e.id,title:e.title,date:e.date,desc:e.type}));
-  const notes=activeNotices().filter(n=>!n.eventDate||(()=>{const d=new Date(n.eventDate+'T12:00:00');const delta=Math.ceil((d-today)/86400000);return delta>=0&&delta<=Number(n.leadDays||0)})()).map(n=>({id:n.id,title:n.title,date:n.eventDate||n.publishAt,desc:n.type}));
-  return [...notes,...events].map(n=>({...n,unread:!seen.has(n.id)}));}
+
+ // Comunicados são mensagens imediatamente disponíveis. A antecedência cria lembretes extras.
+ const dayDifference=iso=>{
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso||'')))return null;
+   const [y,m,d]=iso.split('-').map(Number),today=new Date();
+   return Math.round((Date.UTC(y,m-1,d)-Date.UTC(today.getFullYear(),today.getMonth(),today.getDate()))/86400000);
+ };
+ function upcoming(){
+   if(!data)return [];
+   let previous=[];try{previous=JSON.parse(localStorage.getItem('cora_team_seen_alerts_'+year)||'[]')}catch{}
+   const seen=new Set(Array.isArray(previous)?previous:[]);
+   const notices=activeNotices().map(n=>({id:String(n.id),kind:'notice',
+     title:n.title,desc:String(n.body||n.type||''),type:n.type||'Informativo',
+     date:n.eventDate||String(n.publishAt||'').slice(0,10)}));
+   const dmax=Math.max(0,Number(data.config?.defaultLeadDays??3));
+   const events=filteredEvents().filter(e=>{
+     const delta=dayDifference(e.date);return delta!==null&&delta>=0&&delta<=dmax;
+   }).map(e=>({id:'event-'+e.id,kind:'event',title:e.title,date:e.date,desc:e.notes||e.type||'',
+     type:e.type||'Atividade'}));
+   const reminders=activeNotices().filter(n=>{
+     if(!n.eventDate)return false;
+     const delta=dayDifference(n.eventDate);
+     return delta!==null&&delta>=0&&delta<=Math.max(0,Number(n.leadDays||0));
+   }).map(n=>({id:'reminder-'+n.id+'-'+n.eventDate,kind:'reminder',
+     title:'Lembrete: '+n.title,date:n.eventDate,desc:String(n.body||n.type||''),
+     type:n.type||'Informativo'}));
+   return [...notices,...reminders,...events].map(n=>({...n,unread:!seen.has(n.id)}));
+ }
  function eventHtml(e){const stage=(data?.stages||[]).find(st=>st.start&&st.end&&e.date>=st.start&&e.date<=st.end);return `<article class="cp-list-entry"><time>${safe(e.date.slice(8,10))}/${safe(e.date.slice(5,7))}</time><div><strong>${safe(e.title)}</strong><span class="cp-tag">${safe(e.type||'Atividade')}</span>${stage?`<span class="cp-tag cp-tag-stage">${stage.number}ª etapa · até ${safe(stage.end.slice(8,10)+'/'+stage.end.slice(5,7))}</span>`:''}${e.notes?`<p>${safe(e.notes)}</p>`:''}</div></article>`}
  function noticeHtml(n){return `<article class="cp-notice ${n.type==='Urgente'?'urgent':''}"><small>${safe(n.type)} · ${safe((n.publishAt||'').replace('T',' '))}</small><h3>${safe(n.title)}</h3><p>${safe(n.body)}</p>${n.eventDate?`<small>Data relacionada: ${safe(n.eventDate)} · Alerta ${Number(n.leadDays)||0} dia(s) antes</small>`:''}</article>`}
  function drawTeam(){const here=$('#cpView');if(!here)return;
   const events=filteredEvents(),notes=activeNotices(),assess=events.filter(e=>isAssessment(e)&&!isSecond(e)),alertList=upcoming(),unread=alertList.filter(a=>a.unread).length;
-  const badge=$('#cpBellCount');if(badge){badge.style.display=unread?'block':'none';badge.textContent=String(unread)}
+  const badge=$('#cpBellCount');if(badge){badge.style.display=unread?'block':'none';badge.textContent=unread>99?'99+':String(unread);badge.setAttribute('aria-label',unread+' alertas não lidos')}const bell=$('#cpBell');if(bell){bell.classList.toggle('has-unread',unread>0);bell.setAttribute('aria-label',unread?unread+' alertas novos. Abrir notificações':'Abrir notificações')}
   const sections=[['resumo','Visão Geral'],['calendario','Calendário '+year],['etapas','Etapas letivas'],['avaliacoes','Avaliações e Simulados'],['aniversarios','🎂 Aniversariantes'],['avisos','Avisos'],['pdf','PDF Anual']];
   const tabs=`<div class="cp-tabs">${sections.map(([id,label])=>`<button class="${tab===id?'active':''}" data-cp-tab="${id}">${label}</button>`).join('')}</div>`;
   let content='';
