@@ -40,7 +40,7 @@
     if(!a.title?.trim()||!iso(a.start)||!iso(a.end)||a.start>a.end||!a.start.startsWith(y+'-')||!a.end.startsWith(y+'-'))return {ok:false,error:'Confira o nome e o período das avaliações da '+(i+1)+'ª etapa.'};
    }
   }
-  try{localStorage.setItem(KEY(y),JSON.stringify(data));window.dispatchEvent(new CustomEvent('cora-assessments-changed',{detail:{year:y}}));return {ok:true}}
+  try{localStorage.setItem(KEY(y),JSON.stringify(data));syncToCalendar(y);window.dispatchEvent(new CustomEvent('cora-assessments-changed',{detail:{year:y}}));return {ok:true}}
   catch{return {ok:false,error:'Não foi possível salvar neste navegador. Faça backup.'}}
  }
  function alignWeek(isoDate,y){
@@ -111,6 +111,18 @@
   }
   return result;
  }
+ function syncToCalendar(y=activeYear()){
+  // Evita duplicar os períodos já registrados no PDF oficial de 2026.
+  const approved=publicationEvents(y).filter(e=>y!==2026||e.assessmentDelivery);
+  const key='cora_calendario_eventos_'+y+'_v1';
+  let existing=[];try{existing=JSON.parse(localStorage.getItem(key)||'[]')}catch{}
+  if(!Array.isArray(existing))existing=[];
+  const clean=existing.filter(e=>!/^cora-(entrega-avaliacoes|periodo-avaliacao)-/.test(String(e.id||'')));
+  const next=clean.concat(approved);
+  if(JSON.stringify(next)!==JSON.stringify(existing)){
+   try{localStorage.setItem(key,JSON.stringify(next));window.dispatchEvent(new CustomEvent('cora-data-changed',{detail:{year:y}}));}catch{}
+  }
+ }
  function readForm(){
   const y=activeYear(),data=get(y);
   const cards=[...document.querySelectorAll('#coraAssessmentPanel [data-assessment-stage]')];
@@ -171,8 +183,8 @@
   const anchor=document.getElementById('coraStages')||document.getElementById('yearProjects');
   if(!anchor)return;
   const section=document.createElement('section');section.id='coraAssessmentPanel';section.className='assess-panel';
-  anchor.insertAdjacentElement('afterend',section);render();
-  window.addEventListener('cora-year-changed',render);
+  anchor.insertAdjacentElement('afterend',section);syncToCalendar(activeYear());render();
+  window.addEventListener('cora-year-changed',()=>{syncToCalendar(activeYear());render()});
   window.addEventListener('cora-stages-updated',render);
  });
  window.CoraAssessments={get,save,draftFrom,issues,publicationEvents,display,FUND,MED};
