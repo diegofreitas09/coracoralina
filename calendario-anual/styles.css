@@ -17,3 +17,15 @@
 .official-month-count{padding:14px 0;border-top:1px solid #dce6f0;border-bottom:1px solid #dce6f0;display:flex;gap:13px;align-items:center}.official-month-count span{font-weight:900;color:#1764aa;font-size:30px}.official-month-count small{color:#67839d;font-size:12px}
 @media(max-width:1050px){.official-banner{flex-wrap:wrap}.official-banner-actions{width:100%}.official-reference-grid{grid-template-columns:1fr}}
 @media(max-width:750px){.school-logo{width:50px;height:63px;flex-basis:50px}.official-banner{gap:12px;padding:15px}.official-banner-icon{width:54px;height:54px;font-size:17px}.official-banner-copy strong{font-size:14px}.official-banner-actions .btn{flex:1}.official-calendar-section{padding:14px}.official-calendar-head{display:block}.official-calendar-head .btn{margin-top:12px}.official-month-summary{padding:15px}}
+/* Logo oficial inteira, sem corte no cabeçalho */
+.brand {min-width:0;align-items:center;gap:13px}
+.brand > div {min-width:0;flex:1}
+.brand .school-logo {display:block!important;object-fit:contain!important;object-position:center!important;width:70px!important;height:86px!important;min-width:70px!important;max-width:70px!important;flex:0 0 70px!important;padding:5px!important;background:#fff!important;border:1px solid #d6e1ee!important;border-radius:12px!important;overflow:visible!important}
+@media(max-width:750px){.brand .school-logo{width:65px!important;height:78px!important;min-width:65px!important;max-width:65px!important;flex-basis:65px!important}.brand{padding-left:5px;padding-right:5px}.brand strong{font-size:17px}.brand small{font-size:10px;letter-spacing:1.2px}}
+/* Pontinhos de atividade por dia, visíveis no celular */
+.day.has-event {background:#f5faff;border-color:#d4e5fa}
+.day .event-markers {display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:7px 0 2px 3px}
+.event-marker {display:inline-block;width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#2767ae;box-shadow:0 0 0 1px #fff}
+.event-marker.marker-meeting {background:#20a080}.event-marker.marker-exam{background:#e9a124}.event-marker.marker-holiday{background:#d56a7c}
+.day .event-quantity{display:block;font-size:9px;font-weight:700;color:#375d83;margin-left:3px}
+@media(max-width:750px){.day.has-event{min-height:72px}.day .event-markers{gap:3px;margin:4px 0 0 3px}.event-marker{width:6px;height:6px;flex-basis:6px}.day .event-quantity{font-size:8px;line-height:1.3}.brand{overflow:visible}}
