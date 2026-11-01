@@ -55,8 +55,9 @@
   }
   function openGoogle(event) {
     const url = calendarGoogle(event);
-    const w = window.open(url,'_blank','noopener,noreferrer');
-    if (!w) window.location.href = url;
+    const link = document.createElement('a');
+    link.href = url;link.target = '_blank';link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);link.click();link.remove();
   }
   function openDay(date) {
     daySelected = date;
