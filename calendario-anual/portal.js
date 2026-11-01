@@ -5,6 +5,7 @@
  'use strict';
  const API='/calendario-anual/api', $=s=>document.querySelector(s);
  const MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+ const TEACHER_LINKS=Object.freeze({roteiros:'https://docs.google.com/spreadsheets/d/1Jiy-g9kC7BJ6lR5Hh5cfgBJSAHmdZDS2BwjqIr0WOOc/edit?usp=sharing',gestor:'https://escola.computex.com.br/escola619/index2.php'});
  const eventsKey=y=>'cora_calendario_eventos_'+y+'_v1',noticeKey=y=>'cora_portal_draft_notices_'+y;
  const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const dateStr=(date)=>{const d=new Date(date);return Number.isNaN(d.getTime())?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
@@ -324,6 +325,22 @@
     ['entregas','⌛','Entregas','Prazos e e-mails'],['avisos','✉','Comunicados','Orientações da Gestão'],['pdf','↓','PDF anual','Documento completo']].map(item=>
     '<button type="button" class="cp-flow-link" data-cp-tab="'+item[0]+'"><span class="cp-flow-icon">'+item[1]+'</span>'+
     '<span><strong>'+item[2]+'</strong><small>'+item[3]+'</small></span><b>›</b></button>').join('');
+  // Área de ferramentas externas da Equipe; SVG provisório do Gestor será trocado pela marca original.
+  const roteiroIcon='<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="3" width="14.5" height="18" rx="2"></rect><path d="M8 3v18M11 8h5M11 12h5M11 16h3"></path><path d="m15.9 17.2 3.6-3.6 1.4 1.4-3.6 3.6-2.2.8z"></path></svg>';
+  const gestorIcon='<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2 12 4l9 6.2"></path><path d="M5.5 9.8V20h13V9.8"></path><path d="M10 20v-6.5h4V20"></path><path d="M8 10h.01M16 10h.01"></path><path d="M9 6.1V3h6v3.1"></path></svg>';
+  const openIcon='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5h6v6M19 5l-9 9"></path><path d="M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"></path></svg>';
+  const teacherTools='<section class="cp-teacher-tools" aria-labelledby="cpTeacherToolsTitle">'+
+   '<div class="cp-teacher-tools-head"><div><small>ACESSOS PEDAGÓGICOS</small><h3 id="cpTeacherToolsTitle">Ferramentas do professor</h3></div><span>Roteiros e notas em um só lugar</span></div>'+
+   '<div class="cp-teacher-tools-grid">'+
+    '<a class="cp-teacher-tool" href="'+TEACHER_LINKS.roteiros+'" target="_blank" rel="noopener noreferrer" aria-label="Abrir Digitação de roteiros em nova aba">'+
+     '<span class="cp-teacher-tool-icon cp-teacher-tool-roteiros" aria-hidden="true">'+roteiroIcon+'</span>'+
+     '<span class="cp-teacher-tool-copy"><strong>Digitação de roteiros</strong><small>Planilha de roteiros pedagógicos</small></span>'+
+     '<span class="cp-teacher-tool-open" aria-hidden="true">'+openIcon+'</span></a>'+
+    '<a class="cp-teacher-tool" href="'+TEACHER_LINKS.gestor+'" target="_blank" rel="noopener noreferrer" aria-label="Abrir Gestor Escolar para digitação de notas em nova aba">'+
+     '<span class="cp-teacher-tool-icon cp-teacher-tool-gestor" data-tool-icon="gestor" aria-hidden="true">'+gestorIcon+'</span>'+
+     '<span class="cp-teacher-tool-copy"><strong>Gestor Escolar</strong><small>Digitação de notas</small></span>'+
+     '<span class="cp-teacher-tool-open" aria-hidden="true">'+openIcon+'</span></a>'+
+   '</div></section>';
   const flowHeader=showBell?'':'<section class="cp-flow-hero"><div class="cp-flow-hero-text">'+
    '<small>COLÉGIO CORA CORALINA · EQUIPE PEDAGÓGICA</small><h2>Seu ano letivo, organizado.</h2>'+
    '<p>Uma visão clara das atividades, avaliações e informações da Gestão para '+year+'.</p>'+
@@ -332,6 +349,7 @@
    '<span>'+(closestStage?fmtStage(closestStage.start)+' até '+fmtStage(closestStage.end):'A definir pela Gestão')+'</span>'+
    '<button type="button" data-cp-tab="etapas">Consultar etapas ›</button></div></section>'+
    '<div class="cp-flow-links">'+quickLinks+'</div>'+
+   teacherTools+
    '<section class="cp-flow-stage-section"><div class="cp-flow-stage-title"><div><small>PLANEJAMENTO · '+year+'</small>'+
    '<h3>Início e fim das etapas</h3></div><span>Consulte antes de planejar avaliações</span></div>'+
    '<div class="cp-flow-stage-grid">'+flowStages+'</div></section>';
