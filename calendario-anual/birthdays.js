@@ -38,6 +38,7 @@
   });
   $('birthdayCancel').addEventListener('click',()=>{reset();feedback('Edição cancelada.');});
   monthFilter.addEventListener('change',render);
+  $('jumpBirthdays')?.addEventListener('click',()=>{$('birthdayStudio').scrollIntoView({behavior:'smooth',block:'start'});});
   $('birthdayJumpCard').addEventListener('click',()=>{const n=monthFilter.value==='all'?new Date().getMonth()+1:Number(monthFilter.value);window.dispatchEvent(new CustomEvent('cora-birthday-card-request',{detail:{month:n}}));$('cardStudio').scrollIntoView({behavior:'smooth',block:'start'});});
   window.addEventListener('cora-backup-restored',()=>{people=read();render();feedback('Cadastros restaurados do backup.');publish()});
   window.addEventListener('storage',e=>{if(e.key===KEY){people=read();render();publish();}});
