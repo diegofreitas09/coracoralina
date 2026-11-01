@@ -58,3 +58,17 @@
 #planSyncedEvents>div{padding:7px 10px;background:#fff;border-radius:7px;border:1px solid #dce9f4}
 #planSyncedEvents em{color:#906112}
 @media(max-width:620px){.year-full-months{grid-template-columns:repeat(2,minmax(0,1fr))}.year-full-months label{padding:9px 7px}}
+
+/* Etapas letivas por ano, sem copiar limites antigos */
+.stage-panel{background:#fff;border:1px solid #d6e3ef;padding:17px 20px;border-radius:14px;margin:14px 0;color:#173b63}
+.stage-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}.stage-head strong{font-size:17px}.stage-head span{font-size:12px;color:#59748a}
+.stage-timeline{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.stage-period{border-left:4px solid #e5b321;background:#f1f7ff;border-radius:8px;padding:13px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.stage-period b{font-size:14px}.stage-period small{font-size:12px;color:#536f87;line-height:1.4}
+.stage-period.missing{border-left-color:#94a6b8;background:#f6f8fb}
+.stage-current{margin:13px 0;background:#fff8e3;color:#684f0b;padding:10px 12px;border-radius:9px;font-size:13px}
+.stage-edit{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end}
+.stage-edit label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700}.stage-edit input,.stage-edit select{border:1px solid #cbdbe7;border-radius:8px;min-width:0;width:100%;min-height:42px;padding:7px;color:#12375a}
+.stage-message{font-size:12px;color:#61758c;margin:9px 0 0}
+@media(max-width:790px){.stage-timeline{grid-template-columns:repeat(2,minmax(0,1fr))}.stage-edit{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:440px){.stage-timeline,.stage-edit{grid-template-columns:1fr}}
