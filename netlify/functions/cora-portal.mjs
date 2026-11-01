@@ -2,7 +2,7 @@
 // Passwords and session keys are set in Netlify project environment variables, never in Git.
 import { createHmac, createHash, timingSafeEqual, randomBytes, scryptSync } from 'node:crypto';
 import { getStore } from '@netlify/blobs';
-import {currentMember,loginEmployee,activateEmployee,listEmployees,manageEmployee,statuses,markDelivery} from './cora-team-auth.mjs';
+import {currentMember,loginEmployee,activateEmployee,listEmployees,manageEmployee,statuses,markDelivery,accessPolicy,enforceIndividualAccess} from './cora-team-auth.mjs';
 import {vapidKeys,registrations,saveRegistration,deleteRegistration,dispatchPush,deliveryId,hasDelivered,markDelivered,testDevicePush} from './lib/cora-push-core.mjs';
 
 const COOKIE='cora_portal_session';
@@ -25,7 +25,7 @@ const hash=x=>createHash('sha256').update(String(x||'')).digest();
 const equal=(a,b)=>timingSafeEqual(hash(a),hash(b));
 const token=(role)=>{const payload=Buffer.from(JSON.stringify({role,exp:Date.now()+12*3600e3,nonce:randomBytes(12).toString('hex')})).toString('base64url');const sig=createHmac('sha256',vars().secret).update(payload).digest('base64url');return `${payload}.${sig}`};
 const cookie=(request)=>{const c=request.headers.get('cookie')||'';const m=c.match(/(?:^|;\s*)cora_portal_session=([^;]+)/);return m?.[1]||''};
-const roleOf=(request)=>{const t=cookie(request),parts=t.split('.');if(parts.length!==2)return null;const expected=createHmac('sha256',vars().secret).update(parts[0]).digest('base64url');if(!equal(parts[1],expected))return null;try{const p=JSON.parse(Buffer.from(parts[0],'base64url').toString());return p.exp>Date.now()&&p.role==='gestao'?'gestao':null}catch{return null}};
+const roleOf=(request)=>{const t=cookie(request),parts=t.split('.');if(parts.length!==2)return null;const expected=createHmac('sha256',vars().secret).update(parts[0]).digest('base64url');if(!equal(parts[1],expected))return null;try{const p=JSON.parse(Buffer.from(parts[0],'base64url').toString());return p.exp>Date.now()&&(p.role==='gestao'||(p.role==='equipe'&&!p.uid))?p.role:null}catch{return null}};
 const baseCookie=`Path=/calendario-anual/; HttpOnly; Secure; SameSite=Strict`;
 const str=(v,len=255)=>String(v??'').trim().slice(0,len);
 const cleanEvent=e=>{
@@ -96,8 +96,8 @@ export default async function handler(request){
  if(request.method==='OPTIONS')return new Response('',{status:405,headers:HEADERS});
  if(!configured())return answer({error:'Configuracao segura pendente: definir as tres variaveis CORA_* nas configuracoes protegidas do Netlify.',configured:false},503);
  if(!originAllowed(request))return answer({error:'Origem não autorizada'},403);
- const member=await currentMember(request,vars().secret),role=roleOf(request)||(member?'equipe':null);
- if(action==='me'&&request.method==='GET')return answer({configured:true,role,member:member?{name:member.name,email:member.email,profile:member.profile}:null});
+ const policy=await accessPolicy(),member=await currentMember(request,vars().secret),legacy=roleOf(request),role=legacy==='gestao'?'gestao':member?'equipe':!policy.enforced&&legacy==='equipe'?'equipe':null;
+ if(action==='me'&&request.method==='GET')return answer({configured:true,role,individualRequired:policy.enforced,member:member?{name:member.name,email:member.email,profile:member.profile}:null});
  if(action==='login'&&request.method==='POST'){
   const size=Number(request.headers.get('content-length')||0);if(size>2048)return answer({error:'Entrada muito longa'},413);
   let p;try{p=await request.json()}catch{return answer({error:'Entrada inválida'},400)};
@@ -106,6 +106,10 @@ export default async function handler(request){
    return answer({role:'gestao',configured:true},200,{'set-cookie':`${COOKIE}=${token('gestao')}; Max-Age=43200; ${baseCookie}`});
   }
   if(p.role!=='equipe')return answer({error:'Ambiente inválido.'},400);
+  if(!String(p.email||'').trim()&&!policy.enforced){
+   if(!equal(p.password,vars().equipe||''))return answer({error:'Senha coletiva incorreta.'},401);
+   return answer({role:'equipe',legacy:true,configured:true},200,{'set-cookie':`${COOKIE}=${token('equipe')}; Max-Age=43200; ${baseCookie}`});
+  }
   const result=await loginEmployee(p,vars().secret);
   if(result.error)return answer({error:result.error},result.status||401);
   return answer({role:'equipe',configured:true,member:result.member},200,{'set-cookie':result.cookie});
@@ -123,19 +127,19 @@ export default async function handler(request){
   return answer({publicKey:vapidKeys().publicKey,enabled:true});
  }
  if(action==='push-register'&&request.method==='POST'){
-  if(role!=='equipe')return answer({error:'Somente colaboradores podem registrar aparelhos'},403);
+  if(role!=='equipe'||!member)return answer({error:'Acesso individual necessário para ativar notificações'},403);
   if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Requisição inválida'},400);
   let input;try{input=await request.json()}catch{return answer({error:'Dados inválidos'},400)}
   try{return answer(await saveRegistration(input.subscription,{userId:member.id,version:member.sessionVersion}),200)}catch(e){return answer({error:e.message},400)}
  }
  if(action==='push-remove'&&request.method==='POST'){
-  if(role!=='equipe')return answer({error:'Somente colaboradores podem cancelar inscrições'},403);
+  if(role!=='equipe'||!member)return answer({error:'Acesso pessoal necessário para cancelar notificações'},403);
   if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Requisição inválida'},400);
   let input;try{input=await request.json()}catch{return answer({error:'Dados inválidos'},400)}
   return answer(await deleteRegistration(input.subscription),200);
  }
  if(action==='push-test'&&request.method==='POST'){
-  if(role!=='equipe')return answer({error:'Acesso restrito a colaboradores'},403);
+  if(role!=='equipe'||!member)return answer({error:'Acesso individual necessário para testar notificações'},403);
   if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Requisição inválida'},400);
   let body;try{body=await request.json()}catch{return answer({error:'Inscrição inválida'},400)}
   try{return answer(await testDevicePush(body.subscription,member.id),200)}
@@ -146,6 +150,12 @@ export default async function handler(request){
   return answer({devices:(await registrations()).length},200);
  }
 
+ if(action==='accounts-policy'&&role==='gestao'){
+  if(request.method==='GET')return answer(policy);
+  if(request.method!=='POST'||request.headers.get('x-cora-request')!=='portal')return answer({error:'Acesso negado'},403);
+  const outcome=await enforceIndividualAccess();
+  return outcome.error?answer({error:outcome.error},outcome.status||400):answer(outcome);
+ }
  if(action==='accounts'&&role==='gestao'){
   if(request.method==='GET')return answer(await listEmployees());
   if(request.method!=='POST'||request.headers.get('x-cora-request')!=='portal')return answer({error:'Solicitação inválida.'},400);
@@ -154,12 +164,12 @@ export default async function handler(request){
   return result.error?answer({error:result.error},result.status||400):answer(result);
  }
  if(action==='delivery-profile'&&request.method==='GET'){
-  if(role!=='equipe')return answer({error:'Acesso pessoal necessário.'},403);
+  if(role!=='equipe'||!member)return answer({identified:false,statuses:{}});
   const year=schoolYear(url.searchParams.get('year'))||YEAR;
   return answer({identified:true,name:member.name,email:member.email,statuses:statuses(member,year)});
  }
  if(action==='delivery-mark'&&request.method==='POST'){
-  if(role!=='equipe')return answer({error:'Acesso pessoal necessário.'},403);
+  if(role!=='equipe'||!member)return answer({error:'Acesso pessoal necessário.'},403);
   if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Solicitação inválida.'},400);
   let input;try{input=await request.json()}catch{return answer({error:'Dados inválidos.'},400)}
   const result=await markDelivery(member,input,async(year,stage)=>{
