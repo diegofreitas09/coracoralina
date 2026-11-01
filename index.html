@@ -9,6 +9,17 @@
 <meta name="format-detection" content="telephone=no">
 
 <link rel="stylesheet" href="app.css">
+<script id="calendar-2026-domain-routing">
+(function () {
+  var host = window.location.hostname;
+  var isCalendarSite = host === 'calendario-anual-cora-2026.netlify.app' ||
+    host.endsWith('--calendario-anual-cora-2026.netlify.app');
+  var atRoot = window.location.pathname === '/' || window.location.pathname === '/index.html';
+  if (isCalendarSite && atRoot) {
+    window.location.replace('/calendario-anual/' + window.location.search + window.location.hash);
+  }
+})();
+</script>
 </head><body>
 <header><div class="brand"><img src="logo-escola-web.png"><div><small>PLANO ESTRATÉGICO DE MATRÍCULAS</small><strong>MATRÍCULA 2027</strong></div></div><div class="consult"><div><small>Consultoria e desenvolvimento</small><b>PDF Solução Educacional</b><strong>(85) 98416-1882</strong></div><img src="logo-pdf-web.png"></div></header>
 <nav id="nav"><button data-tab="inicio" class="active">Visão Geral</button><button data-tab="alunos">Alunos</button><button data-tab="retencao">Retenção</button><button data-tab="captacao">Captação</button><button data-tab="graficos">Gráficos</button><button data-tab="fideliza">Fideliza</button><button data-tab="mensalidades">💳 Mensalidades</button><button data-tab="materiais">📚 Materiais</button><button data-tab="experiencia">Experiência</button><button data-tab="metas">Metas</button><button data-tab="receita">Receita 🔒</button><button id="pdfTop" class="pdfbtn">📄 Relatório Completo PDF 🔒</button><button id="installPwaBtn" class="pwa-install-btn" hidden>📲 Instalar App</button></nav>
