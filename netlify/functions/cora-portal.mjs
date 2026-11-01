@@ -58,10 +58,20 @@ const OFFICIAL_DELIVERIES_2026=[
 function includeOfficial2026Deliveries(state){
  if(!state)return state;
  const existing=Array.isArray(state.events)?state.events:[];
- const ids=new Set(existing.map(e=>String(e?.id||'')));
+ const officialById=new Map(OFFICIAL_DELIVERIES_2026.map(e=>[e.id,e]));
+ const repaired=existing.map(event=>{
+  const original=officialById.get(String(event?.id||''));
+  if(!original||event.assessmentDelivery===true)return event;
+  // Um cadastro legado com o mesmo ID pode ter perdido o indicador de entrega.
+  // Restaura os metadados sem mudar a data definida posteriormente pela Gestão.
+  return {...original,...event,assessmentDelivery:true,stageNumber:original.stageNumber,
+   deliveryTypes:str(event.deliveryTypes||original.deliveryTypes,160),
+   fundamentalEmail:original.fundamentalEmail,medioEmail:original.medioEmail,leadDays:5};
+ });
+ const ids=new Set(repaired.map(e=>String(e?.id||'')));
  const additions=OFFICIAL_DELIVERIES_2026.filter(e=>!ids.has(e.id));
- if(!additions.length)return state;
- return {...state,events:[...existing,...additions].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')))};
+ if(!additions.length&&repaired.every((event,i)=>event===existing[i]))return state;
+ return {...state,events:[...repaired,...additions].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')))};
 }
 const cleanNotice=e=>({id:str(e.id,120),title:str(e.title,130),body:str(e.body,1800),type:['Informativo','Urgente','Reunião','Avaliação'].includes(e.type)?e.type:'Informativo',publishAt:str(e.publishAt,30),expiresAt:str(e.expiresAt,30),eventDate:str(e.eventDate,10),leadDays:Math.max(0,Math.min(30,Number(e.leadDays)||0))});
 const cleanBirthday=b=>({id:str(b.id,140),name:str(b.name,100),role:str(b.role,85),day:Number(b.day),month:Number(b.month)});
