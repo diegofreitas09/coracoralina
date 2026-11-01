@@ -57,9 +57,11 @@
   }
   function monthSheet(month,year,logo,code){
     const [c,g]=canvas();
-    const events=window.CoraYears.getEvents(year).filter(e=>Number(e.date.slice(5,7))===month+1);
+    const events=window.CoraYears.filterVisible(window.CoraYears.getEvents(year)).filter(e=>Number(e.date.slice(5,7))===month+1);
     const projects=window.CoraYears.getProjects(year)[month]||[];
     header(g,logo,year,MONTHS[month].toUpperCase()+'  '+year,`${events.length} atividades  •  ${projects.length} projetos no mês`);
+    const drafts=events.filter(e=>e.status==='Em revisão').length;
+    if(drafts){box(g,820,186,370,43,'#fff0cb',8);tx(g,`${drafts} atividade(s) em revisão`,1005,213,19,'#8a661c','800','center');}
     const top=249,cellW=163,cellH=73,x0=49;
     WEEK.forEach((d,i)=>{box(g,x0+i*cellW,top,cellW-5,38,'#e6effa',6);tx(g,d,x0+i*cellW+cellW/2,top+27,19,BLUE,'800','center')});
     const start=new Date(year,month,1).getDay(),last=new Date(year,month+1,0).getDate();
@@ -94,7 +96,9 @@
   }
   function annualSheet(year,logo,code){
     const[c,g]=canvas();header(g,logo,year,'PANORAMA ANUAL  '+year,'Resumo executivo: 12 meses em uma única página');
-    const evs=window.CoraYears.getEvents(year),projs=window.CoraYears.getProjects(year);
+    const evs=window.CoraYears.filterVisible(window.CoraYears.getEvents(year)),projs=window.CoraYears.getProjects(year);
+    const drafts=evs.filter(e=>e.status==='Em revisão').length;
+    if(drafts){box(g,804,187,386,40,'#fff0cb',8);tx(g,`${drafts} evento(s) em revisão`,997,213,18,'#815e13','800','center');}
     const cardW=357,cardH=335,gapX=23,gapY=24,x0=48,y0=260;
     for(let month=0;month<12;month++){
       const col=month%3,row=Math.floor(month/3),x=x0+col*(cardW+gapX),y=y0+row*(cardH+gapY);
@@ -127,6 +131,7 @@
     tx(g,`${scope==='month'?MONTHS[month]+' de ':''}${year} · ${api.audience==='Todos'?'Diretório principal':api.audience}`,186,202,23,'#dbe9fb','600');
     const items=type==='Projetos'?(scope==='month'?projects[month].map(n=>({title:n,date:''})):projects.flatMap((a,i)=>a.map(n=>({title:n,date:MONTHS[i]})))):events;
     tx(g,`${items.length} ${type==='Projetos'?'projetos':'atividades'}`,66,330,26,BLUE,'800');
+    if(events.some(e=>e.status==='Em revisão')){box(g,640,287,377,53,'#fff0c7',11);tx(g,'MINUTA · conferir datas',830,323,21,'#875e14','800','center');}
     const maxRows=15,display=items.slice(0,maxRows);
     display.forEach((e,i)=>{
       const y=375+i*54;
