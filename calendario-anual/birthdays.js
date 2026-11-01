@@ -15,25 +15,30 @@
   function publish(){window.dispatchEvent(new CustomEvent('cora-birthdays-changed',{detail:{count:people.length}}));}
   function save(){try{localStorage.setItem(KEY,JSON.stringify(people));publish();return true}catch{return false}}
   const INITIAL_SYNC_KEY='cora_birthdays_management_initial_sync_v1';
-  // Importa a lista institucional somente uma vez em cada navegador:
-  // mantém aniversariantes já cadastrados e não recria registros excluídos depois.
+  const DECEMBER_SYNC_KEY='cora_birthdays_management_december_2026_v1';
+  // Migração por lote: atualiza dezembro mesmo em navegadores que já importaram novembro.
+  // Cada lote entra uma vez; alterações/exclusões posteriores da Gestão são preservadas.
   function importBaseline(incoming){
     if(!Array.isArray(incoming)||!incoming.length)return 0;
-    try{if(localStorage.getItem(INITIAL_SYNC_KEY))return 0;}catch{return 0;}
+    let initialDone=false,decemberDone=false;
+    try{initialDone=Boolean(localStorage.getItem(INITIAL_SYNC_KEY));decemberDone=Boolean(localStorage.getItem(DECEMBER_SYNC_KEY));}catch{return 0;}
+    if(initialDone&&decemberDone)return 0;
     const existing=read(),merged=[...existing];let added=0;
     for(const candidate of incoming){
-      const name=String(candidate?.name||'').trim().replace(/\s+/g,' ');
+      const name=String(candidate?.name||'').trim().replace(/\\s+/g,' ');
       const day=Number(candidate?.day),month=Number(candidate?.month);
       if(!name||!valid(day,month))continue;
+      if(month===12?decemberDone:initialDone)continue;
       if(merged.some(p=>normalize(p.name)===normalize(name)&&p.day===day&&p.month===month))continue;
       const id=String(candidate.id||'birthday-import-'+month+'-'+day+'-'+added);
       merged.push({id,name:name.slice(0,100),role:String(candidate.role||'').slice(0,85),day,month});added++;
     }
     try{
       localStorage.setItem(KEY,JSON.stringify(merged));
-      localStorage.setItem(INITIAL_SYNC_KEY,'1');
+      if(incoming.some(p=>Number(p?.month)!==12))localStorage.setItem(INITIAL_SYNC_KEY,'1');
+      if(incoming.some(p=>Number(p?.month)===12))localStorage.setItem(DECEMBER_SYNC_KEY,'1');
       people=merged;render();publish();
-      if(added)feedback('✓ '+added+' aniversariante(s) importado(s) do cadastro institucional.');
+      if(added)feedback('✓ '+added+' aniversariante(s) importado(s) do planejamento da escola.');
       return added;
     }catch{return 0;}
   }
