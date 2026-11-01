@@ -396,3 +396,17 @@ body.portal-locked { background:#eef3f9; }
 .cp-welcome-push button:focus-visible{outline:3px solid #6eaede;outline-offset:3px}
 @media(max-width:700px){.cp-welcome{padding:14px 13px;gap:13px;margin-bottom:15px;border-radius:15px}.cp-welcome-person{flex-basis:100%}.cp-welcome-push{max-width:none;flex-basis:100%}.cp-welcome-person h2{font-size:22px}}
 @media(max-width:420px){.cp-welcome-push{flex-wrap:wrap}.cp-welcome-push button{margin-left:45px}.cp-welcome-avatar{width:42px;height:42px;flex-basis:42px}}
+
+
+/* Relatório de autenticações da equipe para controle de acessos. */
+.cp-audit-export{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;margin:15px 0 14px;padding:15px 16px;border:1px solid #cbdff0;border-radius:13px;background:linear-gradient(120deg,#f6fbff,#eaf4fc)}
+.cp-audit-export>div{min-width:0;flex:1 1 300px}
+.cp-audit-export strong{display:block;font-size:14px;color:#1a537b;margin-bottom:5px}
+.cp-audit-export p{font-size:12px;line-height:1.55;color:#496c86;margin:0}
+.cp-audit-export .cp-btn{flex:0 0 auto;min-height:44px;background:#fff;border-color:#7baccd!important;color:#18547f!important}
+.cp-account-audit{flex:1 1 100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.cp-account-audit>span{min-width:0;display:flex;flex-direction:column;gap:4px;border:1px solid #e0ebf3;background:#f8fbff;border-radius:9px;padding:10px 11px;font-size:11px;color:#28526f;overflow-wrap:anywhere}
+.cp-account-audit b{font-size:10px;letter-spacing:.1px;font-weight:800;color:#657f94}
+@media(max-width:920px){.cp-account-audit{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:540px){.cp-account-audit{grid-template-columns:1fr 1fr}.cp-audit-export .cp-btn{width:100%}}
+@media(max-width:350px){.cp-account-audit{grid-template-columns:1fr}}

@@ -64,7 +64,8 @@
   root.insertAdjacentHTML('beforeend','<section id="cpAccountsPanel" class="cp-accounts-panel cp-hidden">'+
    '<div class="cp-accounts-head"><div><small>SEGURANÇA E COLABORADORES</small><h2>Acessos individuais</h2><p>Convites exclusivos, suspensão imediata e bloqueio de ex-funcionários.</p></div><button class="cp-btn soft" id="cpAccountsClose" type="button">Fechar</button></div>'+
    '<p><a href="https://docs.google.com/spreadsheets/d/1tnOgWrN04AMiK88lkCCePeP3iOJ0AHnbN_91SpK5kyA/edit" target="_blank" rel="noopener noreferrer">Abrir planilha Cora Família · Acessos Calendário</a></p>'+
-   '<div class="cp-invite-howto"><strong>Como o professor recebe a senha?</strong><p><b>1.</b> A Gestão cadastra o e-mail aqui (a planilha sozinha não cria a conta). <b>2.</b> Gere o convite e envie o link ao professor. <b>3.</b> O professor abre o link e cria uma senha pessoal. <b>4.</b> A conta muda de Pendente para Ativo. <b>Não existe envio automático de e-mail.</b></p></div>'+
+   '<div class="cp-audit-export"><div><strong>Histórico de autenticações</strong><p>Os acessos ficam no servidor. Para atualizar a planilha, copie o relatório e cole na aba <b>Auditoria de Logins</b>, a partir da célula A1. As colunas de datas e quantidade no cadastro principal serão preenchidas por e-mail. A sincronização ainda não é automática.</p></div><button type="button" id="cpCopyAudit" class="cp-btn soft">Copiar relatório para planilha</button></div>'+
+    '<div class="cp-invite-howto"><strong>Como o professor recebe a senha?</strong><p><b>1.</b> A Gestão cadastra o e-mail aqui (a planilha sozinha não cria a conta). <b>2.</b> Gere o convite e envie o link ao professor. <b>3.</b> O professor abre o link e cria uma senha pessoal. <b>4.</b> A conta muda de Pendente para Ativo. <b>Não existe envio automático de e-mail.</b></p></div>'+
    '<form id="cpAccountCreate" class="cp-account-form"><label>Nome completo<input name="name" required minlength="5" maxlength="100"></label><label>E-mail individual<input name="email" type="email" required></label>'+
    '<label>Função<select name="profile"><option>Professor</option><option>Coordenação</option><option>Funcionário</option></select></label>'+
    '<fieldset class="cp-segment-fieldset"><legend>Segmentos de atuação <small>(marque todos)</small></legend>'+segmentCheckboxes()+'</fieldset>'+
@@ -74,6 +75,23 @@
    '<div class="cp-account-cutover"><strong id="cpCutoverTitle">Acesso coletivo em migração</strong><p id="cpCutoverDescription">Cadastre e ative as contas antes de exigir login individual para toda a escola.</p><button id="cpEnforceIndividual" type="button" class="cp-btn gold">Exigir login individual para todos</button></div>'+
    '<p role="status" id="cpAccountsStatus" aria-live="polite"></p><div id="cpAccountsList"></div></section>');
   $('#cpPublishNow').insertAdjacentHTML('beforebegin','<button id="cpAccountsOpen" class="cp-btn soft" type="button">Acessos da equipe</button>');
+  $('#cpCopyAudit').onclick=async()=>{
+   const button=$('#cpCopyAudit');button.disabled=true;
+   try{
+    const response=await api('accounts'),members=response.members||[];
+    const fmt=iso=>iso?new Date(iso).toLocaleString('pt-BR',{timeZone:'America/Fortaleza',dateStyle:'short',timeStyle:'short'}):'';
+    const escapeSheet=value=>{
+     const clean=String(value??'').replace(/[\t\r\n]/g,' ').trim();
+     return /^[=+@-]/.test(clean)?"'"+clean:clean;
+    };
+    const rows=[['E-mail de acesso','Nome do colaborador','Situação','Data de ativação','Primeiro acesso monitorado','Último acesso','Quantidade de acessos']];
+    for(const member of members)rows.push([member.email,member.name,member.status,fmt(member.activatedAt),fmt(member.firstAccessAt),fmt(member.lastLogin),member.accessCount==null?'':member.accessCount]);
+    const tsv=rows.map(row=>row.map(escapeSheet).join('\t')).join('\n');
+    await navigator.clipboard.writeText(tsv);
+    toast('Relatório copiado ('+members.length+' colaboradores). Cole na aba Auditoria de Logins da planilha, na célula A1.');
+    const status=$('#cpAccountsStatus');if(status)status.textContent='Relatório copiado. Cole na aba Auditoria de Logins, célula A1. Esta transferência é manual.';
+   }catch(e){toast('Não foi possível copiar relatório: '+e.message)}finally{button.disabled=false}
+  };
   $('#cpAccountsOpen').onclick=()=>{$('#cpAccountsPanel').classList.remove('cp-hidden');void loadAccounts()};
   $('#cpAccountsClose').onclick=()=>$('#cpAccountsPanel').classList.add('cp-hidden');
   $('#cpEnforceIndividual').onclick=async()=>{
@@ -182,6 +200,7 @@
   $('#cpAccountsStatus').textContent='Convite gerado para '+email+'. Agora envie o link; a conta só ficará Ativa quando o professor criar a senha.';
   $('#cpAccountInvite').scrollIntoView({behavior:'smooth',block:'center'});
  }
+ const fmtAccess=iso=>iso?new Date(iso).toLocaleString('pt-BR',{timeZone:'America/Fortaleza',dateStyle:'short',timeStyle:'short'}):'Ainda não registrado';
  async function loadAccounts(){
   const list=$('#cpAccountsList');if(!list)return;
   list.textContent='Consultando colaboradores...';
@@ -195,7 +214,9 @@
      const operations=member.status==='Ativo'?['suspend','disable','reinvite']:member.status==='Suspenso'?['enable','disable','reinvite']:member.status==='Desativado'?['enable']:['reinvite','disable'];
      const labels={suspend:'Suspender',disable:'Desativar',enable:'Reativar',reinvite:'Reemitir convite'};
      return '<div class="cp-account-person"><div><strong>'+safe(member.name)+'</strong><small>'+safe(member.email)+' · '+safe(member.profile)+' · '+safe(member.segment)+'</small></div>'+
-      '<span class="cp-account-status">'+(member.status==='Pendente'?'Aguardando ativação':safe(member.status))+'</span><div class="cp-account-buttons">'+operations.map(action=>
+      '<span class="cp-account-status">'+(member.status==='Pendente'?'Aguardando ativação':safe(member.status))+'</span>'+
+       '<div class="cp-account-audit"><span><b>Ativação</b>'+safe(fmtAccess(member.activatedAt))+'</span><span><b>Primeiro acesso monitorado</b>'+safe(fmtAccess(member.firstAccessAt))+'</span><span><b>Último acesso</b>'+safe(fmtAccess(member.lastLogin))+'</span><span><b>Acessos registrados</b>'+(member.accessCount==null?'Histórico anterior não disponível':String(member.accessCount))+'</span></div>'+
+       '<div class="cp-account-buttons">'+operations.map(action=>
        '<button type="button" data-account-operation="'+action+'" data-account-email="'+safe(member.email)+'">'+labels[action]+'</button>').join('')+
        '<button type="button" data-account-operation="editSegments" data-account-email="'+safe(member.email)+'">Editar segmentos</button></div>'+
        '<div class="cp-segment-editor" hidden><strong>Segmentos de atuação</strong>'+segmentCheckboxes(member.segments||[])+
