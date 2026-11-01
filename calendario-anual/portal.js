@@ -53,6 +53,45 @@
   document.body.classList.remove('portal-locked','portal-loading');
   managerNotices=loadNoticeDraft();try{leadDays=Number(localStorage.getItem('cora_default_lead_days_'+year))||3}catch{}
   root.innerHTML=`<div class="cp-manager-bar"><strong>⚙ Gestão</strong><small>Publicações para a Equipe Pedagógica</small><span class="cp-spacer"></span><span id="cpPubStatus" class="cp-status">Ainda não publicado neste acesso</span><button id="cpTogglePanel" class="cp-btn gold">🔔 Publicações e alertas</button><button id="cpPublishNow" class="cp-btn">Publicar para equipe</button><button id="cpLogout" class="cp-btn soft">Sair</button></div><section id="cpManagerPanel" class="cp-manager-panel cp-hidden"><h2>Comunicação com a equipe</h2><p>Os avisos ficam como rascunho neste dispositivo até você clicar em “Publicar para equipe”. Os eventos locais serão enviados junto com os avisos.</p><div class="cp-form-grid"><label>Título do aviso<input id="cpNoticeTitle" maxlength="130" placeholder="Ex.: Reunião de planejamento"></label><label>Tipo<select id="cpNoticeType"><option>Informativo</option><option>Urgente</option><option>Reunião</option><option>Avaliação</option></select></label><label>Data de início da publicação<input id="cpNoticePublish" type="datetime-local" value="${isoNow()}"></label><label class="cp-wide">Mensagem<textarea id="cpNoticeBody" placeholder="Escreva o recado, orientações ou uma alteração do calendário"></textarea></label><label>Data do evento (opcional)<input type="date" id="cpNoticeEventDate" min="2026-01-01" max="2026-12-31"></label><label>Alertar com antecedência<select id="cpNoticeLead"><option value="0">No dia</option><option value="1">1 dia antes</option><option value="2">2 dias antes</option><option value="3" selected>3 dias antes</option><option value="5">5 dias antes</option><option value="7">7 dias antes</option><option value="14">14 dias antes</option><option value="30">30 dias antes</option></select></label><label>Antecedência padrão de eventos<select id="cpDefaultLead"><option value="0">No dia</option><option value="1">1 dia</option><option value="2">2 dias</option><option value="3">3 dias</option><option value="5">5 dias</option><option value="7">7 dias</option><option value="14">14 dias</option></select></label><div class="cp-wide"><button type="button" class="cp-btn soft" id="cpAddNotice" aria-live="polite">Adicionar aviso</button><span id="cpNoticeSaveFeedback" class="cp-save-feedback" role="status" aria-live="polite"></span></div></div><h3>Avisos preparados</h3><div id="cpNoticeRows"></div><div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:13px"><button class="cp-btn gold" id="cpPublishPanel">Publicar calendário + avisos</button><span class="cp-status">Atualizações não são enviadas automaticamente ao salvar o rascunho.</span></div></section>`;
+  // Gestão: o cadastro da planilha é espelho administrativo; a autorização efetiva ocorre neste painel.
+  root.insertAdjacentHTML('beforeend','<section id="cpAccountsPanel" class="cp-accounts-panel cp-hidden">'+
+   '<div class="cp-accounts-head"><div><small>SEGURANÇA E COLABORADORES</small><h2>Acessos individuais</h2><p>Convites exclusivos, suspensão imediata e bloqueio de ex-funcionários.</p></div><button class="cp-btn soft" id="cpAccountsClose" type="button">Fechar</button></div>'+
+   '<p><a href="https://docs.google.com/spreadsheets/d/1tnOgWrN04AMiK88lkCCePeP3iOJ0AHnbN_91SpK5kyA/edit" target="_blank" rel="noopener noreferrer">Abrir planilha Cora Família · Acessos Calendário</a></p>'+
+   '<p class="cp-muted">A planilha é o cadastro administrativo. Para bloquear de verdade, use Suspender ou Desativar neste painel.</p>'+
+   '<form id="cpAccountCreate" class="cp-account-form"><label>Nome completo<input name="name" required minlength="5" maxlength="100"></label><label>E-mail individual<input name="email" type="email" required></label>'+
+   '<label>Função<select name="profile"><option>Professor</option><option>Coordenação</option><option>Funcionário</option></select></label>'+
+   '<label>Segmento<select name="segment"><option>Educação Infantil</option><option>Ensino Fundamental</option><option>Ensino Médio</option><option>Administrativo</option><option>Todos</option></select></label>'+
+   '<button class="cp-btn" type="submit">Criar acesso e convite</button></form>'+
+   '<div id="cpAccountInvite" class="cp-account-invite" hidden><strong>Convite pessoal · válido por 7 dias</strong><p>Envie somente ao colaborador por um canal seguro. Nunca publique em grupos.</p>'+
+   '<textarea id="cpAccountInviteUrl" readonly rows="3"></textarea><button type="button" id="cpCopyInvite" class="cp-btn soft">Copiar convite</button></div>'+
+   '<p role="status" id="cpAccountsStatus" aria-live="polite"></p><div id="cpAccountsList"></div></section>');
+  $('#cpPublishNow').insertAdjacentHTML('beforebegin','<button id="cpAccountsOpen" class="cp-btn soft" type="button">Acessos da equipe</button>');
+  $('#cpAccountsOpen').onclick=()=>{$('#cpAccountsPanel').classList.remove('cp-hidden');void loadAccounts()};
+  $('#cpAccountsClose').onclick=()=>$('#cpAccountsPanel').classList.add('cp-hidden');
+  $('#cpCopyInvite').onclick=async()=>{
+    const link=$('#cpAccountInviteUrl').value;
+    try{await navigator.clipboard.writeText(link);toast('Convite copiado. Envie somente ao colaborador autorizado.')}catch{window.prompt('Copie o convite:',link)}
+  };
+  $('#cpAccountCreate').onsubmit=async event=>{
+    event.preventDefault();const form=event.currentTarget,button=form.querySelector('button');button.disabled=true;
+    try{
+      const input=Object.fromEntries(new FormData(form).entries());
+      const result=await api('accounts',{...input,operation:'create'});
+      showInvite(result.inviteUrl);form.reset();await loadAccounts();
+    }catch(error){$('#cpAccountsStatus').textContent=error.message}finally{button.disabled=false}
+  };
+  $('#cpAccountsList').onclick=async event=>{
+    const btn=event.target.closest('[data-account-operation]');if(!btn)return;
+    const operation=btn.dataset.accountOperation,email=btn.dataset.accountEmail;
+    const label={suspend:'Suspender',disable:'Desativar',enable:'Reativar',reinvite:'Reemitir convite'}[operation];
+    if(!confirm(label+' '+email+'?'))return;
+    btn.disabled=true;
+    try{
+      const result=await api('accounts',{operation,email});
+      if(result.inviteUrl)showInvite(result.inviteUrl);
+      await loadAccounts();
+    }catch(error){$('#cpAccountsStatus').textContent=error.message}finally{btn.disabled=false}
+  };
   $('#cpDefaultLead').value=String(leadDays);
   $('#cpPublishNow').textContent='Publicar '+year+' para equipe';
   const field=$('#cpNoticeEventDate');if(field){field.min=year+'-01-01';field.max=year+'-12-31';}
@@ -106,6 +145,43 @@
 
  }
  function renderNoticeRows(){const area=$('#cpNoticeRows');if(!area)return;area.innerHTML=managerNotices.length?managerNotices.map(n=>`<div class="cp-notice-row"><span><span class="cp-notice-saved">✓ Adicionado</span> <strong>${safe(n.title)}</strong> · ${safe(n.type)} · ${safe(n.publishAt).replace('T',' ')}${n.eventDate?' · Evento '+safe(n.eventDate):''}</span><button class="cp-btn soft" data-cp-remove="${safe(n.id)}">Excluir</button></div>`).join(''):'<p class="cp-muted">Nenhum aviso criado. O calendário oficial ainda pode ser publicado.</p>';area.querySelectorAll('[data-cp-remove]').forEach(b=>b.onclick=()=>{managerNotices=managerNotices.filter(n=>n.id!==b.dataset.cpRemove);localStorage.setItem(noticeKey(year),JSON.stringify(managerNotices));renderNoticeRows()});}
+ function showInvite(link){
+  $('#cpAccountInvite').hidden=false;$('#cpAccountInviteUrl').value=link;
+  $('#cpAccountsStatus').textContent='Convite gerado. Compartilhe o link individualmente. O professor criará a senha pessoal.';
+ }
+ async function loadAccounts(){
+  const list=$('#cpAccountsList');if(!list)return;
+  list.textContent='Consultando colaboradores...';
+  try{
+    const data=await api('accounts');
+    list.innerHTML=(data.members||[]).length?data.members.map(member=>{
+     const operations=member.status==='Ativo'?['suspend','disable','reinvite']:member.status==='Suspenso'?['enable','disable','reinvite']:member.status==='Desativado'?['enable']:['reinvite','disable'];
+     const labels={suspend:'Suspender',disable:'Desativar',enable:'Reativar',reinvite:'Reemitir convite'};
+     return '<div class="cp-account-person"><div><strong>'+safe(member.name)+'</strong><small>'+safe(member.email)+' · '+safe(member.profile)+' · '+safe(member.segment)+'</small></div>'+
+      '<span class="cp-account-status">'+safe(member.status)+'</span><div class="cp-account-buttons">'+operations.map(action=>
+       '<button type="button" data-account-operation="'+action+'" data-account-email="'+safe(member.email)+'">'+labels[action]+'</button>').join('')+'</div></div>';
+    }).join(''):'<p class="cp-muted">Ainda não há colaboradores cadastrados.</p>';
+  }catch(error){list.textContent='Erro ao consultar colaboradores: '+error.message}
+ }
+ function activationGateway(){
+  const params=new URLSearchParams(location.hash.slice(1)),code=params.get('ativar'),email=params.get('email')||'';
+  if(!code)return false;
+  history.replaceState(null,'',location.pathname+location.search);
+  role='';document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');
+  root.innerHTML='<div class="cp-gateway"><div class="cp-login-shell"><div class="cp-login-head"><img id="cpActivationLogo" alt="Colégio Cora Coralina"><div><small>CONVITE AUTORIZADO</small><h1>Ativar minha conta</h1><p>Crie uma senha pessoal. O convite é de uso único.</p></div></div>'+
+   '<form id="cpActivationForm" class="cp-auth"><label>E-mail autorizado<input id="cpActivationEmail" type="email" autocomplete="username" required></label>'+
+   '<label>Senha pessoal: mínimo de 10 caracteres com letras e números<input id="cpActivationPassword" type="password" minlength="10" maxlength="120" autocomplete="new-password" required></label>'+
+   '<button class="cp-btn" type="submit">Ativar acesso</button><p id="cpActivationError" class="cp-error" role="alert"></p></form></div></div>';
+  $('#cpActivationLogo').src=logo();$('#cpActivationEmail').value=email;
+  $('#cpActivationForm').onsubmit=async event=>{
+   event.preventDefault();const btn=$('#cpActivationForm button');btn.disabled=true;
+   try{
+    const response=await api('activate',{email:$('#cpActivationEmail').value,code,password:$('#cpActivationPassword').value});
+    role=response.role;chosen='equipe';await enter();
+   }catch(error){$('#cpActivationError').textContent=error.message;btn.disabled=false}
+  };
+  return true;
+ }
  async function publish(){
   const year=Number(window.CoraYears?.activeYear)||2026;const drafts=loadEventDraft(year);const added=(window.CoraAssessments?.publicationEvents?.(year)||[]).filter(e=>year!==2026||e.assessmentDelivery);const events=[...drafts.filter(e=>e.status!=='Em revisão'&&!e.needsReview&&!/^cora-(entrega-avaliacoes|periodo-avaliacao)-/.test(String(e.id||''))),...added],btn=$('#cpPublishNow');if(!btn)return;btn.disabled=true;
   try{
@@ -535,6 +611,7 @@
  async function start(){
   document.body.classList.add('portal-loading');
   try{
+   if(activationGateway())return;
    const s=await api('me');
    if(s.role){role=s.role;await enter()}else gateway();
   }catch(e){unavailable(e);}
