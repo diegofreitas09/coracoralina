@@ -16,7 +16,7 @@
  const dateStr=(date)=>{const d=new Date(date);return Number.isNaN(d.getTime())?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
  const isoNow=()=>{const d=new Date();return `${dateStr(d)}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`};
  const app=$('#app'),root=document.createElement('div');root.id='coraPortal';document.body.prepend(root);
- let role='',chosen='gestao',data=null,year=Number(window.CoraYears?.activeYear)||2026,availableYears=[2026],month=new Date().getFullYear()===2026?new Date().getMonth():0,tab='resumo',selectedStage=0,managerNotices=[],leadDays=3,timer=null,showBell=false,teacherProfile=null,teacherSaving=false,individualRequired=false;
+ let role='',chosen='gestao',data=null,year=Number(window.CoraYears?.activeYear)||2026,availableYears=[2026],month=new Date().getFullYear()===2026?new Date().getMonth():0,tab='resumo',selectedStage=0,managerNotices=[],leadDays=3,timer=null,showBell=false,teacherProfile=null,teacherSaving=false,individualRequired=false,pushChecked=false,pushConfirmed=false;
  const seenPublicationIds=new Map();
  const endpoint=action=>`${API}?action=${encodeURIComponent(action)}`;
  async function api(action,payload,query=''){
@@ -251,7 +251,35 @@
   }catch(e){toast('Não foi possível publicar: '+e.message);}finally{btn.disabled=false;}
  }
  function teamNav(){return `<div class="cp-team-head"><img id="cpTeamLogo" alt="Brasão do Colégio Cora Coralina"><div><small>COLÉGIO CORA CORALINA · AMBIENTE DE CONSULTA</small><h1>Equipe Pedagógica</h1></div><label class="cp-year-label">Ano letivo <select id="cpTeamYear" aria-label="Ano letivo">${availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('')}</select></label><span class="cp-spacer"></span><button class="cp-btn soft" type="button" id="cpEnableAlerts" title="Ativar notificações mesmo com o aplicativo fechado">Ativar notificações</button><button class="cp-btn cp-bell" id="cpBell" aria-label="Abrir notificações">🔔<em id="cpBellCount" style="display:none">0</em></button><button class="cp-btn" id="cpRefresh">Atualizar</button><button class="cp-btn" id="cpTeamLogout">Sair</button></div>`}
- async function team(){teacherProfile=null;const deep=new URLSearchParams(location.search);year=Number(deep.get('ano'))||2026;if(deep.get('avisos')==='1')showBell=true;document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpEnableAlerts').onclick=enableLocalNotifications;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};$('#cpTeamYear').onchange=e=>{year=Number(e.target.value)||2026;month=0;showBell=false;tab='resumo';refresh()};await refresh();void confirmDevicePush();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},30000);}
+
+ // Conta individual autenticada fornece o nome; nunca reutilizar o e-mail digitado sem validação.
+ function shortWelcomeName(full){
+  const words=String(full||'').trim().split(/\s+/).filter(Boolean);
+  if(!words.length)return 'professor(a)';
+  const compact=words.length>2?[words[0],words[words.length-1]]:words;
+  return compact.map(w=>w.toLocaleLowerCase('pt-BR').replace(/(^|[-’'])\p{L}/gu,v=>v.toLocaleUpperCase('pt-BR'))).join(' ');
+ }
+ function renderTeamWelcome(){
+  const area=$('#cpWelcome');if(!area||role!=='equipe')return;
+  const fullName=teacherProfile?.name||'';
+  const greeting='Olá, '+shortWelcomeName(fullName)+'!';
+  const supported='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+  const blocked=supported&&Notification.permission==='denied';
+  const info=pushConfirmed
+   ?'<div class="cp-welcome-push is-enabled"><span class="cp-welcome-push-symbol" aria-hidden="true">✓</span><div><strong>Notificações ativadas</strong><small>Seu aparelho está cadastrado para avisos da Gestão.</small></div></div>'
+   :!pushChecked
+    ?'<div class="cp-welcome-push"><span class="cp-welcome-push-symbol" aria-hidden="true">◌</span><div><strong>Verificando notificações</strong><small>Consultando as permissões deste aparelho.</small></div></div>'
+    :blocked
+     ?'<div class="cp-welcome-push needs-setup"><span class="cp-welcome-push-symbol" aria-hidden="true">!</span><div><strong>Notificações bloqueadas</strong><small>Autorize o Calendário nas configurações do navegador ou Android.</small></div></div>'
+     :!supported
+      ?'<div class="cp-welcome-push"><span class="cp-welcome-push-symbol" aria-hidden="true">i</span><div><strong>Notificações não disponíveis</strong><small>Abra o aplicativo pelo Chrome no Android para verificar o suporte.</small></div></div>'
+      :'<div class="cp-welcome-push needs-setup"><span class="cp-welcome-push-symbol" aria-hidden="true">!</span><div><strong>Ative as notificações</strong><small>Receba avisos da Gestão e lembretes de entregas.</small></div><button type="button" id="cpWelcomeEnablePush">Ativar agora</button></div>';
+  area.innerHTML='<div class="cp-welcome-person"><span class="cp-welcome-avatar" aria-hidden="true">'+
+   safe((fullName.trim()[0]||'P').toLocaleUpperCase('pt-BR'))+
+   '</span><div><small>ACESSO À EQUIPE PEDAGÓGICA</small><h2>'+safe(greeting)+'</h2></div></div>'+info;
+  $('#cpWelcomeEnablePush')?.addEventListener('click',enableLocalNotifications);
+ }
+ async function team(){teacherProfile=null;pushChecked=false;pushConfirmed=false;const deep=new URLSearchParams(location.search);year=Number(deep.get('ano'))||2026;if(deep.get('avisos')==='1')showBell=true;document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><section id="cpWelcome" class="cp-welcome" aria-label="Boas-vindas e notificações"></section><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpEnableAlerts').onclick=enableLocalNotifications;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};$('#cpTeamYear').onchange=e=>{year=Number(e.target.value)||2026;month=0;showBell=false;tab='resumo';refresh()};await refresh();void confirmDevicePush();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},30000);}
  async function refresh(){try{const [result,identity]=await Promise.all([api('state',undefined,'year='+year),api('delivery-profile',undefined,'year='+year).catch(()=>({identified:false,statuses:{}}))]);teacherProfile=identity.identified?identity:null;availableYears=Array.isArray(result.availableYears)?result.availableYears:[2026];data=result.publication;
     const newNoticeIds=new Set(activeNotices().map(n=>String(n.id)));
     const knownIds=seenPublicationIds.get(year);
@@ -263,7 +291,7 @@
       }
     }
     seenPublicationIds.set(year,newNoticeIds);
-    const picker=$('#cpTeamYear');if(picker){picker.innerHTML=availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('');picker.value=String(year)}drawTeam();checkLocalNotifications()}catch(e){if(e.status===401){clearInterval(timer);gateway('Sessão expirada. Entre novamente.');return;}toast('Falha ao atualizar: '+e.message);}}
+    const picker=$('#cpTeamYear');if(picker){picker.innerHTML=availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('');picker.value=String(year)}renderTeamWelcome();drawTeam();checkLocalNotifications()}catch(e){if(e.status===401){clearInterval(timer);gateway('Sessão expirada. Entre novamente.');return;}toast('Falha ao atualizar: '+e.message);}}
 
 
  // Marcadores de leitura são separados das notificações entregues ao aparelho.
@@ -318,6 +346,7 @@
  }
  async function enableLocalNotifications(){
   const button=$('#cpEnableAlerts');
+  const welcomeButton=$('#cpWelcomeEnablePush');if(welcomeButton){welcomeButton.disabled=true;welcomeButton.textContent='Ativando...'}
   if(button){button.disabled=true;button.textContent='Conectando...'}
   try{
    const subscription=await registerDeviceForPush();
@@ -334,10 +363,12 @@
   }finally{if(button)button.disabled=false}
  }
  function updatePushButton(active){
-  const button=$('#cpEnableAlerts');if(!button)return;
+  pushChecked=true;pushConfirmed=Boolean(active);
+  const button=$('#cpEnableAlerts');if(!button){renderTeamWelcome();return;}
   button.classList.toggle('cp-push-active',Boolean(active));
   button.textContent=active?'✓ Notificações ativas':'Ativar notificações';
   button.title=active?'Este aparelho está inscrito para receber avisos publicados pela Gestão.':'Autorize o Android para receber avisos com o aplicativo fechado.';
+  renderTeamWelcome();
  }
  async function confirmDevicePush(){
   if(role!=='equipe')return;

@@ -372,3 +372,27 @@ body.portal-locked { background:#eef3f9; }
 .cp-activation-footer button{font-size:12px}
 @media(max-width:780px){.cp-activation-help{padding:15px 18px}.cp-activation-footer{padding:0 18px 20px}}
 @media(max-width:500px){.cp-invite-buttons{flex-direction:column;align-items:stretch}.cp-invite-buttons .cp-btn{width:100%}.cp-invite-howto{padding:12px}.cp-first-access{padding:11px 12px}}
+
+
+/* Boas-vindas personalizadas e convite para ativar notificações, após login da Equipe. */
+.cp-welcome{display:flex;align-items:center;justify-content:space-between;gap:17px;flex-wrap:wrap;margin:0 0 18px;padding:17px 20px;border:1px solid #dbe7f3;border-radius:17px;background:linear-gradient(120deg,#fff,#f4f9fe);box-shadow:0 6px 17px #193d610c}
+.cp-welcome-person{display:flex;align-items:center;gap:13px;flex:1 1 210px;min-width:0}
+.cp-welcome-avatar{width:47px;height:47px;flex:0 0 47px;display:grid;place-items:center;border-radius:14px;background:#153b66;color:#fff;font-size:21px;font-weight:850;text-transform:uppercase}
+.cp-welcome-person small{display:block;font-size:9px;letter-spacing:1.25px;font-weight:900;color:#547b9e;margin-bottom:4px}
+.cp-welcome-person h2{margin:0;line-height:1.15;font-size:clamp(20px,2.5vw,25px);letter-spacing:-.55px;font-weight:850;color:#123b61}
+.cp-welcome-push{display:flex;align-items:center;gap:10px;flex:1 1 280px;max-width:540px;border-radius:12px;padding:11px 13px;background:#eef5fb;border:1px solid #dce9f3;color:#315b7b;min-width:0}
+.cp-welcome-push.needs-setup{background:#fff8e9;border-color:#f0dba8;color:#926018}
+.cp-welcome-push.is-enabled{background:#eef9f3;border-color:#cfebd9;color:#24734d}
+.cp-welcome-push-symbol{display:grid;place-items:center;flex:0 0 35px;width:35px;height:35px;border-radius:10px;background:#dce9f4;color:#315b7b;font-size:20px;font-weight:900}
+.cp-welcome-push.needs-setup .cp-welcome-push-symbol{background:#fce8b9;color:#966013}
+.cp-welcome-push.is-enabled .cp-welcome-push-symbol{background:#d8f1e1;color:#24734d}
+.cp-welcome-push>div{flex:1;min-width:0}
+.cp-welcome-push strong{font-size:12px;line-height:1.35;display:block;color:inherit}
+.cp-welcome-push small{display:block;font-size:10px;line-height:1.45;margin-top:3px;color:#66819a}
+.cp-welcome-push.is-enabled small{color:#4d8064}
+.cp-welcome-push.needs-setup small{color:#926e38}
+.cp-welcome-push button{flex:0 0 auto;min-height:39px;border:0;border-radius:9px;background:#176297;color:white;font-size:12px;font-weight:800;padding:9px 13px}
+.cp-welcome-push button:disabled{opacity:.6;cursor:wait}
+.cp-welcome-push button:focus-visible{outline:3px solid #6eaede;outline-offset:3px}
+@media(max-width:700px){.cp-welcome{padding:14px 13px;gap:13px;margin-bottom:15px;border-radius:15px}.cp-welcome-person{flex-basis:100%}.cp-welcome-push{max-width:none;flex-basis:100%}.cp-welcome-person h2{font-size:22px}}
+@media(max-width:420px){.cp-welcome-push{flex-wrap:wrap}.cp-welcome-push button{margin-left:45px}.cp-welcome-avatar{width:42px;height:42px;flex-basis:42px}}
