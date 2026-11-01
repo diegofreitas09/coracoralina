@@ -96,7 +96,8 @@
       const date = `${YEAR}-${String(selectedMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
       const list = (window.CoraYears?.filterVisible(events)||events).filter(item=>item.date===date);
       const isToday = today.getFullYear()===YEAR && today.getMonth()===selectedMonth && today.getDate()===day;
-      html += `<button type="button" class="day ${isToday?'today':''} ${list.length?'has-event':''}" data-date="${date}" title="${list.length?escapeHtml(list.map(item=>item.title).join(' • ')):'Adicionar evento em '+day+'/'+(selectedMonth+1)+'/'+YEAR}" aria-label="${day} de ${MONTHS[selectedMonth]}: ${list.length} evento(s)"><span class="date-num">${day}</span>${list.length?`<span class="event-markers" aria-hidden="true">${list.slice(0,3).map(item=>`<i class="event-marker ${item.type==='Reunião'?'marker-meeting':item.type==='Avaliação'?'marker-exam':item.type==='Feriado'?'marker-holiday':'marker-general'}"></i>`).join('')}</span><span class="event-quantity">${list.length} ${list.length===1?'evento':'eventos'}</span>`:''}</button>`;
+      const stage=window.CoraStages?.get?.(YEAR)?.find(st=>st.start===date||st.end===date);
+      html += `<button type="button" class="day ${isToday?'today':''} ${list.length?'has-event':''} ${stage?'has-stage-boundary':''}" data-date="${date}" title="${list.length?escapeHtml(list.map(item=>item.title).join(' • ')):'Adicionar evento em '+day+'/'+(selectedMonth+1)+'/'+YEAR}" aria-label="${day} de ${MONTHS[selectedMonth]}: ${list.length} evento(s)"><span class="date-num">${day}</span>${stage?`<span class="stage-mark">${stage.start===date?'Início':'Fim'} da ${stage.number}ª etapa</span>`:''}${list.length?`<span class="event-markers" aria-hidden="true">${list.slice(0,3).map(item=>`<i class="event-marker ${item.type==='Reunião'?'marker-meeting':item.type==='Avaliação'?'marker-exam':item.type==='Feriado'?'marker-holiday':'marker-general'}"></i>`).join('')}</span><span class="event-quantity">${list.length} ${list.length===1?'evento':'eventos'}</span>`:''}</button>`;
     }
     $('#calendar').innerHTML = html + '</div>';
     $('#calendar').querySelectorAll('[data-date]').forEach(button => button.addEventListener('click',() => {const date=button.dataset.date;if(eventsFor(selectedMonth).some(item=>item.date===date)&&typeof window.coraOpenDayEvents==='function')window.coraOpenDayEvents(date);else openEventModal(date);}));
@@ -271,7 +272,12 @@
       const label=(ev.time?String(ev.time)+' · ':'')+String(ev.title||'Evento');
       text(g,ellipsis(g,label,step-58),x+42,cy+21,16,navy,'700');
     });
-    if(daily.length===1&&daily[0].notes){
+    const stage=window.CoraStages?.get?.(YEAR)?.find(st=>st.start===date||st.end===date);
+    if(stage){
+      rounded(g,x+8,y+cellH-32,step-16,27,6,'#ffedb2');
+      text(g,(stage.start===date?'INÍCIO ':'FIM ')+stage.number+'ª ETAPA',x+14,y+cellH-14,16,'#885800','800');
+    }
+    if(daily.length===1&&daily[0].notes&&!stage){
       g.font='500 14px Arial,sans-serif';
       text(g,ellipsis(g,daily[0].notes,step-23),x+10,lineTop+visible*38+15,14,'#61768b');
     }
@@ -495,6 +501,7 @@
     window.addEventListener('cora-year-changed',e=>switchYear(e.detail.year));
     window.addEventListener('cora-audience-changed',()=>render());
     window.addEventListener('cora-projects-changed',e=>{if(Number(e.detail?.year)===YEAR)render();});
+    window.addEventListener('cora-stages-updated',e=>{if(Number(e.detail?.year)===YEAR)render();});
     window.addEventListener('cora-data-changed',e=>{if(Number(e.detail.year)===YEAR){loadEvents();render();}});
     try{database=await openDB();await refreshFiles();}catch(error){console.error(error);notify('Os arquivos não podem ser salvos neste navegador.');}
     render();
