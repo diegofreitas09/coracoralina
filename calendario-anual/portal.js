@@ -116,9 +116,45 @@
    toast(`Publicado ${year} para a equipe: ${res.counts.events} eventos, ${res.counts.notices} avisos e ${res.counts.birthdays??birthdays.length} aniversariantes.`);
   }catch(e){toast('Não foi possível publicar: '+e.message);}finally{btn.disabled=false;}
  }
- function teamNav(){return `<div class="cp-team-head"><img id="cpTeamLogo" alt="Brasão do Colégio Cora Coralina"><div><small>COLÉGIO CORA CORALINA · AMBIENTE DE CONSULTA</small><h1>Equipe Pedagógica</h1></div><label class="cp-year-label">Ano letivo <select id="cpTeamYear" aria-label="Ano letivo">${availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('')}</select></label><span class="cp-spacer"></span><button class="cp-btn cp-bell" id="cpBell" aria-label="Abrir notificações">🔔<em id="cpBellCount" style="display:none">0</em></button><button class="cp-btn" id="cpRefresh">Atualizar</button><button class="cp-btn" id="cpTeamLogout">Sair</button></div>`}
- async function team(){year=2026;document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};$('#cpTeamYear').onchange=e=>{year=Number(e.target.value)||2026;month=0;showBell=false;tab='resumo';refresh()};await refresh();clearInterval(timer);timer=setInterval(refresh,90000);}
- async function refresh(){try{const result=await api('state',undefined,'year='+year);availableYears=Array.isArray(result.availableYears)?result.availableYears:[2026];data=result.publication;const picker=$('#cpTeamYear');if(picker){picker.innerHTML=availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('');picker.value=String(year)}drawTeam()}catch(e){if(e.status===401){clearInterval(timer);gateway('Sessão expirada. Entre novamente.');return;}toast('Falha ao atualizar: '+e.message);}}
+ function teamNav(){return `<div class="cp-team-head"><img id="cpTeamLogo" alt="Brasão do Colégio Cora Coralina"><div><small>COLÉGIO CORA CORALINA · AMBIENTE DE CONSULTA</small><h1>Equipe Pedagógica</h1></div><label class="cp-year-label">Ano letivo <select id="cpTeamYear" aria-label="Ano letivo">${availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('')}</select></label><span class="cp-spacer"></span><button class="cp-btn soft" type="button" id="cpEnableAlerts">Ativar avisos no celular</button><button class="cp-btn cp-bell" id="cpBell" aria-label="Abrir notificações">🔔<em id="cpBellCount" style="display:none">0</em></button><button class="cp-btn" id="cpRefresh">Atualizar</button><button class="cp-btn" id="cpTeamLogout">Sair</button></div>`}
+ async function team(){year=2026;document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpEnableAlerts').onclick=enableLocalNotifications;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};$('#cpTeamYear').onchange=e=>{year=Number(e.target.value)||2026;month=0;showBell=false;tab='resumo';refresh()};await refresh();clearInterval(timer);timer=setInterval(refresh,90000);}
+ async function refresh(){try{const result=await api('state',undefined,'year='+year);availableYears=Array.isArray(result.availableYears)?result.availableYears:[2026];data=result.publication;const picker=$('#cpTeamYear');if(picker){picker.innerHTML=availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('');picker.value=String(year)}drawTeam();checkLocalNotifications()}catch(e){if(e.status===401){clearInterval(timer);gateway('Sessão expirada. Entre novamente.');return;}toast('Falha ao atualizar: '+e.message);}}
+
+ const localNoticesKey=()=>('cora_team_notified_'+year+'_v1');
+ async function showDeviceNotice(title,body,tag){
+  if(!('serviceWorker' in navigator))return false;
+  try{
+   const reg=await navigator.serviceWorker.ready;
+   await reg.showNotification(title,{body,tag,icon:'./app-icon-192.png',badge:'./app-icon-192.png',data:{url:'./?avisos=1'},renotify:false});
+   return true;
+  }catch{return false}
+ }
+ async function enableLocalNotifications(){
+  if(!('Notification' in window)||!('serviceWorker' in navigator)){toast('Este navegador não oferece notificações para o aplicativo.');return}
+  const result=await Notification.requestPermission();
+  if(result!=='granted'){toast('Ative a permissão de notificações nas configurações do aparelho.');return}
+  try{
+   localStorage.setItem('cora_team_device_alerts_enabled','1');
+   const already=new Set(JSON.parse(localStorage.getItem(localNoticesKey())||'[]'));
+   upcoming().forEach(n=>already.add(n.id));
+   localStorage.setItem(localNoticesKey(),JSON.stringify([...already]));
+  }catch{}
+  const ok=await showDeviceNotice('Alertas do Colégio Cora Coralina','Avisos ativos enquanto o aplicativo estiver aberto.','cora-alerts-enabled');
+  toast(ok?'Permissão ativada. Novos avisos serão exibidos no aparelho com o aplicativo aberto.':'Permissão concedida, mas não foi possível exibir o aviso do aparelho.');
+ }
+ async function checkLocalNotifications(){
+  if(role!=='equipe'||!data||!('Notification' in window)||Notification.permission!=='granted')return;
+  if(localStorage.getItem('cora_team_device_alerts_enabled')!=='1')return;
+  let notified=[];
+  try{notified=JSON.parse(localStorage.getItem(localNoticesKey())||'[]')}catch{}
+  const known=new Set(Array.isArray(notified)?notified:[]);
+  const list=upcoming().filter(a=>!known.has(a.id)).slice(0,3);
+  for(const item of list){
+   if(await showDeviceNotice(item.title,String(item.desc||'Atividade do calendário')+(item.date?' · '+item.date:''),'cora-'+year+'-'+item.id))known.add(item.id);
+  }
+  if(list.length)try{localStorage.setItem(localNoticesKey(),JSON.stringify([...known]))}catch{}
+ }
+
  function publishedBirthdays(){
   return (Array.isArray(data?.birthdays)?data.birthdays:[])
     .filter(p=>p&&p.name&&Number(p.day)>=1&&Number(p.day)<=31&&Number(p.month)>=1&&Number(p.month)<=12)
