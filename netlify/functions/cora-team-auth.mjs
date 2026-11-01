@@ -55,9 +55,15 @@ export async function loginEmployee(input,secret){
  if(!validEmail(email)||password.length>120)return error('E-mail ou senha inválidos.',401);
  const r=await account(keyFor(email));
  if(!r||r.status!=='Ativo'||!r.salt||!r.passwordHash)return error('Conta não autorizada ou credenciais incorretas.',401);
+ if(Date.parse(r.lockedUntil||'')>Date.now())return error('Muitas tentativas. Tente novamente em alguns minutos.',429);
  const got=Buffer.from(derive(password,r.salt),'hex'),expected=Buffer.from(r.passwordHash,'hex');
- if(got.length!==expected.length||!timingSafeEqual(got,expected))return error('Conta não autorizada ou credenciais incorretas.',401);
- const updated={...r,lastLogin:new Date().toISOString()};
+ if(got.length!==expected.length||!timingSafeEqual(got,expected)){
+  const count=(Number(r.failedLogins)||0)+1;
+  await db().setJSON(r.id,{...r,failedLogins:count>=7?0:count,
+   lockedUntil:count>=7?new Date(Date.now()+10*60*1000).toISOString():'',updatedAt:new Date().toISOString()});
+  return error('Conta não autorizada ou credenciais incorretas.',401);
+ }
+ const updated={...r,failedLogins:0,lockedUntil:'',lastLogin:new Date().toISOString()};
  await db().setJSON(r.id,updated);
  return {ok:true,role:'equipe',member:publicMember(updated),cookie:signedSession(updated,secret)};
 }
