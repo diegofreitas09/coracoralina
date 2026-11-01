@@ -57,17 +57,18 @@ export async function loginEmployee(input,secret){
  if(!validEmail(email)||password.length>120)return error('E-mail ou senha inválidos.',401);
  const r=await account(keyFor(email));
  if(!r||r.status!=='Ativo'||!r.salt||!r.passwordHash)return error('Conta não autorizada ou credenciais incorretas.',401);
- if(Date.parse(r.lockedUntil||'')>Date.now())return error('Muitas tentativas. Tente novamente em alguns minutos.',429);
+ const authState=await activity().get(r.id,{type:'json',consistency:'strong'})||{};
+ if(Date.parse(authState.lockedUntil||'')>Date.now())return error('Muitas tentativas. Tente novamente em alguns minutos.',429);
  const got=Buffer.from(derive(password,r.salt),'hex'),expected=Buffer.from(r.passwordHash,'hex');
  if(got.length!==expected.length||!timingSafeEqual(got,expected)){
-  const count=(Number(r.failedLogins)||0)+1;
-  await db().setJSON(r.id,{...r,failedLogins:count>=7?0:count,
-   lockedUntil:count>=7?new Date(Date.now()+10*60*1000).toISOString():'',updatedAt:new Date().toISOString()});
+  const count=(Number(authState.failedLogins)||0)+1;
+  await activity().setJSON(r.id,{...authState,failedLogins:count>=7?0:count,
+   lockedUntil:count>=7?new Date(Date.now()+10*60*1000).toISOString():''});
   return error('Conta não autorizada ou credenciais incorretas.',401);
  }
  const validNow=await account(r.id);
  if(validNow?.status!=='Ativo'||validNow.sessionVersion!==r.sessionVersion)return error('Conta suspensa ou desativada.',401);
- await activity().setJSON(r.id,{lastLogin:new Date().toISOString()});
+ await activity().setJSON(r.id,{...authState,lastLogin:new Date().toISOString(),failedLogins:0,lockedUntil:''});
  return {ok:true,role:'equipe',member:publicMember(validNow),cookie:signedSession(validNow,secret)};
 }
 export async function activateEmployee(input,secret){
