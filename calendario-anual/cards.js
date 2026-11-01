@@ -159,12 +159,12 @@
   const LABELS={comunicado:'Comunicado',solidaria:'Campanha solidária',reuniao:'Reunião',cronograma:'Cronograma geral',avaliacao:'2ª chamada',aniversario:'Aniversariantes do mês'};
   function exportName(extension){
     const suffix=String(Date.now());
-    const month=template==='comunicado'?Number(holidaysMonth?.value):Number(assessmentsMonth?.value);
-    const label=template==='comunicado'?`Comunicado_${MONTHS[(month||11)-1]}_2026`:(template==='cronograma'||template==='avaliacao')?`${template==='cronograma'?'Cronograma_Geral':'Segunda_Chamada'}_${MONTHS[(month||11)-1]}_2026`:`${template}_2026`;
+    const month=Number(monthSelect()?.value)||11;
+    const label=template==='comunicado'?`Comunicado_${MONTHS[(month||11)-1]}_2026`:(template==='cronograma'||template==='avaliacao')?`${template==='cronograma'?'Cronograma_Geral':'Segunda_Chamada'}_${MONTHS[(month||11)-1]}_2026` :template==='aniversario'?`Aniversariantes_${MONTHS[(month||11)-1]}_2026`:`${template}_2026`;
     return `Cora_Coralina_${label}_${suffix}.${extension}`;
   }
   function updateExportContext(){
-    const message=template==='comunicado'?`Modelo ativo: COMUNICADO · ${MONTHS[(Number(holidaysMonth?.value)||11)-1].toUpperCase()} DE 2026`: (template==='cronograma'||template==='avaliacao')?`Modelo ativo: ${LABELS[template].toUpperCase()} · ${MONTHS[(Number(assessmentsMonth?.value)||11)-1].toUpperCase()} DE 2026`:`Modelo ativo: ${LABELS[template].toUpperCase()}`;
+    const message=template==='comunicado'?`Modelo ativo: COMUNICADO · ${MONTHS[(Number(holidaysMonth?.value)||11)-1].toUpperCase()} DE 2026`: (template==='cronograma'||template==='avaliacao')?`Modelo ativo: ${LABELS[template].toUpperCase()} · ${MONTHS[(Number(assessmentsMonth?.value)||11)-1].toUpperCase()} DE 2026`:template==='aniversario'?`Modelo ativo: ANIVERSARIANTES · ${MONTHS[(Number(birthdayMonth?.value)||11)-1].toUpperCase()} DE 2026`:`Modelo ativo: ${LABELS[template].toUpperCase()}`;
     const target=$('cardExportContext');if(target)target.textContent=message;
     const png=$('downloadCardPng');if(png)png.textContent=`↓ PNG · ${LABELS[template]}`;
     const pdf=$('downloadCardPdf');if(pdf)pdf.textContent=`↓ PDF · ${LABELS[template]}`;
@@ -384,7 +384,8 @@
   function saveDraft(){try{drafts[template]=getForm();localStorage.setItem(ID,JSON.stringify(drafts));$('cardSaveStatus').textContent='Rascunho salvo'}catch{$('cardSaveStatus').textContent='Salvamento indisponível'}}
   function setTemplate(name){if(!DEFAULTS[name])return;saveDraft();template=name;
     if((name==='cronograma'||name==='avaliacao')&&!drafts[name])drafts[name]=assessmentDraft(calendarMonth(),name);
-    setForm(getDraft());if(holidaysControls)holidaysControls.hidden=name!=='comunicado';if(assessmentsControls)assessmentsControls.hidden=name!=='cronograma'&&name!=='avaliacao';if(name==='comunicado'){updateHolidayInfo();const hint=$('cardItemsHint');if(hint)hint.textContent='No comunicado, os feriados do mês podem ser editados.';}if(name==='cronograma'||name==='avaliacao')updateAssessmentInfo();const detailFields=$('cardExtraDetails');if(detailFields)detailFields.hidden=(name==='cronograma'||name==='avaliacao');document.querySelectorAll('[data-template]').forEach(el=>{el.classList.toggle('is-selected',el.dataset.template===name);el.setAttribute('aria-pressed',el.dataset.template===name?'true':'false')});render()}
+    if(name==='aniversario'&&!drafts[name])drafts.aniversario=birthdayDraft(calendarMonth());
+    setForm(getDraft());if(holidaysControls)holidaysControls.hidden=name!=='comunicado';if(assessmentsControls)assessmentsControls.hidden=name!=='cronograma'&&name!=='avaliacao';if(birthdayControls)birthdayControls.hidden=name!=='aniversario';if(name==='comunicado'){updateHolidayInfo();const hint=$('cardItemsHint');if(hint)hint.textContent='No comunicado, os feriados do mês podem ser editados.';}if(name==='cronograma'||name==='avaliacao')updateAssessmentInfo();if(name==='aniversario')updateBirthdayInfo();const detailFields=$('cardExtraDetails');if(detailFields)detailFields.hidden=(name==='cronograma'||name==='avaliacao'||name==='aniversario');document.querySelectorAll('[data-template]').forEach(el=>{el.classList.toggle('is-selected',el.dataset.template===name);el.setAttribute('aria-pressed',el.dataset.template===name?'true':'false')});render()}
   function createExportPages(){const pages=[];const n=pageCount(),d=getForm(),fn=template==='cronograma'?schedule:template==='avaliacao'?assessment:template==='aniversario'?birthdayCard:null;
     if(!fn)return [canvas];
     for(let i=0;i<n;i++){const c=document.createElement('canvas');c.width=W;c.height=H;fn(c.getContext('2d'),d,i);pages.push(c)}
@@ -398,16 +399,21 @@
   form.addEventListener('submit',event=>event.preventDefault());
   if(holidaysMonth)holidaysMonth.addEventListener('change',()=>fillMonth(holidaysMonth.value));
   if(assessmentsMonth)assessmentsMonth.addEventListener('change',()=>fillAssessments(assessmentsMonth.value));
+  if(birthdayMonth)birthdayMonth.addEventListener('change',()=>fillBirthdayCard(birthdayMonth.value));
+  $('loadBirthdayCard')?.addEventListener('click',()=>fillBirthdayCard(birthdayMonth.value));
+  window.addEventListener('cora-birthday-card-request',event=>{setTemplate('aniversario');fillBirthdayCard(event.detail?.month||calendarMonth());});
+  window.addEventListener('cora-birthdays-changed',()=>{if(template==='aniversario')fillBirthdayCard(birthdayMonth?.value||calendarMonth());});
   $('loadMonthAssessments')?.addEventListener('click',()=>fillAssessments(assessmentsMonth.value));
   window.addEventListener('cora-month-changed',event=>{
     const selected=Number(event.detail?.month)+1;
     if(template==='comunicado'&&selected>=1&&selected<=12&&Number(holidaysMonth?.value)!==selected)fillMonth(selected);
     if((template==='cronograma'||template==='avaliacao')&&selected>=1&&selected<=12&&Number(assessmentsMonth?.value)!==selected)fillAssessments(selected);
+    if(template==='aniversario'&&selected>=1&&selected<=12&&Number(birthdayMonth?.value)!==selected)fillBirthdayCard(selected);
   });
   $('loadMonthHolidays')?.addEventListener('click',()=>fillMonth(holidaysMonth.value));
   form.addEventListener('input',()=>{saveDraft();render()});
   document.querySelectorAll('[data-template]').forEach(el=>el.addEventListener('click',()=>setTemplate(el.dataset.template)));
-  $('resetCard').addEventListener('click',()=>{if(confirm('Restaurar o texto original deste modelo?')){drafts[template]=template==='comunicado'?holidayDraft(holidaysMonth.value):(template==='cronograma'||template==='avaliacao')?assessmentDraft(assessmentsMonth.value,template):{...DEFAULTS[template]};setForm(drafts[template]);saveDraft();updateHolidayInfo();if(template==='cronograma'||template==='avaliacao')updateAssessmentInfo();render()}});
+  $('resetCard').addEventListener('click',()=>{if(confirm('Restaurar o texto original deste modelo?')){drafts[template]=template==='comunicado'?holidayDraft(holidaysMonth.value):(template==='cronograma'||template==='avaliacao')?assessmentDraft(assessmentsMonth.value,template):template==='aniversario'?birthdayDraft(birthdayMonth.value):{...DEFAULTS[template]};setForm(drafts[template]);saveDraft();updateHolidayInfo();if(template==='cronograma'||template==='avaliacao')updateAssessmentInfo();if(template==='aniversario')updateBirthdayInfo();render()}});
   $('downloadCardPng').addEventListener('click',async()=>{await assetsReady;ensureComunicadoMonth();saveDraft();render();const filename=exportName('png');pngCanvas(createExportPages()).toBlob(blob=>{if(blob){download(blob,filename);status(`Arquivo gerado: ${LABELS[template]}${template==='comunicado'?' de '+MONTHS[(Number(holidaysMonth?.value)||11)-1]:''}.`)}else status('Falha ao gerar imagem.')},'image/png')});
   $('downloadCardPdf').addEventListener('click',async()=>{await assetsReady;ensureComunicadoMonth();saveDraft();render();const btn=$('downloadCardPdf');btn.disabled=true;btn.textContent='Gerando PDF...';try{const file=window.CoraPDF.fromCanvases(createExportPages(),{pageWidth:540,pageHeight:675,title:`Card Cora Coralina ${template} 2026`});download(file,exportName('pdf'));status(`PDF gerado: ${LABELS[template]}.`)}catch(e){console.error(e);status('PDF indisponível neste navegador. Baixe o PNG e imprima como PDF.')}finally{btn.disabled=false;updateExportContext()}});
   $('jumpCards').addEventListener('click',()=>$('cardStudio').scrollIntoView({behavior:'smooth',block:'start'}));
@@ -421,8 +427,9 @@
   }
   if(!drafts.cronograma)drafts.cronograma=assessmentDraft(calendarMonth(),'cronograma');
   if(!drafts.avaliacao||!drafts.avaliacao.month)drafts.avaliacao={...DEFAULTS.avaliacao};
+  if(!drafts.aniversario||!drafts.aniversario.month)drafts.aniversario=birthdayDraft(calendarMonth());
   
   setForm(getDraft());ensureComunicadoMonth();updateHolidayInfo();render();
   const assetsReady=Promise.all([loadImg(window.CORA_SCHOOL_LOGO||window.CORA_STUDIO_ASSETS?.logo),loadImg(window.CORA_STUDIO_ASSETS?.toys)]).then(([a,b])=>{logo=a;toys=b;render()});
-  window.addEventListener('cora-backup-restored',()=>{try{drafts=JSON.parse(localStorage.getItem(ID)||'{}')||{}}catch{drafts={}}if(!drafts.comunicado?.month)drafts.comunicado=holidayDraft(calendarMonth());if(!drafts.cronograma||/2\s*[ªaºo]?\s*chamada/i.test(String(drafts.cronograma.title||'')))drafts.cronograma=assessmentDraft(calendarMonth(),'cronograma');if(!drafts.avaliacao)drafts.avaliacao={...DEFAULTS.avaliacao};setForm(getDraft());ensureComunicadoMonth();updateHolidayInfo();updateAssessmentInfo();render()});
+  window.addEventListener('cora-backup-restored',()=>{try{drafts=JSON.parse(localStorage.getItem(ID)||'{}')||{}}catch{drafts={}}if(!drafts.comunicado?.month)drafts.comunicado=holidayDraft(calendarMonth());if(!drafts.cronograma||/2\s*[ªaºo]?\s*chamada/i.test(String(drafts.cronograma.title||'')))drafts.cronograma=assessmentDraft(calendarMonth(),'cronograma');if(!drafts.avaliacao)drafts.avaliacao={...DEFAULTS.avaliacao};if(!drafts.aniversario)drafts.aniversario=birthdayDraft(calendarMonth());setForm(getDraft());ensureComunicadoMonth();updateHolidayInfo();updateAssessmentInfo();updateBirthdayInfo();render()});
 })();
