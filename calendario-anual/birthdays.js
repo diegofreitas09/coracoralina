@@ -14,7 +14,30 @@
   const sorted=arr=>[...arr].sort((a,b)=>a.month-b.month||a.day-b.day||a.name.localeCompare(b.name,'pt-BR'));
   function publish(){window.dispatchEvent(new CustomEvent('cora-birthdays-changed',{detail:{count:people.length}}));}
   function save(){try{localStorage.setItem(KEY,JSON.stringify(people));publish();return true}catch{return false}}
-  window.CoraBirthdays={key:KEY,all:()=>sorted(read()),byMonth:n=>sorted(read().filter(p=>p.month===Number(n)))};
+  const INITIAL_SYNC_KEY='cora_birthdays_management_initial_sync_v1';
+  // Importa a lista institucional somente uma vez em cada navegador:
+  // mantém aniversariantes já cadastrados e não recria registros excluídos depois.
+  function importBaseline(incoming){
+    if(!Array.isArray(incoming)||!incoming.length)return 0;
+    try{if(localStorage.getItem(INITIAL_SYNC_KEY))return 0;}catch{return 0;}
+    const existing=read(),merged=[...existing];let added=0;
+    for(const candidate of incoming){
+      const name=String(candidate?.name||'').trim().replace(/\s+/g,' ');
+      const day=Number(candidate?.day),month=Number(candidate?.month);
+      if(!name||!valid(day,month))continue;
+      if(merged.some(p=>normalize(p.name)===normalize(name)&&p.day===day&&p.month===month))continue;
+      const id=String(candidate.id||'birthday-import-'+month+'-'+day+'-'+added);
+      merged.push({id,name:name.slice(0,100),role:String(candidate.role||'').slice(0,85),day,month});added++;
+    }
+    try{
+      localStorage.setItem(KEY,JSON.stringify(merged));
+      localStorage.setItem(INITIAL_SYNC_KEY,'1');
+      people=merged;render();publish();
+      if(added)feedback('✓ '+added+' aniversariante(s) importado(s) do cadastro institucional.');
+      return added;
+    }catch{return 0;}
+  }
+  window.CoraBirthdays={key:KEY,all:()=>sorted(read()),byMonth:n=>sorted(read().filter(p=>p.month===Number(n))),importBaseline};
   monthFilter.innerHTML='<option value="all">Todos os meses</option>'+MONTHS.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
   monthFilter.value=String(new Date().getMonth()+1);
   function feedback(message,ok=true){const e=$('birthdayFeedback');e.textContent=message;e.classList.toggle('birthday-success',ok);e.classList.toggle('birthday-error',!ok)}
