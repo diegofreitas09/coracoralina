@@ -29,28 +29,41 @@ export async function registrations(){
  const items=await store().get('registrations',{type:'json',consistency:'strong'});
  return Array.isArray(items)?items.filter(x=>allowedSubscription(x.subscription)).slice(0,1500):[];
 }
-export async function saveRegistration(subscription){
+export async function saveRegistration(subscription,owner){
+ if(!/^member-[a-f0-9]{64}$/.test(String(owner?.userId||''))||!Number.isInteger(owner?.version))throw new Error('Conta pessoal obrigatória');
  if(!allowedSubscription(subscription))throw new Error('Inscrição inválida');
  const index=fingerprint(subscription);
  const all=await registrations();
- const next=[...all.filter(s=>s.id!==index),{id:index,subscription,
+ const next=[...all.filter(s=>s.id!==index),{id:index,subscription,userId:owner.userId,sessionVersion:owner.version,
   updatedAt:new Date().toISOString()}].slice(-1500);
  await store().setJSON('registrations',next);
  return {active:true,devices:next.length};
 }
-export async function deleteRegistration(subscription){
+export async function deleteRegistration(subscription,userId){
  if(!subscription?.endpoint)return {active:false};
+ if(!/^member-[a-f0-9]{64}$/.test(String(userId||'')))throw new Error('Conta pessoal necessária');
  const id=fingerprint(subscription);
- const all=await registrations(),filtered=all.filter(s=>s.id!==id);
+ const all=await registrations(),filtered=all.filter(s=>!(s.id===id&&s.userId===userId));
  await store().setJSON('registrations',filtered);
  return {active:false,devices:filtered.length};
+}
+export async function deleteUserRegistrations(userId){
+ const all=await registrations(),next=all.filter(item=>item.userId!==userId);
+ if(next.length!==all.length)await store().setJSON('registrations',next);
+ return {removed:all.length-next.length};
 }
 export const deliveryId=(kind,year,id,version='')=>
  createHash('sha256').update([kind,year,id,version].join('|')).digest('hex').slice(0,32);
 export async function hasDelivered(id){return Boolean(await store().get('sent-'+id,{type:'json',consistency:'strong'}))}
 export async function markDelivered(id,value){await store().setJSON('sent-'+id,{at:new Date().toISOString(),...value})}
 export async function dispatchPush(message,{timeout=4500}={}){
- const all=await registrations();
+ const legacy=await registrations(),accounts=getStore('cora-calendar-team-accounts-v1'),cache=new Map(),all=[];
+ for(const record of legacy){
+  if(!/^member-[a-f0-9]{64}$/.test(String(record.userId||'')))continue;
+  if(!cache.has(record.userId))cache.set(record.userId,await accounts.get(record.userId,{type:'json',consistency:'strong'}));
+  const member=cache.get(record.userId);
+  if(member?.status==='Ativo'&&member.sessionVersion===record.sessionVersion)all.push(record);
+ }
  if(!all.length)return {registered:0,sent:0,failed:0,expired:0};
  const {publicKey,privateKey,subject}=vapidKeys();
  const payload=JSON.stringify({title:String(message.title||'Colégio Cora Coralina').slice(0,130),
@@ -77,10 +90,10 @@ export async function dispatchPush(message,{timeout=4500}={}){
  return {registered:all.length,sent,failed,expired};
 }
 
-export async function testDevicePush(subscription){
+export async function testDevicePush(subscription,userId){
  if(!allowedSubscription(subscription))throw new Error('Inscrição do aparelho inválida');
  const all=await registrations();
- if(!all.some(s=>s.id===fingerprint(subscription)))throw new Error('Este aparelho não está cadastrado');
+ if(!all.some(s=>s.id===fingerprint(subscription)&&s.userId===userId))throw new Error('Este aparelho não pertence à sua conta');
  const {publicKey,privateKey,subject}=vapidKeys();
  await webpush.sendNotification(subscription,JSON.stringify({
   title:'Teste de Web Push · Cora Coralina',
