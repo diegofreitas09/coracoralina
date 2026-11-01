@@ -91,9 +91,11 @@ export default async function handler(request){
   const baseBirthdays=input.birthdays===undefined?(Array.isArray(legacy?.birthdays)?legacy.birthdays:DEFAULT_BIRTHDAYS):input.birthdays.map(cleanBirthday).filter(validBirthday);
   const migrated=migrateBirthdays({...legacy,birthdays:baseBirthdays});
   const birthdays=migrated.birthdays.filter((b,i,a)=>a.findIndex(p=>p.id===b.id)===i).sort((a,b)=>a.month-b.month||a.day-b.day||a.name.localeCompare(b.name,'pt-BR'));
+  const projects=Array.from({length:12},(_,i)=>(Array.isArray(input.projects?.[i])?input.projects[i]:previous?.projects?.[i]||[])
+    .slice(0,80).map(x=>str(x,170)).filter(Boolean));
   const stages=stagesFor(input.stages??(previous?.stages||(year===2026?STAGES_2026:[])),year);
   if(stages.some(st=>Boolean(st.start)!==Boolean(st.end)||(st.start&&st.end&&st.start>st.end)))return answer({error:'Etapa com início e fim inconsistentes'},400);
-  const state={year,updatedAt:new Date().toISOString(),events,notices,birthdays,stages,birthdaySeedVersion:BIRTHDAY_SEED_VERSION,config:{defaultLeadDays:Math.max(0,Math.min(30,Number(input.config?.defaultLeadDays??3)))}};
+  const state={year,updatedAt:new Date().toISOString(),events,notices,birthdays,stages,projects,birthdaySeedVersion:BIRTHDAY_SEED_VERSION,config:{defaultLeadDays:Math.max(0,Math.min(30,Number(input.config?.defaultLeadDays??3)))}};
   await store.setJSON(publishedKey(year),state);
   const previousYears=await store.get('published-years',{type:'json',consistency:'strong'});
   const years=Array.from(new Set([2026,year,...(Array.isArray(previousYears)?previousYears:[]).filter(schoolYear)])).sort((a,b)=>a-b);
