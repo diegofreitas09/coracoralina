@@ -178,7 +178,8 @@
      if(!date||!date.startsWith(fmt(targetYear,targetMonth+1,1).slice(0,7))) {skipped++;continue;}
      const id='carry-'+targetYear+'-'+sourceYear+'-'+String(e.id||i);
      if(next.some(p=>p.id===id||p.originId===e.id&&Number(p.originYear)===sourceYear||p.date===date&&identify(p)===identify(e))){duplicates++;continue;}
-     next.push({...e,id,date,source:'Planejamento de '+sourceYear,originId:e.id,originYear:sourceYear,
+     const title=String(e.title||'').replace(new RegExp('\\b'+sourceYear+'\\b','g'),String(targetYear));
+     next.push({...e,id,title,date,source:'Planejamento de '+sourceYear,originId:e.id,originYear:sourceYear,
        notes:String(e.notes||'').slice(0,550),status:'Em revisão',needsReview:true,adjusted:undefined});
      created++;
    }
