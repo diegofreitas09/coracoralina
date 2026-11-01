@@ -117,3 +117,22 @@ body.portal-locked { background:#eef3f9; }
 .cp-stage-card{background:#fff;border:1px solid #d9e5f1;border-left:5px solid #e4b829;border-radius:13px;padding:19px;display:flex;flex-direction:column;gap:8px;color:#173a63}
 .cp-stage-card strong{font-size:19px}.cp-stage-card span{font-size:14px}.cp-stage-card.active{border-color:#268667;background:#eefbf3}.cp-stage-card small{color:#20794a;font-weight:800}
 @media(max-width:640px){.cp-stage-grid{grid-template-columns:1fr}.cp-year-label{width:100%;justify-content:flex-start}}
+
+/* Comunicados não lidos: indicador, aviso destacado e confirmação por mensagem. */
+.cp-bell.has-unread{box-shadow:0 0 0 3px #ffffff5a,0 0 0 6px #e9525b99;animation:cora-bell-signal 1.9s ease-in-out infinite}
+.cp-bell em{right:-8px;top:-9px;font-size:12px!important;font-weight:900;min-width:26px;min-height:25px;text-align:center;display:grid;place-items:center;border:2px solid #fff;z-index:2}
+@keyframes cora-bell-signal{0%,100%{transform:rotate(0)}6%,14%{transform:rotate(-5deg)}10%,18%{transform:rotate(5deg)}22%{transform:rotate(0)}}
+@media(prefers-reduced-motion:reduce){.cp-bell.has-unread{animation:none}}
+.cp-unread-banner{display:block;width:100%;margin:12px 0 17px;padding:14px 16px;border:2px solid #e4b73d;background:#fff8df;color:#624608;border-radius:12px;font-weight:800;text-align:left;box-shadow:0 5px 13px #10294b0b}
+.cp-unread-banner:hover,.cp-unread-banner:focus-visible{background:#ffefd0;outline:2px solid #e5c25c}
+.cp-alert-entry{display:grid;grid-template-columns:104px minmax(0,1fr) auto;align-items:start;gap:12px;padding:13px 12px;margin:9px 0;border:1px solid #dee8f2;border-left:4px solid #d5e1ec;border-radius:11px;background:#fff}
+.cp-alert-entry.unread{background:#fffaf0;border-left-color:#e0af25}
+.cp-alert-entry>time{color:#27577e;background:#e9f3fc;border-radius:7px;font-size:12px;padding:8px 5px;text-align:center;font-weight:700}
+.cp-alert-entry>div{min-width:0;display:flex;flex-direction:column;gap:5px}
+.cp-alert-entry strong{color:#153b60;font-size:14px;overflow-wrap:anywhere}
+.cp-alert-entry small{color:#647b91;font-size:11px}
+.cp-alert-entry p{margin:0 0 4px;color:#365875;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.cp-alert-entry button{font-size:11px;white-space:nowrap}
+.cp-tag-new{color:#815a05!important;background:#fff0b6!important;font-weight:800}
+#cpEnableAlerts{background:#eaf5ff!important;border-color:#b2d4f1!important;color:#173f6d!important;font-weight:750!important}
+@media(max-width:540px){.cp-alert-entry{grid-template-columns:75px minmax(0,1fr)}.cp-alert-entry>button{grid-column:2;justify-self:end}.cp-unread-banner{font-size:13px}}
