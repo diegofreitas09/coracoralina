@@ -55,3 +55,13 @@ Se o site Netlify for conectado ao repositório `diegofreitas09/coracoralina`, s
 - Todos os feriados do mês aparecem no card (não limitados a dois), com data e descrição; é possível editar a lista e as demais informações antes de exportar PNG/PDF.
 - Julho de 2026 não apresenta feriados classificados no calendário escolar enviado. O editor indica ausência de registros em vez de inventar datas.
 - Datas como Quarta-feira de Cinzas têm observações de funcionamento conforme a fonte. Antes de enviar a famílias, confirmar eventuais alterações do calendário e retornos das aulas com a coordenação.
+
+
+## Cards de avaliações — separação de tipos
+
+- **Cronograma geral:** extrai do calendário institucional do mês avaliações regulares, simulados, provas especiais (como OBA), atividades avaliativas e sondagens; elimina eventos de **2ª chamada**.
+- **Avaliações:** extrai apenas avaliações regulares, parciais, globais, diagnósticas e sondagens. Não inclui simulados ou provas especiais.
+- **2ª chamada:** possui rascunho exclusivo de 2ª chamada, não é alimentado pelos dois modelos gerais.
+- O seletor de mês dos dois modelos gerais atualiza o conteúdo pelo calendário principal e mantém cada rascunho separado.
+- Com mais de 10 registros, o PNG inclui vários cards empilhados e o PDF gera várias páginas, sem excluir as datas restantes.
+- Os eventos são referências do calendário de 2026, não são datas/disciplinas inventadas. Antes de divulgar para uma turma específica, o usuário deve completar as disciplinas com base no cronograma aprovado.
