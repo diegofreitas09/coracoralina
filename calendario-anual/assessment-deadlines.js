@@ -22,7 +22,14 @@
  const activeYear=()=>Number(window.CoraYears?.activeYear)||2026;
  const clone=x=>JSON.parse(JSON.stringify(x));
  const baseline=()=>({year:2026,approved:true,source:'Comunicados pedagógicos de 2026',items:clone(ORIGINAL)});
- const blank=y=>({year:y,approved:false,source:'Rascunho anual sujeito a validação',items:[1,2,3,4].map(stage=>({stage,due:'',deliveryTypes:'',items:[]}))});
+ const blank=y=>({year:y,approved:false,approvedStages:[],source:'Rascunho anual sujeito a validação',items:[1,2,3,4].map(stage=>({stage,due:'',deliveryTypes:'',items:[]}))});
+ // Compatibilidade: as aprovações anuais existentes continuam aprovadas nas quatro etapas.
+ function approvedSet(data){
+  const original=Array.isArray(data.approvedStages)?data.approvedStages:(data.approved?[1,2,3,4]:[]);
+  return new Set(original.map(Number).filter(n=>Number.isInteger(n)&&n>=1&&n<=4));
+ }
+ const isStageApproved=(data,number)=>approvedSet(data).has(number);
+ let selectedStage=1;
  function get(y=activeYear()){
   try{
    const saved=JSON.parse(localStorage.getItem(KEY(y))||'null');
@@ -40,6 +47,7 @@
     if(!a.title?.trim()||!iso(a.start)||!iso(a.end)||a.start>a.end||!a.start.startsWith(y+'-')||!a.end.startsWith(y+'-'))return {ok:false,error:'Confira o nome e o período das avaliações da '+(i+1)+'ª etapa.'};
    }
   }
+  const validStages=approvedSet(data);data.approvedStages=[...validStages].sort((a,b)=>a-b);data.approved=validStages.size===4;
   try{localStorage.setItem(KEY(y),JSON.stringify(data));syncToCalendar(y);window.dispatchEvent(new CustomEvent('cora-assessments-changed',{detail:{year:y}}));return {ok:true}}
   catch{return {ok:false,error:'Não foi possível salvar neste navegador. Faça backup.'}}
  }
@@ -64,11 +72,12 @@
   if(result.ok)render();
   return result;
  }
- function issues(data){
+ function issues(data,stageFilter=0){
   const y=data.year,out=[];
   const stages=window.CoraStages?.get?.(y)||[];
-  if(y>2026&&stages.filter(s=>s.start&&s.end).length<4)out.push('Defina as quatro etapas do ano letivo '+y+' antes de liberar o calendário.');
+  if(y>2026&&(stageFilter?(!stages.some(s=>Number(s.number)===stageFilter&&s.start&&s.end)):stages.filter(s=>s.start&&s.end).length<4))out.push(stageFilter?'Defina o período letivo da '+stageFilter+'ª etapa de '+y+' antes de validar.':'Defina as quatro etapas letivas de '+y+' antes de publicar.');
   for(const r of data.items){
+   if(stageFilter&&r.stage!==stageFilter)continue;
    if(!r.due){out.push('Entrega da '+r.stage+'ª etapa ainda não definida.');continue;}
    if(y===2027&&HOLIDAYS_2027[r.due])out.push('A entrega da '+r.stage+'ª etapa coincide com '+HOLIDAYS_2027[r.due]+' ('+display(r.due)+').');
    if(y===2027&&r.due>='2027-06-24'&&r.due<='2027-07-25')out.push('Prazo da '+r.stage+'ª etapa durante a Copa Feminina 2027 ('+display(r.due)+'): revisar recesso escolar.');
@@ -86,14 +95,15 @@
     if(st?.start&&st?.end&&(a.start<st.start||a.end>st.end))out.push(a.title+' da '+r.stage+'ª etapa ultrapassa os limites ('+display(st.start)+' a '+display(st.end)+').');
    }
   }
-  if(y===2027)out.push('Fortaleza sediará jogos da Copa do Mundo Feminina (24/06 a 25/07/2027): ajuste o recesso e o calendário conforme o Parecer CNE/CEB nº 7/2026, homologado pelo MEC.');
+  if(y===2027&&!stageFilter)out.push('Fortaleza sediará jogos da Copa do Mundo Feminina (24/06 a 25/07/2027): ajuste o recesso e o calendário conforme o Parecer CNE/CEB nº 7/2026, homologado pelo MEC.');
   if(y>2026)out.push('Confira feriados municipais, recessos, sábados letivos, carga horária e mínimo legal de 200 dias antes da publicação.');
   return [...new Set(out)];
  }
  function publicationEvents(y=activeYear()){
-  const data=get(y);if(!data.approved)return [];
+  const data=get(y);
   const result=[];
   for(const row of data.items){
+   if(!isStageApproved(data,row.stage))continue;
    const label=row.stage+'ª etapa';
    if(row.due)result.push({
     id:'cora-entrega-avaliacoes-'+y+'-'+row.stage,
@@ -132,69 +142,131 @@
    try{localStorage.setItem(key,JSON.stringify(next));window.dispatchEvent(new CustomEvent('cora-data-changed',{detail:{year:y}}));}catch{}
   }
  }
- function readForm(){
-  const y=activeYear(),data=get(y);
-  const cards=[...document.querySelectorAll('#coraAssessmentPanel [data-assessment-stage]')];
-  if(cards.length!==4)return null;
-  data.items=cards.map(card=>({
-   stage:Number(card.dataset.assessmentStage),due:card.querySelector('[data-assessment-due]')?.value||'',
-   deliveryTypes:card.querySelector('[data-assessment-types]')?.value?.trim()||'',
-   items:[...card.querySelectorAll('[data-assessment-item]')].map(el=>({
-    title:el.querySelector('[data-assessment-title]').value.trim(),
-    start:el.querySelector('[data-assessment-start]').value,
-    end:el.querySelector('[data-assessment-end]').value
-   }))
-  }));
-  data.approved=false;return data;
+
+ function selectedCard(){
+  const y=activeYear(),data=get(y),row=data.items[selectedStage-1],valid=isStageApproved(data,selectedStage);
+  if(!row)return '';
+  const alertItems=issues(data,selectedStage);
+  const windows=row.items.map((item,i)=>'<div data-assessment-item class="assess-eval-item">'+
+   '<div class="assess-eval-title"><span class="assess-eval-index">'+String(i+1).padStart(2,'0')+'</span>'+
+   '<input aria-label="Nome da avaliação '+(i+1)+'" data-assessment-title value="'+esc(item.title)+'" placeholder="Nome da avaliação"></div>'+
+   '<div class="assess-dates"><label>Início<input type="date" data-assessment-start value="'+esc(item.start)+'" min="'+y+'-01-01" max="'+y+'-12-31"></label>'+
+   '<label>Fim<input type="date" data-assessment-end value="'+esc(item.end)+'" min="'+y+'-01-01" max="'+y+'-12-31"></label></div>'+
+   '<button type="button" data-remove-assessment>Remover avaliação</button></div>').join('');
+  return '<div class="assess-stage-detail" data-assessment-stage="'+selectedStage+'">'+
+   '<div class="assess-stage-title"><div><span class="assess-eyebrow">ETAPA SELECIONADA</span><h3>'+selectedStage+'ª etapa · '+y+'</h3></div>'+
+   '<span class="assess-pill '+(valid?'is-approved':'')+'">'+(valid?'Validada':'A validar')+'</span></div>'+
+   '<div class="assess-primary-fields"><label>Data de entrega à coordenação<input type="date" data-assessment-due value="'+esc(row.due)+'" min="'+y+'-01-01" max="'+y+'-12-31"></label>'+
+   '<label>Avaliações que devem ser entregues<input type="text" data-assessment-types value="'+esc(row.deliveryTypes||'')+'" placeholder="AP2, AD, AR"></label></div>'+
+   '<details class="assess-windows" id="assessWindows" '+(row.items.length===0?'open':'')+'><summary>Períodos de avaliações <span>'+row.items.length+' registrado(s)</span></summary>'+
+   '<div class="assess-item-list">'+windows+'</div><button type="button" class="assess-add" data-add-assessment>+ Adicionar avaliação</button></details>'+
+   '<div class="assess-notes"><strong>Conferência desta etapa</strong><div>'+
+     (alertItems.length?alertItems.slice(0,9).map(t=>'<p>• '+esc(t)+'</p>').join(''):'<p>Nenhum conflito automático identificado para a etapa selecionada.</p>')+
+   '</div></div></div>';
+ }
+ function readSelected(){
+  const host=document.getElementById('coraAssessmentPanel');
+  const card=host?.querySelector('[data-assessment-stage]');
+  if(!card)return null;
+  return {stage:selectedStage,due:card.querySelector('[data-assessment-due]')?.value||'',
+    deliveryTypes:card.querySelector('[data-assessment-types]')?.value?.trim()||'',
+    items:[...card.querySelectorAll('[data-assessment-item]')].map(el=>({
+     title:el.querySelector('[data-assessment-title]')?.value?.trim()||'',
+     start:el.querySelector('[data-assessment-start]')?.value||'',
+     end:el.querySelector('[data-assessment-end]')?.value||''
+    }))
+  };
+ }
+ function saveSelected(){
+  const y=activeYear(),data=get(y),next=readSelected();
+  if(!next)return {ok:false,error:'Etapa não encontrada.'};
+  if(JSON.stringify(data.items[selectedStage-1])===JSON.stringify(next))return {ok:true,changed:false};
+  data.items[selectedStage-1]=next;
+  const approved=approvedSet(data);approved.delete(selectedStage);
+  data.approvedStages=[...approved];data.approved=false;
+  const result=save(data);
+  return {...result,changed:Boolean(result.ok)};
  }
  function render(){
   const host=document.getElementById('coraAssessmentPanel');if(!host)return;
-  const y=activeYear(),d=get(y),alerts=issues(d),count=d.items.filter(x=>x.due).length;
-  host.innerHTML='<div class="assess-heading"><div><span class="assess-eyebrow">GESTÃO · PRAZOS PEDAGÓGICOS · '+y+'</span><h2>Entregas e avaliações integradas</h2><p>Datas e janelas de provas por etapa. Edite aqui, salve e depois use <b>Publicar para equipe</b> na Gestão.</p></div><span class="assess-pill '+(d.approved?'is-approved':'')+'">'+(d.approved?'Pronto para publicar':'Em revisão')+'</span></div>'+
-  '<div class="assess-summary"><span><b>'+count+'/4</b> entregas definidas</span><span><b>5 dias</b> antecedência do lembrete</span><span><b>'+d.items.reduce((s,r)=>s+r.items.length,0)+'</b> janelas de avaliação</span></div>'+
-  '<p class="assess-email-note"><strong>Destinos:</strong> Fundamental: <a href="mailto:'+FUND+'">'+FUND+'</a> · Médio: <a href="mailto:'+MED+'">'+MED+'</a>. O disparo de e-mail não é automático.</p>'+
-  '<div class="assess-stage-grid">'+d.items.map(row=>'<article class="assess-stage-card" data-assessment-stage="'+row.stage+'">'+
-    '<h3>'+row.stage+'ª etapa</h3><label>Entrega à coordenação<input type="date" data-assessment-due value="'+esc(row.due)+'" min="'+y+'-01-01" max="'+y+'-12-31"></label>'+
-    '<label>Avaliações a entregar<input type="text" data-assessment-types value="'+esc(row.deliveryTypes||'')+'" placeholder="AP2, AD, AR"></label>'+
-    '<div class="assess-item-list">'+row.items.map(item=>'<div data-assessment-item class="assess-eval-item"><input aria-label="Nome da avaliação" data-assessment-title value="'+esc(item.title)+'" placeholder="Avaliação"><div class="assess-dates"><label>Início<input type="date" data-assessment-start value="'+esc(item.start)+'"></label><label>Fim<input type="date" data-assessment-end value="'+esc(item.end)+'"></label></div><button type="button" data-remove-assessment title="Remover este período">Remover</button></div>').join('')+'</div>'+
-    '<button type="button" class="assess-add" data-add-assessment>+ Adicionar avaliação</button></article>').join('')+'</div>'+
-  '<div class="assess-notes"><strong>Conferências necessárias</strong><div>'+(alerts.length?alerts.slice(0,12).map(t=>'<p>• '+esc(t)+'</p>').join(''):'<p>Nenhum conflito detectado pelas regras automáticas.</p>')+'</div></div>'+
-  '<div class="assess-actions">'+(y>2026?'<button type="button" class="btn btn-outline" id="assessImportYear">Importar 2026 como rascunho</button>':'')+
-  '<button type="button" class="btn btn-outline" id="assessSave">Salvar rascunho</button><button type="button" class="btn btn-primary" id="assessApprove">Validar datas e liberar para publicação</button><span role="status" id="assessStatus"></span></div>'+
-  '<p class="assess-foot">Importar um ano não substitui a definição do calendário letivo; feriados e recessos mudam. A liberação só envia dados quando a Gestão publicar.</p>';
+  const y=activeYear(),data=get(y),valid=approvedSet(data),defined=data.items.filter(x=>x.due).length;
+  host.innerHTML='<div class="assess-heading"><div><span class="assess-eyebrow">GESTÃO · PRAZOS PEDAGÓGICOS · '+y+'</span>'+
+   '<h2>Entregas e avaliações</h2><p>Selecione uma etapa para conferir suas datas e validar individualmente.</p></div>'+
+   '<span class="assess-pill '+(valid.size===4?'is-approved':'')+'">'+valid.size+'/4 validadas</span></div>'+
+   '<div class="assess-summary"><span><b>'+defined+'/4</b> entregas definidas</span><span><b>5 dias</b> de antecedência</span></div>'+
+   '<div class="assess-picker"><label for="assessStageSelect">Escolher etapa letiva</label><select id="assessStageSelect" aria-label="Selecionar etapa para editar e validar">'+
+   data.items.map(row=>'<option value="'+row.stage+'" '+(row.stage===selectedStage?'selected':'')+'>'+row.stage+'ª etapa'+
+    (isStageApproved(data,row.stage)?' · validada':' · revisar')+'</option>').join('')+'</select>'+
+   '<div class="assess-stage-progress" aria-label="Situação das quatro etapas">'+data.items.map(row=>
+    '<span class="'+(isStageApproved(data,row.stage)?'done':'')+(selectedStage===row.stage?' selected':'')+'">'+row.stage+'ª '+(isStageApproved(data,row.stage)?'✓':'○')+'</span>').join('')+'</div></div>'+
+   selectedCard()+
+   '<div class="assess-actions">'+(y>2026?'<button type="button" class="btn btn-outline" id="assessImportYear">Importar 2026 como rascunho</button>':'')+
+   '<button type="button" class="btn btn-outline" id="assessSave">Salvar esta etapa</button>'+
+   '<button type="button" class="btn btn-primary" id="assessApprove">Validar '+selectedStage+'ª etapa</button></div>'+
+   '<p class="assess-feedback" id="assessStatus" role="status" aria-live="polite"></p>'+
+   '<div class="assess-email-note"><strong>Coordenação:</strong> Fundamental <a href="mailto:'+FUND+'">'+FUND+'</a> · Médio <a href="mailto:'+MED+'">'+MED+'</a>.</div>'+
+   '<p class="assess-foot">A validação é individual. Para compartilhar as datas aprovadas, clique em <b>Publicar para equipe</b> na barra superior da Gestão. Os e-mails não são enviados automaticamente.</p>';
   const status=message=>{const e=document.getElementById('assessStatus');if(e)e.textContent=message;};
-  host.querySelectorAll('[data-add-assessment]').forEach(btn=>btn.onclick=()=>{
-   const container=btn.parentElement.querySelector('.assess-item-list');
-   const template=document.createElement('div');template.className='assess-eval-item';template.dataset.assessmentItem='';
-   template.innerHTML='<input aria-label="Nome da avaliação" data-assessment-title placeholder="Nome da avaliação"><div class="assess-dates"><label>Início<input type="date" data-assessment-start></label><label>Fim<input type="date" data-assessment-end></label></div><button type="button" data-remove-assessment>Remover</button>';
-   template.querySelector('[data-remove-assessment]').onclick=()=>template.remove();container.append(template);
+  const picker=document.getElementById('assessStageSelect');
+  picker.addEventListener('change',()=>{
+    const next=Number(picker.value),saved=saveSelected();
+    if(!saved.ok){picker.value=String(selectedStage);status(saved.error||'Confira as datas antes de mudar de etapa.');return}
+    selectedStage=next;render();
+    if(saved.changed)status('Alterações da etapa anterior salvas como rascunho. Valide-a antes de publicar.');
   });
-  host.querySelectorAll('[data-remove-assessment]').forEach(btn=>btn.onclick=()=>btn.closest('[data-assessment-item]').remove());
+  host.querySelectorAll('[data-assessment-due],[data-assessment-types],[data-assessment-title],[data-assessment-start],[data-assessment-end]').forEach(el=>{
+   el.addEventListener('input',()=>status('Alterações ainda não salvas. Ao trocar de etapa, o rascunho será salvo automaticamente.'));
+  });
+  const add=host.querySelector('[data-add-assessment]');
+  add?.addEventListener('click',()=>{
+   const list=host.querySelector('.assess-item-list'),item=document.createElement('div');
+   item.className='assess-eval-item';item.dataset.assessmentItem='';
+   item.innerHTML='<div class="assess-eval-title"><span class="assess-eval-index">+</span><input aria-label="Nome da avaliação" data-assessment-title placeholder="Nome da avaliação"></div>'+
+    '<div class="assess-dates"><label>Início<input type="date" data-assessment-start min="'+y+'-01-01" max="'+y+'-12-31"></label>'+
+    '<label>Fim<input type="date" data-assessment-end min="'+y+'-01-01" max="'+y+'-12-31"></label></div>'+
+    '<button type="button" data-remove-assessment>Remover avaliação</button>';
+   list.append(item);status('Preencha as datas da avaliação adicionada.');item.querySelector('[data-assessment-title]')?.focus();
+  });
+  host.onclick=event=>{
+    const btn=event.target.closest('[data-remove-assessment]');
+    if(!btn||!host.contains(btn))return;
+    btn.closest('[data-assessment-item]')?.remove();
+    status('Avaliação removida do formulário. Salve a etapa para confirmar.');
+  };
   document.getElementById('assessImportYear')?.addEventListener('click',()=>{
-    if(!confirm('Importar os prazos de 2026 como um novo rascunho de '+y+'? As datas ainda precisam de validação.'))return;
-    const result=draftFrom(y,2026);if(!result.ok)status(result.error);
+   if(!confirm('Importar os prazos de 2026 como rascunho de '+y+'? Os dados deste ano ainda precisarão de validação por etapa.'))return;
+   const result=draftFrom(y,2026);if(!result.ok)status(result.error);
   });
-  document.getElementById('assessSave').onclick=()=>{
-   const draft=readForm(),result=draft?save(draft):{ok:false,error:'Formulário incompleto.'};
-   if(result.ok){render();const e=document.getElementById('assessStatus');if(e)e.textContent='Rascunho salvo. Falta validar e publicar.'}else status(result.error);
-  };
-  document.getElementById('assessApprove').onclick=()=>{
-   const draft=readForm();if(!draft){status('Formulário incompleto.');return}
-   if(y>2026&&(!window.CoraStages?.get?.(y)||window.CoraStages.get(y).some(s=>!s.start||!s.end))){status('Defina e salve primeiro as quatro etapas letivas de '+y+'.');return}
-   const result=save(draft);if(!result.ok){status(result.error);return}
-   const warnings=issues(draft);
-   if(warnings.length&&!confirm('Atenção: '+warnings.length+' conferência(s) pendente(s).\n\n'+warnings.slice(0,4).join('\n')+'\n\nAs datas foram verificadas e aprovadas pela Gestão?')){status('Rascunho salvo, mas não liberado.');return}
-   if(!warnings.length&&!confirm('Confirma que as datas de '+y+' foram conferidas no calendário letivo oficial da escola?'))return;
-   draft.approved=true;const approved=save(draft);if(approved.ok){render();document.getElementById('assessStatus').textContent='Datas liberadas. Clique em Publicar para equipe na barra superior.'}else status(approved.error);
-  };
+  document.getElementById('assessSave').addEventListener('click',()=>{
+   const result=saveSelected();
+   if(!result.ok){status(result.error);return}
+   const message=result.changed?'Rascunho da '+selectedStage+'ª etapa salvo. Valide para liberá-la.':'Nenhuma alteração pendente nesta etapa.';
+   const opened=Boolean(document.getElementById('assessWindows')?.open);
+   render();document.getElementById('assessWindows').open=opened;status(message);
+  });
+  document.getElementById('assessApprove').addEventListener('click',()=>{
+   const initial=saveSelected();if(!initial.ok){status(initial.error);return}
+   const data=get(y),row=data.items[selectedStage-1];
+   if(!row.due||!row.deliveryTypes||!row.items.length){status('Preencha a entrega, os tipos de prova e pelo menos um período de avaliação.');return}
+   if(y>2026){const st=window.CoraStages?.get?.(y)?.find(x=>Number(x.number)===selectedStage);if(!st?.start||!st?.end){status('Defina o início e o fim da '+selectedStage+'ª etapa letiva antes de validar.');return}}
+   const warnings=issues(data,selectedStage);
+   const question=warnings.length?'Esta etapa possui '+warnings.length+' conferência(s):\n\n'+warnings.slice(0,5).join('\n')+'\n\nVocê conferiu e aprova as datas desta etapa?':
+     'Confirma que o prazo de entrega e as avaliações da '+selectedStage+'ª etapa de '+y+' estão corretos?';
+   if(!confirm(question)){status('Etapa salva como rascunho, sem nova validação.');return}
+   const approvals=approvedSet(data);approvals.add(selectedStage);
+   data.approvedStages=[...approvals];data.approved=approvals.size===4;
+   const result=save(data);
+   if(!result.ok){status(result.error);return}
+   render();status('✓ '+selectedStage+'ª etapa validada. Publique na Gestão para a equipe visualizar.');
+  });
  }
  document.addEventListener('DOMContentLoaded',()=>{
   const anchor=document.getElementById('coraStages')||document.getElementById('yearProjects');
   if(!anchor)return;
   const section=document.createElement('section');section.id='coraAssessmentPanel';section.className='assess-panel';
   anchor.insertAdjacentElement('afterend',section);syncToCalendar(activeYear());render();
-  window.addEventListener('cora-year-changed',()=>{syncToCalendar(activeYear());render()});
+  window.addEventListener('cora-year-changed',()=>{selectedStage=1;syncToCalendar(activeYear());render()});
   window.addEventListener('cora-stages-updated',render);
  });
- window.CoraAssessments={get,save,draftFrom,issues,publicationEvents,display,FUND,MED};
+ window.CoraAssessments={get,save,draftFrom,issues,publicationEvents,isStageApproved,display,FUND,MED};
 })();

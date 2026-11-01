@@ -1,12 +1,57 @@
-.assess-panel{margin:22px 0;padding:24px;border:1px solid #dce5ef;border-radius:18px;background:#fff;box-shadow:0 8px 24px rgba(15,40,70,.04)}
-.assess-heading{display:flex;gap:18px;align-items:flex-start;justify-content:space-between}.assess-heading h2{margin:6px 0;font-size:24px;color:#173653}.assess-heading p{margin:4px 0 12px;color:#65758b;font-size:14px}.assess-eyebrow{font-size:11px;letter-spacing:1.3px;color:#3275a7;font-weight:800}
-.assess-pill{white-space:nowrap;background:#fff2db;color:#845110;font-size:12px;font-weight:800;border-radius:99px;padding:7px 12px}.assess-pill.is-approved{background:#e5f4ed;color:#18734d}
-.assess-summary{display:flex;gap:10px;flex-wrap:wrap}.assess-summary span{padding:10px 15px;background:#f1f6fb;border-radius:10px;color:#465a72;font-size:12px}.assess-summary b{font-size:19px;color:#153f65;margin-right:5px}
-.assess-email-note{font-size:12px;color:#4e6177;padding:12px 0;overflow-wrap:anywhere}.assess-email-note a{color:#1665a0;text-decoration:underline}
-.assess-stage-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.assess-stage-card{border:1px solid #dde6ef;padding:17px;border-radius:14px;background:#fcfdff}.assess-stage-card h3{margin:0 0 15px;color:#163e63;font-size:17px}.assess-stage-card>label{display:block;margin:9px 0;font-size:12px;color:#53667e;font-weight:700}
-.assess-stage-card input{box-sizing:border-box;display:block;width:100%;margin-top:5px;background:#fff;border:1px solid #cfdce7;border-radius:8px;padding:9px;color:#153651;font:inherit;min-width:0}
-.assess-item-list{margin-top:14px}.assess-eval-item{border-top:1px solid #e7edf3;padding:12px 0}.assess-eval-item>input{font-weight:650}.assess-dates{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px}.assess-dates label{font-size:11px;color:#6c7d91}.assess-eval-item button,.assess-add{border:0;background:none;color:#275f87;padding:8px 0;cursor:pointer;font-size:12px;font-weight:700}
-.assess-eval-item button{color:#a34538}.assess-notes{margin:16px 0;padding:14px;border-radius:12px;border:1px solid #efdfba;background:#fffaf0;color:#6d552c;font-size:12px}.assess-notes strong{display:block;margin-bottom:7px}.assess-notes p{margin:4px 0}
-.assess-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.assess-actions button{font-size:12px}.assess-actions span{font-size:12px;color:#266c5e}.assess-foot{font-size:12px;color:#74849a;margin:13px 0 0}
-.cp-deadline-card{border:1px solid #dce6ee;border-radius:12px;padding:15px;margin:10px 0;background:#fff}.cp-deadline-card h3{margin:5px 0 8px;color:#18466f;font-size:16px}.cp-deadline-card p{margin:6px 0;color:#566b7c;font-size:13px}.cp-deadline-card a{color:#135a94;overflow-wrap:anywhere;text-decoration:underline}.cp-deadline-count{font-weight:700;color:#996321}
-@media(max-width:790px){.assess-panel{padding:16px}.assess-stage-grid{grid-template-columns:1fr}.assess-heading{flex-direction:column}.assess-heading h2{font-size:20px}}
+/* Gestão pedagógica · apenas uma etapa visível por vez */
+.assess-panel{margin:20px 0;padding:clamp(17px,2.7vw,27px);border:1px solid #dce6ef;border-radius:20px;background:#fff;box-shadow:0 8px 25px #1536530c;color:#203f5a}
+.assess-heading{display:flex;gap:16px;align-items:flex-start;justify-content:space-between}
+.assess-heading h2{font-size:clamp(19px,2.3vw,25px);margin:4px 0 5px;color:#133b5e;letter-spacing:-.5px;line-height:1.25}
+.assess-heading p{font-size:12px;color:#667e93;margin:0}
+.assess-eyebrow{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#3675a4;font-weight:850}
+.assess-pill{white-space:nowrap;background:#fff3df;color:#845c27;font-size:11px;font-weight:800;border-radius:999px;padding:8px 12px}
+.assess-pill.is-approved{background:#e8f5ee;color:#176945}
+.assess-summary{display:flex;flex-wrap:wrap;gap:9px;margin:17px 0 14px}
+.assess-summary span{background:#f0f6fc;border:1px solid #e6eff7;border-radius:10px;padding:9px 13px;color:#59748c;font-size:12px}
+.assess-summary b{font-size:18px;color:#194d78;margin-right:5px}
+.assess-picker{display:grid;grid-template-columns:minmax(200px,390px) minmax(0,1fr);gap:13px 19px;align-items:end;max-width:1000px;padding:14px 16px;border:1px solid #dce9f3;border-radius:14px;background:#f7faff}
+.assess-picker>label{grid-column:1;grid-row:1;font-size:12px;font-weight:800;color:#315674;margin:0}
+.assess-picker select{grid-column:1;grid-row:2;display:block;width:100%;height:44px;padding:9px 12px;color:#164467;font-size:14px;font-weight:750;border:1px solid #c4d9eb;border-radius:10px;background:#fff}
+.assess-stage-progress{grid-row:2;grid-column:2;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.assess-stage-progress span{border-radius:8px;border:1px solid #e3e9ee;background:#eef3f7;color:#6a8093;padding:8px 10px;font-size:11px;font-weight:750}
+.assess-stage-progress span.done{color:#1c764f;background:#e7f6ed;border-color:#cae8d5}
+.assess-stage-progress span.selected{outline:2px solid #73afd5;outline-offset:1px}
+.assess-stage-detail{max-width:980px;margin-top:15px;padding:20px 19px;border:1px solid #e1eaf2;background:#fff;border-radius:15px}
+.assess-stage-title{display:flex;align-items:center;justify-content:space-between;gap:13px;margin-bottom:13px}
+.assess-stage-title h3{font-size:20px;color:#133f65;margin:3px 0 0;letter-spacing:-.4px}
+.assess-primary-fields{display:grid;grid-template-columns:minmax(200px,.76fr) minmax(240px,1.24fr);gap:13px}
+.assess-primary-fields label,.assess-dates label{display:block;font-size:12px;font-weight:750;color:#47677f}
+.assess-stage-detail input{box-sizing:border-box;width:100%;display:block;min-width:0;margin-top:6px;padding:10px 12px;border:1px solid #cddde9;border-radius:9px;background:#fff;color:#173f5e;font-size:13px;min-height:42px}
+.assess-stage-detail input:focus,.assess-picker select:focus{outline:2px solid #86bbdf;outline-offset:1px}
+.assess-windows{margin-top:17px;border:1px solid #deebf4;border-radius:12px;background:#fafcff;overflow:hidden}
+.assess-windows summary{list-style:none;display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:9px;padding:13px 15px;font-size:13px;font-weight:800;color:#1b527a;user-select:none}
+.assess-windows summary::-webkit-details-marker{display:none}
+.assess-windows summary::before{content:"▸";margin-right:5px;color:#1d70aa;transition:transform .16s}
+.assess-windows[open] summary::before{transform:rotate(90deg)}
+.assess-windows summary span{margin-left:auto;font-size:11px;color:#7590a4;font-weight:650}
+.assess-item-list{padding:0 15px}
+.assess-eval-item{padding:13px 0 14px;border-top:1px solid #e4edf5}
+.assess-eval-title{display:flex;gap:9px;align-items:center}
+.assess-eval-index{font-size:11px;background:#eaf3fb;border-radius:8px;padding:6px 9px;font-weight:800;color:#28618c}
+.assess-eval-title input{margin:0;font-weight:700}
+.assess-dates{margin-top:9px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.assess-dates label{font-size:11px}
+.assess-eval-item button{border:0;background:none;padding:7px 2px;margin-top:6px;color:#a34843;font-size:11px;font-weight:750;cursor:pointer}
+.assess-add{margin:2px 15px 13px;border:1px dashed #9ac0df;background:#f0f8ff;color:#266792;font-weight:800;border-radius:9px;min-height:37px;padding:7px 12px;font-size:12px;cursor:pointer}
+.assess-notes{margin:16px 0 0;padding:11px 13px;border-radius:11px;border:1px solid #f0e1c4;background:#fffaf1;font-size:11px;color:#755b38}
+.assess-notes strong{display:block;font-size:12px;margin-bottom:4px}
+.assess-notes p{margin:4px 0;line-height:1.5}
+.assess-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:15px}
+.assess-actions .btn{min-height:40px;font-size:12px}
+.assess-feedback{margin:10px 0 0;font-size:12px;min-height:18px;color:#246a55;font-weight:700}
+.assess-email-note{margin:13px 0 0;font-size:11px;color:#667f95;overflow-wrap:anywhere}
+.assess-email-note a{color:#17649b}
+.assess-foot{color:#7b8996;font-size:11px;margin:10px 0 0;max-width:900px}
+.cp-deadline-card{border:1px solid #dce6ee;border-radius:12px;padding:15px;margin:10px 0;background:#fff}
+.cp-deadline-card h3{margin:5px 0 8px;color:#18466f;font-size:16px}
+.cp-deadline-card p{margin:6px 0;color:#566b7c;font-size:13px}
+.cp-deadline-card a{color:#135a94;overflow-wrap:anywhere;text-decoration:underline}
+.cp-deadline-count{font-weight:700;color:#996321}
+@media(max-width:850px){.assess-picker{grid-template-columns:1fr}.assess-picker>label,.assess-picker select,.assess-stage-progress{grid-column:1;grid-row:auto}.assess-stage-progress{margin-top:2px}.assess-primary-fields{grid-template-columns:1fr 1fr}}
+@media(max-width:540px){.assess-panel{margin:13px 0;padding:15px;border-radius:16px}.assess-heading{align-items:flex-start;flex-wrap:wrap}.assess-heading h2{font-size:20px}.assess-summary{margin:12px 0}.assess-summary span{font-size:11px;padding:8px 9px}.assess-picker{padding:11px;gap:9px}.assess-stage-progress{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}.assess-stage-progress span{text-align:center;padding:7px 3px;font-size:10px}.assess-stage-detail{padding:14px 12px}.assess-primary-fields{grid-template-columns:1fr;gap:11px}.assess-stage-title h3{font-size:18px}.assess-stage-title .assess-pill{font-size:10px}.assess-actions .btn{flex:1;white-space:normal;font-size:11px}.assess-windows summary{padding:13px 10px}.assess-item-list{padding:0 10px}}
+@media(max-width:370px){.assess-dates{grid-template-columns:1fr}}
