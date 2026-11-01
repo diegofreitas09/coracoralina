@@ -6,6 +6,11 @@
  const API='/calendario-anual/api', $=s=>document.querySelector(s);
  const MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
  const TEACHER_LINKS=Object.freeze({roteiros:'https://docs.google.com/spreadsheets/d/1Jiy-g9kC7BJ6lR5Hh5cfgBJSAHmdZDS2BwjqIr0WOOc/edit?usp=sharing',gestor:'https://escola.computex.com.br/escola619/index2.php',classroom:'https://classroom.google.com/',sae:'https://sae.digital/'});
+ const SEGMENT_OPTIONS=['Educação Infantil','Ensino Fundamental I','Ensino Fundamental II','Ensino Médio','Administrativo','Todos'];
+ const segmentCheckboxes=(selected=[])=>'<div class="cp-segment-checks">'+SEGMENT_OPTIONS.map(option=>
+  '<label class="cp-segment-choice"><input type="checkbox" name="segments" value="'+safe(option)+'" '+(selected.includes(option)?'checked':'')+'><span>'+safe(option)+'</span></label>').join('')+'</div>';
+ const selectedSegments=container=>[...container.querySelectorAll('input[name="segments"]:checked')].map(x=>x.value);
+ const validSelectedSegments=segments=>segments.length>0&&!(segments.includes('Todos')&&segments.length>1);
  const eventsKey=y=>'cora_calendario_eventos_'+y+'_v1',noticeKey=y=>'cora_portal_draft_notices_'+y;
  const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const dateStr=(date)=>{const d=new Date(date);return Number.isNaN(d.getTime())?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
@@ -61,7 +66,7 @@
    '<p class="cp-muted">A planilha é o cadastro administrativo. Para bloquear de verdade, use Suspender ou Desativar neste painel.</p>'+
    '<form id="cpAccountCreate" class="cp-account-form"><label>Nome completo<input name="name" required minlength="5" maxlength="100"></label><label>E-mail individual<input name="email" type="email" required></label>'+
    '<label>Função<select name="profile"><option>Professor</option><option>Coordenação</option><option>Funcionário</option></select></label>'+
-   '<label>Segmento<select name="segment"><option>Educação Infantil</option><option>Ensino Fundamental</option><option>Ensino Médio</option><option>Administrativo</option><option>Todos</option></select></label>'+
+   '<fieldset class="cp-segment-fieldset"><legend>Segmentos de atuação <small>(marque todos)</small></legend>'+segmentCheckboxes()+'</fieldset>'+
    '<button class="cp-btn" type="submit">Criar acesso e convite</button></form>'+
    '<div id="cpAccountInvite" class="cp-account-invite" hidden><strong>Convite pessoal · válido por 7 dias</strong><p>Envie somente ao colaborador por um canal seguro. Nunca publique em grupos.</p>'+
    '<textarea id="cpAccountInviteUrl" readonly rows="3"></textarea><button type="button" id="cpCopyInvite" class="cp-btn soft">Copiar convite</button></div>'+
@@ -84,19 +89,29 @@
   $('#cpAccountCreate').onsubmit=async event=>{
     event.preventDefault();const form=event.currentTarget,button=form.querySelector('button');button.disabled=true;
     try{
-      const input=Object.fromEntries(new FormData(form).entries());
+      const input=Object.fromEntries(new FormData(form).entries());input.segments=selectedSegments(form);
+      if(!validSelectedSegments(input.segments))throw new Error('Marque um ou mais segmentos; Todos deve ser usado sozinho.');
       const result=await api('accounts',{...input,operation:'create'});
       showInvite(result.inviteUrl);form.reset();await loadAccounts();
     }catch(error){$('#cpAccountsStatus').textContent=error.message}finally{button.disabled=false}
   };
   $('#cpAccountsList').onclick=async event=>{
     const btn=event.target.closest('[data-account-operation]');if(!btn)return;
-    const operation=btn.dataset.accountOperation,email=btn.dataset.accountEmail;
+    const operation=btn.dataset.accountOperation,email=btn.dataset.accountEmail,row=btn.closest('.cp-account-person');
+    if(operation==='editSegments'){
+      const editor=row?.querySelector('.cp-segment-editor');if(editor)editor.hidden=!editor.hidden;
+      return;
+    }
     const label={suspend:'Suspender',disable:'Desativar',enable:'Reativar',reinvite:'Reemitir convite'}[operation];
-    if(!confirm(label+' '+email+'?'))return;
+    if(operation!=='updateSegments'&&!confirm(label+' '+email+'?'))return;
     btn.disabled=true;
     try{
-      const result=await api('accounts',{operation,email});
+      const input={operation,email};
+      if(operation==='updateSegments'){
+        input.segments=selectedSegments(row.querySelector('.cp-segment-editor'));
+        if(!validSelectedSegments(input.segments))throw new Error('Marque um ou mais segmentos; Todos deve ser usado sozinho.');
+      }
+      const result=await api('accounts',input);
       if(result.inviteUrl)showInvite(result.inviteUrl);
       await loadAccounts();
     }catch(error){$('#cpAccountsStatus').textContent=error.message}finally{btn.disabled=false}
@@ -172,7 +187,10 @@
      const labels={suspend:'Suspender',disable:'Desativar',enable:'Reativar',reinvite:'Reemitir convite'};
      return '<div class="cp-account-person"><div><strong>'+safe(member.name)+'</strong><small>'+safe(member.email)+' · '+safe(member.profile)+' · '+safe(member.segment)+'</small></div>'+
       '<span class="cp-account-status">'+safe(member.status)+'</span><div class="cp-account-buttons">'+operations.map(action=>
-       '<button type="button" data-account-operation="'+action+'" data-account-email="'+safe(member.email)+'">'+labels[action]+'</button>').join('')+'</div></div>';
+       '<button type="button" data-account-operation="'+action+'" data-account-email="'+safe(member.email)+'">'+labels[action]+'</button>').join('')+
+       '<button type="button" data-account-operation="editSegments" data-account-email="'+safe(member.email)+'">Editar segmentos</button></div>'+
+       '<div class="cp-segment-editor" hidden><strong>Segmentos de atuação</strong>'+segmentCheckboxes(member.segments||[])+
+       '<button type="button" data-account-operation="updateSegments" data-account-email="'+safe(member.email)+'">Salvar segmentos</button></div></div>';
     }).join(''):'<p class="cp-muted">Ainda não há colaboradores cadastrados.</p>';
   }catch(error){list.textContent='Erro ao consultar colaboradores: '+error.message}
  }
