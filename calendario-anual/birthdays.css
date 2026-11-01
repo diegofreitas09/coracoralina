@@ -1,0 +1,25 @@
+/* Gestão de aniversariantes: discreta, adaptável e alinhada à identidade Cora. */
+.birthday-section{scroll-margin-top:70px}
+.birthday-layout{display:grid;grid-template-columns:minmax(260px,1fr) minmax(280px,1.2fr);gap:18px;align-items:start}
+.birthday-form,.birthday-roster{background:#fff;border:1px solid #dfe8f2;border-radius:17px;padding:21px;box-shadow:0 10px 24px #0925480c}
+.birthday-form label{display:flex;flex-direction:column;gap:6px;font-weight:750;font-size:13px;color:#25476e}
+.birthday-form input,.birthday-roster select{width:100%;border:1px solid #cfdeeb;border-radius:9px;background:#fff;color:#1a3a60;min-height:44px;padding:10px 12px;font:inherit}
+.birthday-two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.birthday-form{display:flex;flex-direction:column;gap:13px}
+.birthday-roster-head{display:flex;gap:12px;align-items:end;justify-content:space-between;flex-wrap:wrap}
+.birthday-roster-head label{display:flex;flex-direction:column;gap:5px;font-weight:750;font-size:12px;color:#25476e;min-width:185px}
+.birthday-roster ul{list-style:none;padding:0;margin:12px 0 0;display:flex;flex-direction:column;gap:7px;max-height:460px;overflow:auto}
+.birthday-entry{display:flex;align-items:center;gap:10px;padding:10px;background:#f5f9fd;border-radius:11px;border:1px solid #e4ebf4}
+.birthday-day{display:inline-flex;justify-content:center;align-items:center;min-width:70px;background:#edf2ff;border-radius:9px;padding:10px;color:#164b89;font-weight:800;font-size:13px}
+.birthday-person{flex:1;min-width:0;display:flex;flex-direction:column;color:#15365a;font-size:14px}
+.birthday-person strong{overflow-wrap:anywhere}.birthday-person small{color:#7188a3;margin-top:2px}
+.birthday-actions{display:flex;flex-wrap:wrap;gap:5px}
+.birthday-actions button{border:1px solid #cbd9e9;border-radius:8px;background:#fff;color:#1b578f;padding:8px 10px;font-size:12px;font-weight:700}
+.birthday-actions .birthday-remove{color:#a73748}
+.birthday-empty{color:#67809a;font-size:13px;padding:22px;text-align:center}
+.birthday-feedback{font-size:12px;line-height:1.5;color:#55748f;min-height:20px}
+.birthday-success{color:#16804a;font-weight:750}.birthday-error{color:#b03d46;font-weight:750}
+.birthday-hint{font-size:12px;color:#71849c;line-height:1.55}
+.birthday-roster-foot{margin-top:13px;display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap}
+@media(max-width:790px){.birthday-layout{grid-template-columns:1fr}.birthday-form,.birthday-roster{padding:15px}}
+@media(max-width:410px){.birthday-entry{flex-wrap:wrap}.birthday-actions{margin-left:auto}}
