@@ -213,36 +213,90 @@
   function headerCanvas(name,sub){const [c,g]=canvasBase();g.fillStyle='#102a4c';g.fillRect(0,0,PAGE_W,155);text(g,'CORA CORALINA  /  CALENDÁRIO ANUAL '+YEAR,76,75,22,'#c8d9ef','700');text(g,name,76,133,48,'#fff','700');const badge=$('#schoolLogo');if(badge?.complete&&badge.naturalWidth){rounded(g,PAGE_W-163,11,112,136,10,'#fff');g.drawImage(badge,PAGE_W-160,13,106,130);}text(g,sub,78,201,25,GREY);return [c,g];}
   function footerCanvas(g,section='CALENDÁRIO ANUAL '+YEAR){g.fillStyle='#e4ebf3';g.fillRect(70,1130,PAGE_W-140,2);text(g,section,74,1162,18,GREY,'700');text(g,'COLÉGIO CORA CORALINA',PAGE_W-400,1162,18,GREY,'700');text(g,'Tecnologia: PDF Solução Educacional',PAGE_W-400,1132,15,BLUE,'700');}
   function calendarCanvas(month){
-    const [c,g]=headerCanvas(`${MONTHS[month].toUpperCase()} ${YEAR}`,`${eventsFor(month).length} evento(s) cadastrado(s)  ·  ${filesFor(month).length} documento(s) anexado(s)`);
-    const x0=72, y0=275, w=(PAGE_W-144)/7, h=125;
-    WEEK.forEach((name,i)=>{rounded(g,x0+i*w+3,230,w-6,38,5,'#edf3fa');text(g,name,x0+i*w+15,257,20,BLUE,'700');});
-    const start=new Date(YEAR,month,1).getDay(),last=new Date(YEAR,month+1,0).getDate();
-    for(let cell=0;cell<42;cell++){
-      const col=cell%7,row=Math.floor(cell/7),x=x0+col*w,y=y0+row*h;
-      const day=cell-start+1, valid=day>0&&day<=last;
-      g.fillStyle=valid?'#fff':'#f7f9fc';g.fillRect(x+1,y+1,w-2,h-2);
-      g.strokeStyle='#dfe6ef';g.lineWidth=2;g.strokeRect(x,y,w,h);
-      if(!valid)continue;
-      text(g,day,x+13,y+34,25,INK,'700');
-      const dayDate=`${YEAR}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-      const list=events.filter(item=>item.date===dayDate);
-      g.font='700 18px Arial, sans-serif';
-      list.slice(0,3).forEach((event,j)=>{
-        rounded(g,x+9,y+43+j*23,w-20,21,3,'#e9f2fd');
-        text(g,ellipsis(g,event.title,w-34),x+14,y+59+j*23,17,BLUE,'700');
-      });
-      if(list.length>3)text(g,`+ ${list.length-3} mais`,x+13,y+118,15,GREY);
+  const [c,g]=canvasBase(), all=eventsFor(month);
+  const projects=window.CoraYears?.getProjects?.(YEAR)?.[month]||[];
+  const width=PAGE_W-136,x0=68,step=width/7;
+  const first=new Date(YEAR,month,1).getDay(),last=new Date(YEAR,month+1,0).getDate();
+  const rows=Math.ceil((first+last)/7),gridY=218,gridBottom=970,cellH=(gridBottom-gridY)/rows;
+  const accent='#ffcf2d',white='#ffffff',navy='#0b2d54',light='#f5f9ff';
+  const palette=type=>type==='Feriado'?'#cf4753':type==='Reunião'?'#246bb1':type==='Avaliação'?'#df9220':/simulado/i.test(type)?'#9b62b5':type==='Pedagógico'?'#27846c':'#3369a2';
+  g.fillStyle=white;g.fillRect(0,0,PAGE_W,PAGE_H);
+  g.fillStyle=navy;g.fillRect(0,0,PAGE_W,146);
+  g.fillStyle=accent;g.fillRect(0,146,PAGE_W,8);
+  text(g,MONTHS[month].toUpperCase(),72,85,62,white,'800');
+  text(g,String(YEAR),PAGE_W-350,89,68,'#f9d456','800');
+  text(g,'COLÉGIO CORA CORALINA · CALENDÁRIO ESCOLAR',73,128,21,'#dfebfd','700');
+  const badge=$('#schoolLogo');
+  if(badge?.complete&&badge.naturalWidth){rounded(g,PAGE_W-117,18,83,105,10,white);g.drawImage(badge,PAGE_W-114,21,78,99)}
+  WEEK.forEach((wd,i)=>{
+    rounded(g,x0+i*step+1,168,step-2,40,0,'#135e85');
+    text(g,wd,x0+i*step+step/2-21,195,22,white,'800');
+  });
+  function symbol(event,x,y,color){
+    const type=String(event.type||'');
+    g.save();g.strokeStyle=color;g.fillStyle=color;g.lineWidth=2.6;g.lineCap='round';g.lineJoin='round';
+    if(/feriado/i.test(type)){
+      g.beginPath();g.moveTo(x,y);g.lineTo(x,y+16);g.moveTo(x+2,y+1);g.lineTo(x+15,y+1);g.lineTo(x+11,y+9);g.lineTo(x+2,y+9);g.stroke();
+    }else if(/avalia|simulad|sondag/i.test(type+' '+event.title)){
+      g.strokeRect(x+1,y,13,17);g.beginPath();g.moveTo(x+4,y+6);g.lineTo(x+11,y+6);g.moveTo(x+4,y+11);g.lineTo(x+11,y+11);g.stroke();
+    }else if(/reuni|encontro/i.test(type+' '+event.title)){
+      g.beginPath();g.arc(x+6,y+4,3,0,7);g.arc(x+15,y+4,3,0,7);g.moveTo(x,y+17);g.quadraticCurveTo(x+3,y+8,x+7,y+12);g.moveTo(x+10,y+12);g.quadraticCurveTo(x+17,y+8,x+21,y+17);g.stroke();
+    }else{
+      g.beginPath();g.moveTo(x+2,y+14);g.lineTo(x+2,y+1);g.lineTo(x+10,y+4);g.lineTo(x+18,y+1);g.lineTo(x+18,y+14);g.lineTo(x+10,y+17);g.closePath();g.stroke();
     }
-    const infoY=1070;text(g,'Documentos deste mês: '+filesFor(month).length+'   •   Eventos: '+eventsFor(month).length,75,infoY,23,BLUE,'700');footerCanvas(g);return c;
+    g.restore();
   }
+  for(let cell=0;cell<rows*7;cell++){
+    const row=Math.floor(cell/7),col=cell%7,day=cell-first+1;
+    const x=x0+col*step,y=gridY+row*cellH;
+    const valid=day>=1&&day<=last;
+    g.fillStyle=!valid?'#eef3f8':col===0?'#fff0ee':(col===6?'#f3f8fc':white);
+    g.fillRect(x+1,y+1,step-2,cellH-2);
+    g.strokeStyle='#aebdcc';g.lineWidth=1.5;g.strokeRect(x,y,step,cellH);
+    if(!valid)continue;
+    text(g,String(day),x+11,y+29,25,navy,'800');
+    const date=`${YEAR}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const daily=all.filter(e=>e.date===date);
+    const visible=Math.min(daily.length,rows===6?2:3);
+    const lineTop=y+36;
+    daily.slice(0,visible).forEach((ev,j)=>{
+      const cy=lineTop+j*(rows===6?37:38),color=palette(ev.type);
+      rounded(g,x+7,cy,step-14,32,5,ev.status==='Em revisão'?'#fff3dc':light);
+      g.fillStyle=color;g.fillRect(x+7,cy,4,32);
+      symbol(ev,x+16,cy+7,color);
+      g.font='700 16px Arial,sans-serif';
+      text(g,ellipsis(g,ev.title,step-58),x+42,cy+21,16,navy,'700');
+    });
+    if(daily.length>visible)text(g,`+ ${daily.length-visible} atividade(s)`,x+9,y+cellH-9,14,'#60788c','700');
+  }
+  rounded(g,68,987,PAGE_W-136,130,6,'#f4f8fc');
+  text(g,'PROJETOS DO MÊS',PAGE_W/2-126,1013,23,navy,'800');
+  const shown=projects.slice(0,6);
+  if(!shown.length){
+    text(g,'Nenhum projeto cadastrado neste mês.',PAGE_W/2-210,1063,19,'#708498','600');
+  }else{
+    g.font='700 17px Arial,sans-serif';
+    shown.forEach((name,i)=>{
+      const col=i%2,row=Math.floor(i/2),x=90+col*765,y=1045+row*21;
+      g.fillStyle=accent;g.fillRect(x,y-12,7,12);
+      text(g,ellipsis(g,String(name),712),x+16,y,17,navy,'700');
+    });
+    if(projects.length>6)text(g,`+ ${projects.length-6} projetos adicionais na página seguinte`,100,1110,15,'#56708b','600');
+  }
+  footerCanvas(g);
+  return c;
+}
   function listingCanvas(month,kind,items,part,total){
-    const title=kind==='events'?'Eventos detalhados':'Índice de documentos';
+    const title=kind==='events'?'Eventos detalhados':kind==='projects'?'Projetos do mês':'Índice de documentos';
     const [c,g]=headerCanvas(`${MONTHS[month]} — ${title}`,`Página ${part+1} de ${total} • Anexo ao calendário de ${MONTHS[month]}`);
     const first=part*16;
     items.slice(first,first+16).forEach((item,i)=>{
       const y=254+i*51;
       if(i%2===0){g.fillStyle='#f1f5fa';g.fillRect(72,y-29,PAGE_W-144,45);}
-      if(kind==='events'){
+      if(kind==='projects'){
+        text(g,String(first+i+1).padStart(2,'0'),88,y,23,BLUE,'700');
+        text(g,ellipsis(g,String(item),1290),145,y,24,INK,'700');
+      }else if(kind==='events'){
         const day=Number(item.date.slice(8,10)).toString().padStart(2,'0');
         text(g,day+'/'+String(month+1).padStart(2,'0'),88,y,24,BLUE,'700');
         text(g,ellipsis(g,item.title,950),220,y,24,INK,'700');
@@ -286,6 +340,8 @@
       const problems=[];
       for(let month=0;month<12;month++){
         await attachCanvas(pdf,calendarCanvas(month));
+        const projects=window.CoraYears?.getProjects?.(YEAR)?.[month]||[];
+        if(projects.length>6)for(let part=0;part<Math.ceil((projects.length-6)/16);part++)await attachCanvas(pdf,listingCanvas(month,'projects',projects.slice(6),part,Math.ceil((projects.length-6)/16)));
         const items=eventsFor(month);for(let part=0;part<Math.ceil(items.length/16);part++)await attachCanvas(pdf,listingCanvas(month,'events',items,part,Math.ceil(items.length/16)));
         const files=filesFor(month);for(let part=0;part<Math.ceil(files.length/16);part++)await attachCanvas(pdf,listingCanvas(month,'files',files,part,Math.ceil(files.length/16)));
         for(const file of files){if(!/\.(pdf|png|jpg|jpeg|webp)$/i.test(file.name))continue;
