@@ -75,7 +75,7 @@
  function issues(data,stageFilter=0){
   const y=data.year,out=[];
   const stages=window.CoraStages?.get?.(y)||[];
-  if(y>2026&&(stageFilter?stages.some(s=>Number(s.number)===stageFilter&&(!s.start||!s.end)):stages.filter(s=>s.start&&s.end).length<4))out.push('Defina o período letivo da '+(stageFilter||'cada')+'ª etapa de '+y+' antes de liberar o calendário.');
+  if(y>2026&&(stageFilter?(!stages.some(s=>Number(s.number)===stageFilter&&s.start&&s.end)):stages.filter(s=>s.start&&s.end).length<4))out.push(stageFilter?'Defina o período letivo da '+stageFilter+'ª etapa de '+y+' antes de validar.':'Defina as quatro etapas letivas de '+y+' antes de publicar.');
   for(const r of data.items){
    if(stageFilter&&r.stage!==stageFilter)continue;
    if(!r.due){out.push('Entrega da '+r.stage+'ª etapa ainda não definida.');continue;}
@@ -95,7 +95,7 @@
     if(st?.start&&st?.end&&(a.start<st.start||a.end>st.end))out.push(a.title+' da '+r.stage+'ª etapa ultrapassa os limites ('+display(st.start)+' a '+display(st.end)+').');
    }
   }
-  if(y===2027)out.push('Fortaleza sediará jogos da Copa do Mundo Feminina (24/06 a 25/07/2027): ajuste o recesso e o calendário conforme o Parecer CNE/CEB nº 7/2026, homologado pelo MEC.');
+  if(y===2027&&!stageFilter)out.push('Fortaleza sediará jogos da Copa do Mundo Feminina (24/06 a 25/07/2027): ajuste o recesso e o calendário conforme o Parecer CNE/CEB nº 7/2026, homologado pelo MEC.');
   if(y>2026)out.push('Confira feriados municipais, recessos, sábados letivos, carga horária e mínimo legal de 200 dias antes da publicação.');
   return [...new Set(out)];
  }
@@ -227,12 +227,12 @@
     '<button type="button" data-remove-assessment>Remover avaliação</button>';
    list.append(item);status('Preencha as datas da avaliação adicionada.');item.querySelector('[data-assessment-title]')?.focus();
   });
-  host.addEventListener('click',event=>{
+  host.onclick=event=>{
     const btn=event.target.closest('[data-remove-assessment]');
     if(!btn||!host.contains(btn))return;
     btn.closest('[data-assessment-item]')?.remove();
     status('Avaliação removida do formulário. Salve a etapa para confirmar.');
-  });
+  };
   document.getElementById('assessImportYear')?.addEventListener('click',()=>{
    if(!confirm('Importar os prazos de 2026 como rascunho de '+y+'? Os dados deste ano ainda precisarão de validação por etapa.'))return;
    const result=draftFrom(y,2026);if(!result.ok)status(result.error);
