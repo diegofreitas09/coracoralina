@@ -19,7 +19,7 @@
   function allEvents() {
     const api=window.CoraYears;
     if(api)return api.filterVisible(api.getEvents(api.activeYear));
-    const current=stored(STORE,[]);
+    const current=stored(`cora_calendario_eventos_${currentYear()}_v1`,[]);
     return Array.isArray(current)?current:[];
   }
   function findEvent(id) {return allEvents().find(function(e) {return String(e.id) === id;});}
