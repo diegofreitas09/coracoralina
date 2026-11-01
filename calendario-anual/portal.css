@@ -345,3 +345,30 @@ body.portal-locked { background:#eef3f9; }
 .cp-segment-editor>button{border:0;border-radius:9px;padding:11px 15px;background:#185e96;color:#fff;font-size:12px;font-weight:850}
 @media(max-width:780px){.cp-segment-checks{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){.cp-segment-checks{grid-template-columns:1fr}.cp-segment-fieldset{padding:10px}}
+
+
+/* Primeiro acesso: separar cadastro, convite, envio manual e ativação. */
+#coraPortal [hidden]{display:none!important}
+.cp-first-access{grid-column:1/-1;display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:8px 15px;padding:11px 14px;background:#eef6fc;border:1px solid #d7e6f2;border-radius:11px}
+.cp-first-access button{border:0;background:none;color:#185b91;padding:5px 0;text-decoration:underline;text-underline-offset:3px;font-size:13px;font-weight:850;text-align:left}
+.cp-first-access small{font-size:11px;color:#5b7891;line-height:1.45}
+.cp-invite-howto{padding:15px 17px;margin:13px 0 14px;border-radius:13px;background:#eff6fc;border:1px solid #d9e7f1;color:#244f74}
+.cp-invite-howto>strong{display:block;font-size:14px;margin-bottom:6px}
+.cp-invite-howto p{font-size:12px;margin:0;line-height:1.7;color:#466984}
+.cp-invite-howto b{color:#164a76}
+.cp-invite-buttons{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.cp-invite-buttons .cp-btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;color:#fff;min-height:45px;padding:10px 15px;font-size:12px}
+.cp-invite-buttons .cp-btn.soft{color:#174e80}
+.cp-account-invite .cp-invite-email-notice{margin:10px 0 0;color:#416c50;line-height:1.5;font-weight:700;font-size:12px}
+.cp-activation-help{padding:17px 33px 15px;font-size:12px;line-height:1.65;color:#4c6c88}
+.cp-activation-help strong{display:block;font-size:14px;color:#17486e;margin-bottom:4px}
+.cp-activation-help p{margin:0}
+#cpActivationForm{grid-template-columns:minmax(0,1fr);align-items:stretch;padding-top:7px}
+#cpActivationForm label{margin:0;font-size:13px;min-width:0}
+#cpActivationForm input{margin-top:8px}
+#cpActivationCode{font-family:ui-monospace,SFMono-Regular,monospace;font-size:12px;overflow:hidden;text-overflow:ellipsis}
+#cpActivationForm button{width:100%}
+.cp-activation-footer{padding:0 33px 28px}
+.cp-activation-footer button{font-size:12px}
+@media(max-width:780px){.cp-activation-help{padding:15px 18px}.cp-activation-footer{padding:0 18px 20px}}
+@media(max-width:500px){.cp-invite-buttons{flex-direction:column;align-items:stretch}.cp-invite-buttons .cp-btn{width:100%}.cp-invite-howto{padding:12px}.cp-first-access{padding:11px 12px}}
