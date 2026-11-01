@@ -53,6 +53,66 @@
  }
  function fmt(y,m,d){return String(y)+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0')}
  function fmtBR(s){const [y,m,d]=String(s).split('-');return d+'/'+m+'/'+y;}
+
+ // Sugestões anuais: conserva cadastros existentes; novas datas exigem validação.
+ const managedAssessmentEvent=e=>/^cora-(?:entrega-avaliacoes|periodo-avaliacao)-/.test(String(e?.id||''));
+ const suggestedDate=(value,from,to,title='Atividade escolar')=>String(value||'').startsWith(from+'-')?(targetDate(value,to,'Pedagógico',title)?.date||''):'';
+ function suggestedRange(start,end,from,to,title){
+   const moved=suggestedDate(start,from,to,title);
+   const span=Math.round((Date.parse(end+'T12:00:00Z')-Date.parse(start+'T12:00:00Z'))/86400000);
+   if(!moved||!Number.isFinite(span)||span<0)return null;
+   const shiftedEnd=new Date(Date.parse(moved+'T12:00:00Z')+span*86400000).toISOString().slice(0,10);
+   return shiftedEnd.startsWith(to+'-')?{start:moved,end:shiftedEnd}:null;
+ }
+ function academicPreview(from,to){
+   const previous=window.CoraStages?.get?.(from)||[],current=window.CoraStages?.get?.(to)||[];
+   const former=window.CoraAssessments?.get?.(from)?.items||[],now=window.CoraAssessments?.get?.(to)?.items||[];
+   const ranges=previous.filter((x,i)=>x.start&&x.end&&!current[i]?.start&&!current[i]?.end);
+   const deliveries=former.filter((x,i)=>(x.due||x.items?.length)&&!now[i]?.due&&!now[i]?.items?.length&&!now[i]?.deliveryTypes);
+   return {stages:ranges.length,assessments:deliveries.length,
+     firstStage:ranges[0]?suggestedDate(ranges[0].start,from,to):'',
+     firstDue:deliveries[0]?suggestedDate(deliveries[0].due,from,to,'Entrega de avaliações'):''};
+ }
+ function copyAcademicSuggestions(from,to,{stages=true,assessments=true}={}){
+   const result={stages:0,assessments:0,warnings:[]};
+   if(!Number.isInteger(from)||!Number.isInteger(to)||from>=to)return {...result,warnings:['Selecione anos válidos.']};
+   if(stages&&window.CoraStages){
+     const earlier=window.CoraStages.get(from),next=window.CoraStages.get(to);
+     for(let i=0;i<4;i++){
+       const source=earlier[i],current=next[i];
+       if(!source?.start||!source.end||!current||current.start||current.end)continue;
+       const start=suggestedDate(source.start,from,to),end=suggestedDate(source.end,from,to);
+       if(!start||!end||start>end){result.warnings.push('Revisar etapa '+(i+1)+'.');continue;}
+       next[i]={number:i+1,start,end,needsReview:true,originYear:from};result.stages++;
+     }
+     if(result.stages){
+       const saved=window.CoraStages.save(to,next);
+       if(!saved.ok){result.warnings.push('Etapas não importadas: '+(saved.message||'períodos incompatíveis'));result.stages=0;}
+     }
+   }
+   if(assessments&&window.CoraAssessments){
+     const former=window.CoraAssessments.get(from),target=window.CoraAssessments.get(to);
+     for(let i=0;i<4;i++){
+       const source=former.items?.[i],current=target.items?.[i];
+       if(!source||!current||current.due||current.items?.length||current.deliveryTypes)continue;
+       const due=source.due?suggestedDate(source.due,from,to,'Entrega de avaliações'):'';
+       const items=[];
+       for(const item of source.items||[]){
+         const range=suggestedRange(item.start,item.end,from,to,item.title);
+         if(!range){result.warnings.push('Revisar avaliação: '+item.title);continue;}
+         items.push({title:String(item.title||'').replace(new RegExp('\\b'+from+'\\b','g'),String(to)),...range});
+       }
+       if(!due&&!items.length)continue;
+       target.items[i]={stage:i+1,due,deliveryTypes:source.deliveryTypes||'',items};
+       target.source='Sugestão de '+from+' · verificar antes de publicar';result.assessments++;
+     }
+     if(result.assessments){
+       const saved=window.CoraAssessments.save(target);
+       if(!saved.ok){result.warnings.push('Entregas não importadas: '+(saved.error||'datas incompatíveis'));result.assessments=0;}
+     }
+   }
+   return result;
+ }
  function identify(e){return String(e.title||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLocaleLowerCase('pt-BR');}
  function sameEvent(a,b){
    return (String(b.originId||'')===String(a.id)&&Number(b.originYear)===Number(a.date?.slice(0,4)))||
