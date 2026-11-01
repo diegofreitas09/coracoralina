@@ -228,6 +228,9 @@
   text(g,'COLÉGIO CORA CORALINA · CALENDÁRIO ESCOLAR',73,128,21,'#dfebfd','700');
   const badge=$('#schoolLogo');
   if(badge?.complete&&badge.naturalWidth){rounded(g,PAGE_W-117,18,83,105,10,white);g.drawImage(badge,PAGE_W-114,21,78,99)}
+  // Referência visual do calendário oficial de 2026: mês na lateral, grade semanal e projetos abaixo.
+  g.save();g.translate(43,925);g.rotate(-Math.PI/2);
+  text(g,MONTHS[month].toUpperCase()+' '+YEAR,0,0,28,'#d8a600','800');g.restore();
   WEEK.forEach((wd,i)=>{
     rounded(g,x0+i*step+1,168,step-2,40,0,'#135e85');
     text(g,wd,x0+i*step+step/2-21,195,22,white,'800');
