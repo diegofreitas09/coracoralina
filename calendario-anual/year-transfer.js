@@ -75,6 +75,8 @@
    const title=$('welcomeYear');if(title)title.textContent=year;
    const yearLabel=document.querySelector('.welcome .eyebrow');if(yearLabel)yearLabel.textContent='PLANEJAMENTO · '+year;
    const short=document.querySelector('.sidebar-foot');if(short)short.textContent=year===2026?'Ano base · Dados preservados':'Ano '+year+' · Rascunhos em revisão neste dispositivo';
+   const importButton=$('carryMonthManual');if(importButton)importButton.hidden=year<=2026;
+   const help=$('yearCarryHelp');if(help)help.textContent=year<=2026?'Ano de referência preservado. Selecione 2027 para iniciar um novo planejamento.':'Reaproveite atividades, projetos e planejamento do mês anterior, com datas revisáveis.';
    const official=$('officialBanner');
    if(official){
     const label=official.querySelector('.official-banner-copy strong');
