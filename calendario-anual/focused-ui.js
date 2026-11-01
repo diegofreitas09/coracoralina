@@ -17,6 +17,15 @@
     $('quickExportPDF').addEventListener('click',()=>$('exportBtn').click());
     $('openNotifications').addEventListener('click',()=>$('alertsDialog').showModal());
     $('closeAlerts').addEventListener('click',()=>$('alertsDialog').close());
+    $('alertsGoogleBtn').addEventListener('click',()=>{
+      const year=window.CoraYears?.activeYear||2026;
+      if(year===2026){
+        $('subscribeOfficialBtn')?.click();
+      }else{
+        $('exportYearIcsBtn')?.click();
+        alert('O arquivo da agenda do ano foi preparado. Importe-o ao Google Agenda e configure os lembretes.');
+      }
+    });
     window.CoraFocus={openTools(){setManaging(true);},closeTools(){setManaging(false);}};
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
