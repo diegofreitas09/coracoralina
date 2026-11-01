@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="styles.css?v=confirmacao13" />
   <link rel="stylesheet" href="studio.css?v=20261101-mes-modelo" />
   <link rel="stylesheet" href="portal.css?v=voltar14" />
+  <link rel="stylesheet" href="birthdays.css?v=aniversarios15" />
 </head>
 <body class="portal-locked portal-loading">
 <div id="app" class="layout">
@@ -72,14 +73,38 @@
           <aside class="studio-preview" aria-label="Prévia do planejamento"><div class="planning-paper"><div class="paper-toptag">COLÉGIO CORA CORALINA · 2026</div><div class="paper-gold"></div><h3>Planejamento <span id="planPreviewMonth">Novembro</span></h3><p id="planPreviewSegment">Fundamental II e Ensino Médio</p><div class="paper-overline">REUNIÃO DE EQUIPE</div><div class="paper-highlights"><div><small>PROJETOS</small><strong id="planProjectCount">0</strong></div><div><small>ATIVIDADES</small><strong id="planScheduleCount">0</strong></div><div><small>EVENTOS DO CALENDÁRIO</small><strong id="planCalendarCount">0</strong></div></div><div class="paper-overline">RESUMO DA PAUTA</div><div id="planPreviewAgenda" class="paper-points"></div><div class="paper-rule"></div><p class="paper-signature">Organização • Alinhamento • Resultados</p></div><p class="studio-advice">Use o planejamento de novembro enviado como ponto de partida. Confira datas e responsáveis antes de compartilhar o PDF com a equipe.</p></aside>
         </div>
       </section>
+
+      <section id="birthdayStudio" class="studio-section birthday-section" aria-labelledby="birthdayHeading">
+        <div class="studio-section-head"><div><div class="eyebrow">GESTÃO · DATAS COMEMORATIVAS</div><h2 id="birthdayHeading">Aniversariantes da equipe</h2><p>Cadastre uma única vez o nome, o dia e o mês. O card mensal reúne automaticamente os aniversariantes cadastrados, em ordem de data.</p></div><span class="studio-pill">Cadastro anual</span></div>
+        <div class="birthday-layout">
+          <form id="birthdayForm" class="birthday-form">
+            <div class="studio-form-heading"><strong>Cadastrar aniversariante</strong></div>
+            <label>Nome completo<input type="text" id="birthdayName" required maxlength="100" placeholder="Nome do colaborador" autocomplete="off" /></label>
+            <label>Função / setor (opcional)<input type="text" id="birthdayRole" maxlength="85" placeholder="Professor(a), Coordenação, Secretaria..." /></label>
+            <div class="birthday-two">
+              <label>Dia<input type="number" id="birthdayDay" min="1" max="31" inputmode="numeric" required placeholder="Dia" /></label>
+              <label>Mês<select id="birthdayMonth" required><option value="">Selecionar</option><option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option><option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option><option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option></select></label>
+            </div>
+            <div class="studio-actions"><button type="submit" class="btn btn-primary" id="birthdaySave">＋ Cadastrar aniversariante</button><button type="button" class="btn btn-ghost" id="birthdayCancel" hidden>Cancelar edição</button></div>
+            <span id="birthdayFeedback" class="birthday-feedback" role="status" aria-live="polite"></span>
+            <small class="birthday-hint">O cadastro é recorrente em todos os anos. Os registros são guardados neste navegador e incluídos no backup da Gestão.</small>
+          </form>
+          <div class="birthday-roster">
+            <div class="birthday-roster-head"><div><strong>Aniversariantes cadastrados</strong><div class="birthday-hint" id="birthdayCount">0 aniversariantes</div></div><label>Filtrar por mês<select id="birthdayListMonth"></select></label></div>
+            <ul id="birthdayList" aria-label="Lista de aniversariantes cadastrados"></ul>
+            <div class="birthday-roster-foot"><span class="birthday-hint">É possível editar ou excluir um registro.</span><button id="birthdayJumpCard" type="button" class="btn btn-dark">🎂 Gerar card do mês</button></div>
+          </div>
+        </div>
+      </section>
       <section id="cardStudio" class="studio-section" aria-labelledby="cardHeading">
-        <div class="studio-section-head"><div><div class="eyebrow">COMUNICAÇÃO VISUAL · IDENTIDADE INSTITUCIONAL</div><h2 id="cardHeading">Criador de cards</h2><p>Escolha um dos cinco modelos inspirados nos seus exemplos, edite as informações e baixe a imagem pronta para divulgar.</p></div><span class="studio-pill studio-pill-gold">PNG + PDF</span></div>
+        <div class="studio-section-head"><div><div class="eyebrow">COMUNICAÇÃO VISUAL · IDENTIDADE INSTITUCIONAL</div><h2 id="cardHeading">Criador de cards</h2><p>Escolha um modelo institucional, edite as informações e baixe a imagem pronta para divulgar.</p></div><span class="studio-pill studio-pill-gold">PNG + PDF</span></div>
         <div class="template-picker" role="group" aria-label="Escolha um modelo de card">
           <button type="button" class="template-btn is-selected" data-template="comunicado"><span class="template-icon">!</span><strong>Comunicado</strong><small>Avisos e feriados</small></button>
           <button type="button" class="template-btn" data-template="solidaria"><span class="template-icon">♡</span><strong>Campanha</strong><small>Ações solidárias</small></button>
           <button type="button" class="template-btn" data-template="reuniao"><span class="template-icon">▦</span><strong>Reunião</strong><small>Escola e família</small></button>
           <button type="button" class="template-btn" data-template="cronograma"><span class="template-icon">▤</span><strong>Cronograma geral</strong><small>Provas, simulados e sondagens</small></button>
           <button type="button" class="template-btn" data-template="avaliacao"><span class="template-icon">✓</span><strong>2ª chamada</strong><small>Somente segunda chamada</small></button>
+          <button type="button" class="template-btn" data-template="aniversario"><span class="template-icon">🎂</span><strong>Aniversariantes</strong><small>Comemorações do mês</small></button>
         </div>
         <div class="studio-layout card-editor-layout"><form id="cardForm" class="studio-form"><div class="studio-form-heading"><strong>Editar informações do card</strong><span id="cardSaveStatus">Rascunho automático</span></div>
           <div id="holidayControls" class="holiday-controls" aria-label="Feriados mensais do comunicado">
@@ -89,6 +114,10 @@
           <div id="assessmentControls" class="holiday-controls" aria-label="Cronograma de avaliações por mês" hidden>
             <div class="holiday-controls-row"><label for="assessmentsMonth">Mês das avaliações<select id="assessmentsMonth" aria-describedby="assessmentsInfo"></select></label><button type="button" class="btn btn-dark" id="loadMonthAssessments">↻ Carregar avaliações do mês</button></div>
             <p id="assessmentsInfo" class="holiday-month-info" role="status" aria-live="polite">Calendário de avaliações filtrado por modelo.</p>
+          </div>
+          <div id="birthdayControls" class="holiday-controls" aria-label="Aniversariantes do mês" hidden>
+            <div class="holiday-controls-row"><label for="birthdayCardMonth">Aniversariantes de<select id="birthdayCardMonth" aria-describedby="birthdayCardInfo"></select></label><button type="button" class="btn btn-dark" id="loadBirthdayCard">↻ Atualizar aniversariantes</button></div>
+            <p id="birthdayCardInfo" class="holiday-month-info" role="status" aria-live="polite">Os aniversariantes cadastrados na Gestão aparecerão aqui.</p>
           </div>
           <label>Título principal<input name="title" maxlength="110" required /></label>
           <label>Subtítulo / destaque<input name="subtitle" maxlength="160" /></label>
@@ -116,6 +145,7 @@
 <script src="app.js?v=confirmacao13" defer></script>
 <script src="official-calendar-ui.js" defer></script>
 <script src="planning.js" defer></script>
+<script src="birthdays.js?v=aniversarios15" defer></script>
 <script src="cards.js?v=2026-cronograma-layout-v10" defer></script>
 <script src="portal.js?v=voltar14" defer></script>
 </body>
