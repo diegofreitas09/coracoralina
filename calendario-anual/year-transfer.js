@@ -76,6 +76,7 @@
    const yearLabel=document.querySelector('.welcome .eyebrow');if(yearLabel)yearLabel.textContent='PLANEJAMENTO · '+year;
    const short=document.querySelector('.sidebar-foot');if(short)short.textContent=year===2026?'Ano base · Dados preservados':'Ano '+year+' · Rascunhos em revisão neste dispositivo';
    const importButton=$('carryMonthManual');if(importButton)importButton.hidden=year<=2026;
+   const fullYearButton=$('carryWholeYear');if(fullYearButton)fullYearButton.hidden=year<=2026;
    const help=$('yearCarryHelp');if(help)help.textContent=year<=2026?'Ano de referência preservado. Selecione 2027 para iniciar um novo planejamento.':'Reaproveite atividades, projetos e planejamento do mês anterior, com datas revisáveis.';
    const official=$('officialBanner');
    if(official){
@@ -108,6 +109,12 @@
       fillYears();$('schoolYearSelect').value=String(next);$('schoolYearSelect').dispatchEvent(new Event('change'));
    });
    $('carryMonthManual')?.addEventListener('click',()=>showWizard(CoraYears.activeYear,CoraYears.month,true));
+   const fullYearBtn=document.createElement('button');
+   fullYearBtn.type='button';fullYearBtn.id='carryWholeYear';fullYearBtn.className='btn btn-dark';
+   fullYearBtn.textContent='↻ Importar ano completo';
+   $('yearCarryTools')?.appendChild(fullYearBtn);
+   fullYearBtn.hidden=CoraYears.activeYear<=2026;
+   fullYearBtn.addEventListener('click',()=>showFullYearWizard(CoraYears.activeYear));
    $('editMonthProjects')?.addEventListener('click',()=>{
       const year=CoraYears.activeYear,month=CoraYears.month;
       const list=getProjects(year);
@@ -207,5 +214,87 @@
    const message=created+' evento(s) importados e marcados para revisão. '+(copiedProjects?copiedProjects+' projeto(s). ':'')+(copiedPlan?'Planejamento reaproveitado. ':'')+(duplicates?duplicates+' já existentes ignorados. ':'')+(skipped?skipped+' data(s) não importadas.':'');
    const alert=$('toast');if(alert){alert.textContent=message;alert.classList.add('visible');setTimeout(()=>alert.classList.remove('visible'),6000);}
  }
- window.CoraYearPlanner={targetDate,readEvents,showWizard,importSelection};
+
+ function copyYearMonth(from,to,month,includeProjects,includePlan){
+   const events=readEvents(from,month),key=EVENT_KEY(to),existing=stored(key,[]);
+   const next=Array.isArray(existing)?[...existing]:[];
+   let added=0,duplicates=0;
+   for(const event of events){
+     const calculated=targetDate(event.date,to,event.type,event.title);
+     if(!calculated?.date)continue;
+     const id='carry-'+to+'-'+from+'-'+String(event.id||identify(event));
+     const duplicate=next.some(p=>p.id===id||(p.originId===event.id&&Number(p.originYear)===from)||
+       (p.date===calculated.date&&identify(p)===identify(event)&&p.type===event.type));
+     if(duplicate){duplicates++;continue}
+     next.push({...event,id,date:calculated.date,
+       title:String(event.title||'').replace(new RegExp('\\b'+from+'\\b','g'),String(to)),
+       notes:String(event.notes||'').replace(new RegExp('\\b'+from+'\\b','g'),String(to)),
+       source:'Importado de '+from,originId:event.id,originYear:from,status:'Em revisão',needsReview:true});
+     added++;
+   }
+   if(added&&!save(key,next))throw Error('Não foi possível salvar os eventos de '+MONTHS[month]);
+   let projectCount=0,planCopied=false;
+   if(includeProjects){
+     const p=getProjects(to),fromProjects=getProjects(from)[month]||[];
+     if(!p[month]?.length&&fromProjects.length){p[month]=[...fromProjects];if(saveProjects(to,p))projectCount=fromProjects.length}
+   }
+   if(includePlan){
+     const fromPlans=stored(PLAN_KEY(from),{}),toPlans=stored(PLAN_KEY(to),{});
+     if(fromPlans[month]&&!toPlans[month]){
+       const plan={...fromPlans[month]};
+       // Não levar datas de 2026 textualmente para um novo ano. A lista de eventos é a fonte das datas.
+       plan.meetingDate='';
+       plan.schedule='';
+       plan.projects=(getProjects(to)[month]||[]).join('\n');
+       plan.birthdays=''; // Os aniversários são consultados no cadastro recorrente, não no texto do ano-base.
+       plan.copiedFromYear=from;plan.needsReview=true;
+       toPlans[month]=plan;
+       planCopied=save(PLAN_KEY(to),toPlans);
+     }
+   }
+   localStorage.setItem(FLAG_KEY(to,month),'imported');
+   return {added,duplicates,projectCount,planCopied};
+ }
+ function showFullYearWizard(year){
+   if(year<=2026)return;
+   if(chooser.open)chooser.close();
+   const sourceYear=year-1;
+   chooser.innerHTML='<form method="dialog" class="year-carry-head"><div><small>GESTÃO · NOVO ANO</small><h2>Importar calendário completo para '+year+'</h2><p>Copiar eventos, projetos e planejamentos para cada mês do novo ano, mantendo '+sourceYear+' intacto.</p></div><button type="submit" aria-label="Fechar">✕</button></form>'+
+   '<div class="year-carry-body"><div class="year-carry-options"><label>Ano de origem<select id="fullSource">'+Array.from({length:year-2026},(_,i)=>year-1-i).map(y=>'<option value="'+y+'">'+y+'</option>').join('')+'</select></label><p class="year-carry-policy">Feriados fixos mantêm o dia. Eventos escolares usam a mesma ocorrência do dia da semana; todas as datas importadas precisam de revisão.</p></div>'+
+   '<p id="fullSummary" class="year-carry-summary"></p><div id="fullMonths" class="year-full-months"></div>'+
+   '<label class="year-carry-project"><input type="checkbox" id="fullProjects" checked /> Incluir todos os projetos mensais</label>'+
+   '<label class="year-carry-project"><input type="checkbox" id="fullPlanning" checked /> Incluir os planejamentos pedagógicos</label>'+
+   '<p class="year-carry-warning">Atividades já cadastradas não serão apagadas nem duplicadas. Após importar, clique nos eventos para editar a data e salvar.</p></div>'+
+   '<div class="year-carry-actions"><button id="fullCancel" type="button" class="btn btn-ghost">Cancelar</button><button id="fullConfirm" type="button" class="btn btn-primary">Importar ano selecionado</button></div>';
+   chooser.showModal();
+   const refresh=()=>{
+     const from=Number($('fullSource').value);
+     const counts=MONTHS.map((name,month)=>({name,month,n:readEvents(from,month).length,p:getProjects(from)[month]?.length||0}));
+     $('fullSummary').textContent=counts.reduce((a,b)=>a+b.n,0)+' eventos e '+counts.reduce((a,b)=>a+b.p,0)+' projetos disponíveis em '+from+'.';
+     $('fullMonths').innerHTML=counts.map(c=>'<label><input type="checkbox" data-full-month="'+c.month+'" checked /><strong>'+c.name+'</strong><small>'+c.n+' eventos · '+c.p+' projetos</small></label>').join('');
+   };
+   $('fullSource').addEventListener('change',refresh);
+   $('fullCancel').addEventListener('click',()=>chooser.close());
+   $('fullConfirm').addEventListener('click',()=>{
+     const from=Number($('fullSource').value),months=[...chooser.querySelectorAll('[data-full-month]:checked')].map(el=>Number(el.dataset.fullMonth));
+     if(!months.length){alert('Selecione pelo menos um mês.');return}
+     const stats={added:0,duplicates:0,projectCount:0,plans:0};
+     try{
+       for(const month of months){
+         const result=copyYearMonth(from,year,month,$('fullProjects').checked,$('fullPlanning').checked);
+         stats.added+=result.added;stats.duplicates+=result.duplicates;stats.projectCount+=result.projectCount;if(result.planCopied)stats.plans++;
+       }
+     }catch(e){alert(e.message);return}
+     chooser.close();
+     window.dispatchEvent(new CustomEvent('cora-data-changed',{detail:{year,month:CoraYears.month}}));
+     window.dispatchEvent(new CustomEvent('cora-projects-changed',{detail:{year,month:CoraYears.month}}));
+     window.dispatchEvent(new CustomEvent('cora-planning-copied',{detail:{year,month:CoraYears.month}}));
+     putProjects(year,CoraYears.month);
+     const msg='Importação concluída: '+stats.added+' eventos, '+stats.projectCount+' projetos e '+stats.plans+' planejamentos. '+stats.duplicates+' eventos existentes preservados. Confira as datas em revisão.';
+     const toast=$('toast');if(toast){toast.textContent=msg;toast.classList.add('visible');setTimeout(()=>toast.classList.remove('visible'),7000)}
+   });
+   refresh();
+ }
+
+ window.CoraYearPlanner={targetDate,readEvents,showWizard,showFullYearWizard,importSelection};
 })();
