@@ -65,7 +65,7 @@ export default async function handler(){
   for(const item of pending.slice(0,45)){
    if(await hasDelivered(item.id))continue;
    try{
-    const stats=await dispatchPush({...item,year,urgent:item.kind==='notice'});
+    const stats=await dispatchPush({...item,year,urgent:item.kind==='notice'||item.kind==='assessment-deadline'});
     if(stats.registered)await markDelivered(item.id,{kind:item.kind,year,sent:stats.sent,failed:stats.failed});
    }catch(e){console.error('Erro de envio agendado',e.message)}
   }
