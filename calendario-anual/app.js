@@ -265,8 +265,13 @@
       g.fillStyle=color;g.fillRect(x+7,cy,4,32);
       symbol(ev,x+16,cy+7,color);
       g.font='700 16px Arial,sans-serif';
-      text(g,ellipsis(g,ev.title,step-58),x+42,cy+21,16,navy,'700');
+      const label=(ev.time?String(ev.time)+' · ':'')+String(ev.title||'Evento');
+      text(g,ellipsis(g,label,step-58),x+42,cy+21,16,navy,'700');
     });
+    if(daily.length===1&&daily[0].notes){
+      g.font='500 14px Arial,sans-serif';
+      text(g,ellipsis(g,daily[0].notes,step-23),x+10,lineTop+visible*38+15,14,'#61768b');
+    }
     if(daily.length>visible)text(g,`+ ${daily.length-visible} atividade(s)`,x+9,y+cellH-9,14,'#60788c','700');
   }
   rounded(g,68,987,PAGE_W-136,130,6,'#f4f8fc');
