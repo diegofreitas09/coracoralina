@@ -92,3 +92,9 @@ body.portal-locked { background:#eef3f9; }
 .cp-portal-toast {position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0a335d;color:white;max-width:90vw;border-radius:12px;padding:12px 20px;z-index:500;box-shadow:0 9px 25px #0004;}
 @media(max-width:780px){.cp-role-grid {grid-template-columns:1fr;padding:15px 18px;}.cp-role {min-height:120px;padding:16px;}.cp-auth {grid-template-columns:1fr;padding:2px 18px 20px;}.cp-login-head{padding:20px;}.cp-login-head img{width:67px;height:80px;}.cp-team-head{padding:13px;}.cp-team-head img{width:50px;height:58px;}.cp-overview{grid-template-columns:1fr 1fr;}.cp-form-grid{grid-template-columns:1fr 1fr;}.cp-form-grid .cp-wide{grid-column:span 2;}.cp-pdf-sample{grid-template-columns:1fr;}.cp-team-main{padding:13px 12px 45px;}}
 @media(max-width:420px){.cp-overview{grid-template-columns:1fr 1fr;}.cp-metric{padding:12px;}.cp-metric strong{font-size:27px;}.cp-team-head h1{font-size:23px;}.cp-team-head .cp-btn{font-size:12px;}.cp-gateway-foot{flex-direction:column;}}
+/* Navegação de retorno na Central de alertas da Equipe Pedagógica. */
+.cp-alert-heading-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0}
+.cp-alert-heading-left h2{margin:0}
+.cp-back-alert,.cp-btn.cp-back-alert{min-height:44px;min-width:112px;background:#e8f1fb;color:#0d3d78;border:1px solid #c8d9ec;white-space:nowrap}
+.cp-back-alert:hover,.cp-back-alert:focus-visible{background:#d7e8fa;border-color:#9cbedf}
+@media(max-width:620px){.cp-bell-panel .cp-main-heading{align-items:flex-start;gap:12px;flex-wrap:wrap}.cp-alert-heading-left{width:100%}.cp-alert-heading-left h2{font-size:19px}}
