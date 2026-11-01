@@ -248,7 +248,7 @@
    const initial=saveSelected();if(!initial.ok){status(initial.error);return}
    const data=get(y),row=data.items[selectedStage-1];
    if(!row.due||!row.deliveryTypes||!row.items.length){status('Preencha a entrega, os tipos de prova e pelo menos um período de avaliação.');return}
-   if(y>2026){const st=window.CoraStages?.get?.(y)?.find(x=>Number(x.number)===selectedStage);if(!st?.start||!st?.end){status('Defina o início e o fim da '+selectedStage+'ª etapa letiva antes de validar.');return}}
+   if(y>2026){const st=window.CoraStages?.get?.(y)?.find(x=>Number(x.number)===selectedStage);if(!st?.start||!st?.end||st.needsReview){status('Confira e valide primeiro o início e o fim da '+selectedStage+'ª etapa letiva.');return}}
    const warnings=issues(data,selectedStage);
    const question=warnings.length?'Esta etapa possui '+warnings.length+' conferência(s):\n\n'+warnings.slice(0,5).join('\n')+'\n\nVocê conferiu e aprova as datas desta etapa?':
      'Confirma que o prazo de entrega e as avaliações da '+selectedStage+'ª etapa de '+y+' estão corretos?';
