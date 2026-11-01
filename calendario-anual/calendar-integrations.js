@@ -1,11 +1,11 @@
 (() => {
   'use strict';
-  const STORE = 'cora_calendario_eventos_2026_v1';
-  const REMOVED = 'cora_official_2026_removed_v1';
+  const currentYear=()=>window.CoraYears?.activeYear||2026;
+  
   const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   let deferredInstall = null;
   let daySelected = '';
-  let selectedMonth = new Date().getFullYear() === 2026 ? new Date().getMonth() : 0;
+  let selectedMonth = new Date().getFullYear() === (window.CoraYears?.activeYear||2026) ? new Date().getMonth() : 0;
   const el = id => document.getElementById(id);
   function safe(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, function(c) {
@@ -17,18 +17,10 @@
     catch (_) { return fallback; }
   }
   function allEvents() {
-    const removed = new Set(stored(REMOVED, []));
-    const map = new Map();
-    (window.CORA_OFFICIAL_2026 && window.CORA_OFFICIAL_2026.events || []).forEach(function(e) {
-      if (e && e.id && !removed.has(e.id)) map.set(e.id, e);
-    });
-    const own = stored(STORE, []);
-    if (Array.isArray(own)) own.forEach(function(e) {
-      if (e && e.id && typeof e.date === 'string' && !removed.has(e.id)) map.set(e.id, e);
-    });
-    return Array.from(map.values()).filter(function(e) {
-      return /^2026-\d{2}-\d{2}$/.test(e.date || '') && typeof e.title === 'string';
-    }).sort(function(a,b) { return a.date.localeCompare(b.date) || a.title.localeCompare(b.title); });
+    const api=window.CoraYears;
+    if(api)return api.filterVisible(api.getEvents(api.activeYear));
+    const current=stored(STORE,[]);
+    return Array.isArray(current)?current:[];
   }
   function findEvent(id) {return allEvents().find(function(e) {return String(e.id) === id;});}
   function nextDay(day) {
@@ -49,7 +41,7 @@
   }
   function calendarGoogle(event) {
     const range = interval(event);
-    const description = [event.notes || '',event.meet ? 'Google Meet: '+event.meet : '', 'Calendário escolar — Colégio Cora Coralina'].filter(Boolean).join('\n\n');
+    const description = [event.notes || '',event.meet ? 'Google Meet: '+event.meet : '', 'Calendário escolar '+currentYear()+' — Colégio Cora Coralina'].filter(Boolean).join('\n\n');
     const p = new URLSearchParams({action:'TEMPLATE',text:event.title,dates:range[0]+'/'+range[1],details:description,location:event.mode==='online' ? (event.meet||'Google Meet') : (event.place||''),ctz:'America/Fortaleza'});
     return 'https://calendar.google.com/calendar/render?' + p.toString();
   }
@@ -62,7 +54,7 @@
   function openDay(date) {
     daySelected = date;
     const parts = date.split('-'), list=allEvents().filter(function(e){return e.date===date;});
-    el('dayEventsTitle').textContent = Number(parts[2])+' de '+MONTHS[Number(parts[1])-1]+' de 2026';
+    el('dayEventsTitle').textContent = Number(parts[2])+' de '+MONTHS[Number(parts[1])-1]+' de '+parts[0];
     el('dayEventsList').innerHTML = list.length ? list.map(function(e){
       return '<article class="day-event-entry"><div><strong>'+safe(e.title)+'</strong><p>'+safe(e.type||'Evento')+(e.time?' · '+safe(e.time):' · Dia inteiro')+'</p>'+(e.notes?'<small>'+safe(e.notes)+'</small>':'')+'</div><div class="day-event-buttons"><button type="button" class="btn btn-outline" data-google="'+safe(e.id)+'">Google Agenda</button>'+(e.meet && /^https:\/\/meet\.google\.com\//.test(e.meet) ? '<a class="btn btn-outline" rel="noopener noreferrer" href="'+safe(e.meet)+'" target="_blank">Entrar no Meet</a>':'')+'</div></article>';
     }).join(''):'<p>Não há atividades cadastradas neste dia.</p>';
@@ -73,7 +65,7 @@
     return String(value||'').replace(/\\/g,'\\\\').replace(/\r?\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;');
   }
   function toIcs(items) {
-    const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Cora Coralina//Agenda Escolar 2026//PT-BR','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:Colégio Cora Coralina 2026'];
+    const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Cora Coralina//Agenda Escolar 2026//PT-BR','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:Colégio Cora Coralina '+currentYear()];
     const stamp = new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
     items.forEach(function(e) {
       const range = interval(e),t=timed(e);
@@ -87,17 +79,19 @@
     return lines.join('\r\n')+'\r\n';
   }
   function downloadMonth(all) {
-    const list = all ? allEvents() : allEvents().filter(function(e){return Number(e.date.slice(5,7))===selectedMonth+1;});
+    const published=allEvents().filter(function(e){return (e.status||'Publicado')==='Publicado';});
+    const list = all ? published : published.filter(function(e){return Number(e.date.slice(5,7))===selectedMonth+1;});
     if(!list.length){alert('Nenhum evento cadastrado para exportar.');return;}
     const blob = new Blob([toIcs(list)],{type:'text/calendar;charset=utf-8'});
     const u=URL.createObjectURL(blob),a=document.createElement('a');
-    a.href=u;a.download=all?'Agenda_Cora_Coralina_2026.ics':'Agenda_Cora_'+MONTHS[selectedMonth]+'_2026.ics';
+    a.href=u;a.download=all?'Agenda_Cora_Coralina_'+currentYear()+'.ics':'Agenda_Cora_'+MONTHS[selectedMonth]+'_'+currentYear()+'.ics';
     document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},10000);
   }
   function upcoming() {
     const banner=el('upcomingReminder');if(!banner)return;
     const now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
     const next=allEvents().filter(function(e){
+      if((e.status||'Publicado')!=='Publicado')return false;
       const d=new Date(e.date+'T12:00:00');
       const days=Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-today)/86400000);
       return days>=0 && days<=7;
@@ -123,7 +117,8 @@
       const btn=evt.target.closest('[data-google]');
       if(!btn)return;
       evt.preventDefault();
-      const event=findEvent(btn.dataset.google);if(event)openGoogle(event);
+      const event=findEvent(btn.dataset.google);
+      if(event){if(event.status==='Em revisão'&&!confirm('Este evento ainda está em revisão. Deseja mesmo abri-lo no Google Agenda?'))return;openGoogle(event);}
     });
     el('exportIcsBtn').addEventListener('click',function(){downloadMonth(false);});
     const yearBtn=document.createElement('button');
@@ -132,7 +127,7 @@
     yearBtn.addEventListener('click',function(){downloadMonth(true);});
     const subscribeBtn=document.createElement('button');
     subscribeBtn.type='button';subscribeBtn.className='btn btn-install-soft';subscribeBtn.id='subscribeOfficialBtn';
-    subscribeBtn.textContent='Vincular calendário oficial ao Google';
+    subscribeBtn.textContent='Assinar calendário oficial 2026';
     yearBtn.insertAdjacentElement('afterend',subscribeBtn);
     subscribeBtn.addEventListener('click',async function(){
       const feed=new URL('./agenda-oficial-2026.ics',window.location.href).href;
@@ -153,6 +148,13 @@
     el('calendar').parentElement.parentElement.insertAdjacentElement('beforebegin',alertBox);
     window.addEventListener('cora-month-changed',function(e){selectedMonth=e.detail.month;el('exportIcsBtn').textContent='Baixar '+MONTHS[selectedMonth]+' (.ics)';upcoming();});
     upcoming();
+    window.addEventListener('cora-year-changed',()=>{
+      selectedMonth=window.CoraYears?.month||0;
+      el('exportYearIcsBtn').textContent='Baixar agenda '+currentYear()+' (.ics)';
+      el('subscribeOfficialBtn').hidden=currentYear()!==2026;
+      upcoming();
+    });
+    el('subscribeOfficialBtn').hidden=currentYear()!==2026;
     el('installIos').addEventListener('click',function(){help('ios');});
     el('installAndroid').addEventListener('click',async function(){
       if(!deferredInstall){help('android');return;}
