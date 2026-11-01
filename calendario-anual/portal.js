@@ -11,6 +11,7 @@
  const isoNow=()=>{const d=new Date();return `${dateStr(d)}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`};
  const app=$('#app'),root=document.createElement('div');root.id='coraPortal';document.body.prepend(root);
  let role='',chosen='gestao',data=null,year=Number(window.CoraYears?.activeYear)||2026,availableYears=[2026],month=new Date().getFullYear()===2026?new Date().getMonth():0,tab='resumo',selectedStage=0,managerNotices=[],leadDays=3,timer=null,showBell=false;
+ const seenPublicationIds=new Map();
  const endpoint=action=>`${API}?action=${encodeURIComponent(action)}`;
  async function api(action,payload,query=''){
   const opts={credentials:'same-origin',cache:'no-store',headers:{'accept':'application/json'}};
@@ -119,7 +120,18 @@
  }
  function teamNav(){return `<div class="cp-team-head"><img id="cpTeamLogo" alt="Brasão do Colégio Cora Coralina"><div><small>COLÉGIO CORA CORALINA · AMBIENTE DE CONSULTA</small><h1>Equipe Pedagógica</h1></div><label class="cp-year-label">Ano letivo <select id="cpTeamYear" aria-label="Ano letivo">${availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('')}</select></label><span class="cp-spacer"></span><button class="cp-btn soft" type="button" id="cpEnableAlerts" title="Funciona com aplicativo aberto; push em segundo plano depende de configuração do servidor">Avisos no celular (app aberto)</button><button class="cp-btn cp-bell" id="cpBell" aria-label="Abrir notificações">🔔<em id="cpBellCount" style="display:none">0</em></button><button class="cp-btn" id="cpRefresh">Atualizar</button><button class="cp-btn" id="cpTeamLogout">Sair</button></div>`}
  async function team(){year=2026;if(new URLSearchParams(location.search).get('avisos')==='1')showBell=true;document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpEnableAlerts').onclick=enableLocalNotifications;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};$('#cpTeamYear').onchange=e=>{year=Number(e.target.value)||2026;month=0;showBell=false;tab='resumo';refresh()};await refresh();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},30000);}
- async function refresh(){try{const result=await api('state',undefined,'year='+year);availableYears=Array.isArray(result.availableYears)?result.availableYears:[2026];data=result.publication;const picker=$('#cpTeamYear');if(picker){picker.innerHTML=availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('');picker.value=String(year)}drawTeam();checkLocalNotifications()}catch(e){if(e.status===401){clearInterval(timer);gateway('Sessão expirada. Entre novamente.');return;}toast('Falha ao atualizar: '+e.message);}}
+ async function refresh(){try{const result=await api('state',undefined,'year='+year);availableYears=Array.isArray(result.availableYears)?result.availableYears:[2026];data=result.publication;
+    const newNoticeIds=new Set(activeNotices().map(n=>String(n.id)));
+    const knownIds=seenPublicationIds.get(year);
+    if(knownIds){
+      const fresh=(data?.notices||[]).filter(n=>newNoticeIds.has(String(n.id))&&!knownIds.has(String(n.id)));
+      if(fresh.length&&role==='equipe'){
+        vibrationFeedback();
+        toast(fresh.length===1?'🔔 Novo aviso da Gestão: '+fresh[0].title:'🔔 '+fresh.length+' novos comunicados da Gestão. Toque no sininho.');
+      }
+    }
+    seenPublicationIds.set(year,newNoticeIds);
+    const picker=$('#cpTeamYear');if(picker){picker.innerHTML=availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('');picker.value=String(year)}drawTeam();checkLocalNotifications()}catch(e){if(e.status===401){clearInterval(timer);gateway('Sessão expirada. Entre novamente.');return;}toast('Falha ao atualizar: '+e.message);}}
 
 
  // Marcadores de leitura são separados das notificações entregues ao aparelho.
