@@ -109,3 +109,11 @@ body.portal-locked { background:#eef3f9; }
 .cp-birthday-preview{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}
 .cp-birthday-preview span{background:#fff;border:1px solid #d6e5f4;border-radius:8px;padding:7px 10px;font-size:13px;font-weight:650}
 @media(max-width:620px){.cp-birthday-panel,.cp-birthday-teaser{padding:13px}.cp-birthday-panel .cp-main-heading h2,.cp-birthday-teaser .cp-main-heading h2{font-size:20px}}
+
+/* Seletor de anos e visão de etapas - Equipe Pedagógica */
+.cp-year-label{display:flex;align-items:center;gap:8px;color:#e3effc;font-size:12px;font-weight:700;white-space:nowrap}
+.cp-year-label select{border:1px solid #77a4ce;border-radius:9px;background:#fff;color:#153a60;font-size:15px;font-weight:800;padding:9px 13px;min-height:43px}
+.cp-stage-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin:18px 0}
+.cp-stage-card{background:#fff;border:1px solid #d9e5f1;border-left:5px solid #e4b829;border-radius:13px;padding:19px;display:flex;flex-direction:column;gap:8px;color:#173a63}
+.cp-stage-card strong{font-size:19px}.cp-stage-card span{font-size:14px}.cp-stage-card.active{border-color:#268667;background:#eefbf3}.cp-stage-card small{color:#20794a;font-weight:800}
+@media(max-width:640px){.cp-stage-grid{grid-template-columns:1fr}.cp-year-label{width:100%;justify-content:flex-start}}
