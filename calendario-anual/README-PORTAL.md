@@ -33,3 +33,7 @@ Configure todas com escopo Functions, marque como sensíveis/secretas e aplique 
 - O HTML/JavaScript do calendário são arquivos estáticos de um repositório público. O login restringe dados publicados pela API, não impede que arquivos estáticos públicos sejam lidos.
 - O armazenamento no Netlify Blobs é ideal para uma direção com poucas publicações; gravações simultâneas podem exigir gestão de versões no futuro.
 - Testado localmente: Node.js --check de todos os scripts; testes de autenticação, sessão, leitura e bloqueio de publicação pelo perfil Equipe em API simulada. Não foi possível completar teste visual automatizado no navegador por bloqueio do ambiente de execução.
+
+## Ativação de produção (2026-11-01)
+
+As credenciais são armazenadas nas variáveis protegidas do Netlify. Após alterações em `CORA_SESSION_SECRET`, publique uma nova versão para que a função de autenticação leia a chave atual. Não inclua valores secretos no repositório.
