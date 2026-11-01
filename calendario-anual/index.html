@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="studio.css" />
+  <link rel="stylesheet" href="studio.css?v=20261101-mes-modelo" />
 </head>
 <body>
 <div id="app" class="layout">
@@ -91,7 +91,8 @@
           <label>Itens ou cronograma <span class="field-hint">No comunicado, todos os feriados do mês aparecem aqui e podem ser editados.</span><textarea name="items" rows="6" maxlength="2200"></textarea></label>
           <div class="studio-three"><label>Data<input name="date" placeholder="06/11/2026" maxlength="45" /></label><label>Horário<input name="time" placeholder="18h30" maxlength="45" /></label><label>Local<input name="place" placeholder="Quadra da escola" maxlength="80" /></label></div>
           <label>Rodapé / assinatura<input name="footer" maxlength="180" /></label>
-          <div class="studio-actions"><button type="button" class="btn btn-ghost" id="resetCard">Restaurar este modelo</button><button type="button" class="btn btn-primary" id="downloadCardPng">↓ Baixar card PNG</button><button type="button" class="btn btn-outline" id="downloadCardPdf">↓ Baixar PDF</button></div>
+          <p class="card-export-context" id="cardExportContext" role="status" aria-live="polite">Modelo ativo: COMUNICADO · NOVEMBRO DE 2026</p>
+          <div class="studio-actions"><button type="button" class="btn btn-ghost" id="resetCard">Restaurar este modelo</button><button type="button" class="btn btn-primary" id="downloadCardPng">↓ PNG · Comunicado</button><button type="button" class="btn btn-outline" id="downloadCardPdf">↓ PDF · Comunicado</button></div>
           <p class="note">O arquivo PNG sai em 1080 × 1350 pixels. Os modelos são editáveis e os rascunhos ficam salvos somente neste navegador.</p>
         </form><aside class="card-canvas-wrap"><div class="card-preview-top"><strong>Prévia em tempo real</strong><span>1080 × 1350 px</span></div><canvas id="studioCardCanvas" width="1080" height="1350" aria-label="Prévia visual do card" role="img"></canvas><div class="preview-footer">Paleta institucional azul-marinho, azul e amarelo • Colégio Cora Coralina</div></aside></div>
       </section>
