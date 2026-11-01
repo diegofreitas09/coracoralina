@@ -126,9 +126,11 @@
    const today=dateStr(new Date());const future=events.filter(e=>e.date>=today).slice(0,9);
    const thisMonth=new Date().getMonth()+1;
    const birthdayList=publishedBirthdays().filter(p=>Number(p.month)===thisMonth);
+   const nextMonth=thisMonth===12?1:thisMonth+1;
+   const nextBirthdays=publishedBirthdays().filter(p=>Number(p.month)===nextMonth);
    content=`<div class="cp-main-heading"><h2>Atividades e próximos compromissos</h2></div><div class="cp-list">${future.length?future.map(eventHtml).join(''):'<p class="cp-muted">Nenhum evento futuro publicado em 2026.</p>'}</div>
    <div class="cp-birthday-teaser"><div class="cp-main-heading"><h2>🎂 Aniversariantes de ${MONTHS[thisMonth-1]}</h2><button class="cp-btn soft" id="cpSeeBirthdays">Ver todos os meses</button></div>
-   <div class="cp-list">${birthdayList.length?birthdayList.map(birthdayEntry).join(''):'<p class="cp-muted">Nenhum aniversariante publicado para este mês.</p>'}</div></div>
+   <div class="cp-list">${birthdayList.length?birthdayList.map(birthdayEntry).join(''):'<p class="cp-muted">Nenhum aniversariante publicado para este mês.</p>'}</div><div class="cp-birthday-next"><strong>Próximo mês · ${MONTHS[nextMonth-1]}</strong><div class="cp-birthday-preview">${nextBirthdays.length?nextBirthdays.map(p=>`<span>${safe(String(p.day).padStart(2,'0'))}/${safe(String(p.month).padStart(2,'0'))} · ${safe(p.name)}</span>`).join(''):'<span>Nenhum aniversariante cadastrado</span>'}</div></div></div>
    <h2 style="color:#12375e;margin-top:28px">Comunicados recentes</h2>${notes.slice(0,3).map(noticeHtml).join('')||'<p class="cp-muted">Sem avisos recentes.</p>'}`;
   }else if(tab==='calendario'||tab==='avaliacoes'){
    const arr=(tab==='avaliacoes'?assess:events).filter(e=>Number(e.date.slice(5,7))===month+1);
