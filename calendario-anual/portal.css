@@ -198,3 +198,8 @@ body.portal-locked { background:#eef3f9; }
 @media(max-width:650px){.cp-team-main{padding:15px 12px 45px}.cp-flow-hero{grid-template-columns:1fr;border-radius:20px;padding:24px 20px}.cp-flow-feature{padding:17px}.cp-flow-hero h2{font-size:30px}.cp-flow-hero p{font-size:13px}.cp-flow-stage-title{flex-wrap:wrap}.cp-team-head .cp-year-label{margin-left:0}.cp-flow-links{gap:9px}.cp-flow-link{min-height:80px;padding:12px 9px;gap:8px}.cp-flow-link strong{font-size:12px}.cp-flow-link small{font-size:10px}.cp-flow-icon{width:34px;height:37px;font-size:19px}.cp-flow-link>b{display:none}.cp-flow-stage-section{padding:15px 12px}.cp-flow-stage{padding:10px 8px;gap:7px}.cp-flow-stage-num{width:28px;height:28px}.cp-flow-stage strong{font-size:12px}}
 @media(max-width:375px){.cp-flow-links{grid-template-columns:1fr 1fr}.cp-flow-link{flex-wrap:wrap}.cp-flow-stage-grid{gap:7px}.cp-flow-stage-date{font-size:11px}}
 @media(prefers-reduced-motion:reduce){.cp-flow-link,.cp-flow-stage{transition:none;transform:none!important}}
+
+/* Histórico anual das entregas pedagógicas, incluindo prazos já passados. */
+.cp-deadline-total{font-size:13px;color:#476b89;background:#edf5fd;border:1px solid #dceaf6;border-radius:10px;padding:11px 13px;margin:13px 0}.cp-deadline-total strong{font-size:19px;color:#194f79;margin-right:3px}
+.cp-deadline-card small{font-size:11px;letter-spacing:.2px;color:#547592;font-weight:750}
+.cp-deadline-card h3{font-weight:850}

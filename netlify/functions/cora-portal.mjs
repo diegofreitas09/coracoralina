@@ -41,6 +41,38 @@ const cleanEvent=e=>{
  }
  return item;
 };
+// Cronograma histórico recebido oficialmente da coordenação em 2026.
+// Disponível no portal da equipe mesmo em publicações anteriores à integração de prazos.
+// As entradas existentes do mesmo ID têm prioridade: edições da Gestão são preservadas.
+const OFFICIAL_DELIVERIES_2026=[
+ {stage:1,date:'2026-01-05',types:'AP2 e AD'},
+ {stage:2,date:'2026-03-06',types:'AP2, AD e Recomposição do 1º semestre'},
+ {stage:3,date:'2026-06-29',types:'AD'},
+ {stage:4,date:'2026-08-28',types:'AP2, AD e Recomposição do 2º semestre'}
+].map(({stage,date,types})=>cleanEvent({
+ id:'cora-entrega-avaliacoes-2026-'+stage,date,
+ title:'Entrega das avaliações à coordenação — '+stage+'ª etapa',
+ type:'Avaliação',notes:'Entrega de '+types+' à coordenação. Fundamental: coordenacaofundamentalcora@gmail.com. Médio: coordenacaomediocora@gmail.com.',
+ assessmentDelivery:true,stageNumber:stage,deliveryTypes:types
+}));
+function includeOfficial2026Deliveries(state){
+ if(!state)return state;
+ const existing=Array.isArray(state.events)?state.events:[];
+ const officialById=new Map(OFFICIAL_DELIVERIES_2026.map(e=>[e.id,e]));
+ const repaired=existing.map(event=>{
+  const original=officialById.get(String(event?.id||''));
+  if(!original||event.assessmentDelivery===true)return event;
+  // Um cadastro legado com o mesmo ID pode ter perdido o indicador de entrega.
+  // Restaura os metadados sem mudar a data definida posteriormente pela Gestão.
+  return {...original,...event,assessmentDelivery:true,stageNumber:original.stageNumber,
+   deliveryTypes:str(event.deliveryTypes||original.deliveryTypes,160),
+   fundamentalEmail:original.fundamentalEmail,medioEmail:original.medioEmail,leadDays:5};
+ });
+ const ids=new Set(repaired.map(e=>String(e?.id||'')));
+ const additions=OFFICIAL_DELIVERIES_2026.filter(e=>!ids.has(e.id));
+ if(!additions.length&&repaired.every((event,i)=>event===existing[i]))return state;
+ return {...state,events:[...repaired,...additions].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')))};
+}
 const cleanNotice=e=>({id:str(e.id,120),title:str(e.title,130),body:str(e.body,1800),type:['Informativo','Urgente','Reunião','Avaliação'].includes(e.type)?e.type:'Informativo',publishAt:str(e.publishAt,30),expiresAt:str(e.expiresAt,30),eventDate:str(e.eventDate,10),leadDays:Math.max(0,Math.min(30,Number(e.leadDays)||0))});
 const cleanBirthday=b=>({id:str(b.id,140),name:str(b.name,100),role:str(b.role,85),day:Number(b.day),month:Number(b.month)});
 const validBirthday=b=>b.id&&b.name&&Number.isInteger(b.month)&&b.month>=1&&b.month<=12&&Number.isInteger(b.day)&&b.day>=1&&b.day<=new Date(Date.UTC(2024,b.month,0)).getUTCDate();
@@ -113,6 +145,8 @@ export default async function handler(request){
     await store.setJSON(publishedKey(2026),state);
   }
   if(state&&!Array.isArray(state.stages))state={...state,stages:year===2026?STAGES_2026:stagesFor([],year)};
+  // Repara publicações antigas em tempo de leitura sem mexer em comunicados ou em anos posteriores.
+  if(year===2026)state=includeOfficial2026Deliveries(state);
   return answer({role,year,availableYears,publication:state});
  }
  if(action==='publish'&&request.method==='POST'){
@@ -123,11 +157,18 @@ export default async function handler(request){
   let input;try{input=await request.json()}catch{return answer({error:'JSON inválido'},400)}
   const year=schoolYear(input.year||YEAR);if(!year)return answer({error:'Ano letivo inválido'},400);
   if(!Array.isArray(input.events)||!Array.isArray(input.notices)||input.events.length>5000||input.notices.length>300)return answer({error:'Dados inválidos'},400);
-  const events=input.events.map(cleanEvent).filter(e=>validISO(e.date,year)&&e.id&&e.title);
-  if(events.length!==input.events.length)return answer({error:'Eventos com datas inválidas ou de outro ano: revise o calendário.'},400);
+  const incomingEvents=input.events.map(cleanEvent).filter(e=>validISO(e.date,year)&&e.id&&e.title);
+  if(incomingEvents.length!==input.events.length)return answer({error:'Eventos com datas inválidas ou de outro ano: revise o calendário.'},400);
   const notices=input.notices.map(cleanNotice).filter(n=>n.id&&n.title);
   if(input.birthdays!==undefined&&(!Array.isArray(input.birthdays)||input.birthdays.length>500))return answer({error:'Aniversariantes inválidos'},400);
   const previous=await store.get(publishedKey(year),{type:'json',consistency:'strong'});
+  // A publicação nova nunca perde o histórico das quatro entregas oficiais de 2026.
+  // Dados enviados agora pela Gestão prevalecem; em seguida vêm edições já publicadas;
+  // só então completamos IDs inexistentes com as datas oficiais originais.
+  const events=year===2026?includeOfficial2026Deliveries({events:[...incomingEvents,
+    ...(previous?.events||[]).filter(e=>e.assessmentDelivery===true&&
+      /^cora-entrega-avaliacoes-2026-[1-4]$/.test(String(e.id||''))&&
+      !incomingEvents.some(n=>n.id===e.id))]})?.events||incomingEvents:incomingEvents;
   const legacy=year===2026?previous:await store.get(publishedKey(2026),{type:'json',consistency:'strong'});
   const baseBirthdays=input.birthdays===undefined?(Array.isArray(legacy?.birthdays)?legacy.birthdays:DEFAULT_BIRTHDAYS):input.birthdays.map(cleanBirthday).filter(validBirthday);
   const migrated=migrateBirthdays({...legacy,birthdays:baseBirthdays});
