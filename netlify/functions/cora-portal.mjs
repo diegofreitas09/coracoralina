@@ -107,7 +107,7 @@ export default async function handler(request){
   }
   if(p.role!=='equipe')return answer({error:'Ambiente inválido.'},400);
   if(!String(p.email||'').trim()&&!policy.enforced){
-   if(!equal(p.password,vars().equipe||''))return answer({error:'Senha coletiva incorreta.'},401);
+   if(!vars().equipe||!equal(p.password,vars().equipe))return answer({error:'Senha coletiva incorreta.'},401);
    return answer({role:'equipe',legacy:true,configured:true},200,{'set-cookie':`${COOKIE}=${token('equipe')}; Max-Age=43200; ${baseCookie}`});
   }
   const result=await loginEmployee(p,vars().secret);
