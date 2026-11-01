@@ -101,7 +101,7 @@
     const fmt=d=>d.slice(8,10)+'/'+d.slice(5,7);
     panel.innerHTML='<div class="eyebrow">PRAZOS OFICIAIS · '+YEAR+'</div><h3>Entregas e avaliações do mês</h3>'+
        '<p>Sincronizado com a seção “Entregas e avaliações integradas” da Gestão. A Equipe Pedagógica recebe os dados somente após publicação.</p>'+
-       (obj.records.length?obj.records.filter(v=>obj.approved||v.kind==='content').map(v=>'<div class="deadline-item"><time>'+fmt(v.date)+'</time><span><strong>'+safeText(v.title)+'</strong> · '+safeText(v.detail)+'</span></div>').join(''):
+       (obj.records.filter(v=>obj.approved||v.kind==='content').length?obj.records.filter(v=>obj.approved||v.kind==='content').map(v=>'<div class="deadline-item"><time>'+fmt(v.date)+'</time><span><strong>'+safeText(v.title)+'</strong> · '+safeText(v.detail)+'</span></div>').join(''):
         '<div class="deadline-empty">'+(obj.approved?'Nenhum prazo pedagógico previsto para este mês.':'Ano em revisão: confira e aprove as datas na Gestão antes de divulgar.')+'</div>')+
        '<div class="deadline-source">Envio das avaliações: <a href="mailto:coordenacaofundamentalcora@gmail.com">Coordenação Fundamental</a> · <a href="mailto:coordenacaomediocora@gmail.com">Coordenação Médio</a>. Lembrete cinco dias antes da entrega.</div>';
   }
