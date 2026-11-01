@@ -20,7 +20,18 @@ const validEmail=e=>e.length<=180&&/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
 const keyFor=email=>'member-'+digest(emailOf(email));
 const securePassword=p=>typeof p==='string'&&p.length>=10&&p.length<=120&&/[A-Za-zÀ-ÿ]/.test(p)&&/[0-9]/.test(p);
 const derive=(password,salt)=>scryptSync(password,salt,32).toString('hex');
-const publicMember=r=>({id:r.id,name:r.name,email:r.email,profile:r.profile,segment:r.segment,status:r.status,
+const VALID_SEGMENTS=['Educação Infantil','Ensino Fundamental I','Ensino Fundamental II','Ensino Médio','Administrativo'];
+const parseSegments=value=>{
+ let values=Array.isArray(value)?value:typeof value==='string'?value.split(/\s*\+\s*/):[];
+ if(values.length===1&&values[0]==='Ensino Fundamental')values=['Ensino Fundamental I','Ensino Fundamental II'];
+ if(values.length===1&&values[0]==='Todos')return ['Todos'];
+ if(!values.length||values.length>VALID_SEGMENTS.length||values.some(v=>!VALID_SEGMENTS.includes(v))||
+    new Set(values).size!==values.length)return null;
+ return VALID_SEGMENTS.filter(s=>values.includes(s));
+};
+const segmentsOf=record=>parseSegments(record.segments||record.segment)||[];
+const segmentsLabel=values=>values.join(' + ');
+const publicMember=r=>({id:r.id,name:r.name,email:r.email,profile:r.profile,segment:r.segment,segments:segmentsOf(r),status:r.status,
  activatedAt:r.activatedAt||'',lastLogin:r.lastLogin||'',updatedAt:r.updatedAt||''});
 const error=(message,status=400)=>({error:message,status});
 const account=async id=>/^member-[0-9a-f]{64}$/.test(String(id||''))?
@@ -107,17 +118,17 @@ export async function manageEmployee(input,baseUrl){
  const email=emailOf(input.email),operation=String(input.operation||'create');
  if(!validEmail(email))return error('E-mail inválido.');
  const id=keyFor(email),existing=await account(id),now=new Date().toISOString();
+ const selected=parseSegments(input.segments??input.segment);
  if(operation==='create'){
   if(existing)return error('E-mail já cadastrado. Utilize Reemitir convite.',409);
   if(!String(input.name||'').trim()||String(input.name).trim().length<5||
-     !['Professor','Coordenação','Funcionário'].includes(input.profile)||
-     !['Educação Infantil','Ensino Fundamental','Ensino Médio','Administrativo','Todos'].includes(input.segment))
+     !['Professor','Coordenação','Funcionário'].includes(input.profile)||!selected)
    return error('Preencha nome completo, perfil e segmento válidos.');
  }else if(!existing)return error('Conta não localizada.',404);
  if(operation==='create'||operation==='reinvite'){
   if(existing&&existing.status==='Desativado')return error('Reative a conta antes de emitir convite.');
   const code=randomBytes(32).toString('base64url'),expiry=new Date(Date.now()+7*86400000).toISOString();
-  const base=existing||{id,email,name:String(input.name).trim().slice(0,100),profile:input.profile,segment:input.segment,
+  const base=existing||{id,email,name:String(input.name).trim().slice(0,100),profile:input.profile,segment:segmentsLabel(selected),segments:selected,
     statuses:{},createdAt:now,sessionVersion:0};
   const updated={...base,status:'Pendente',salt:'',passwordHash:'',inviteHash:digest(code),inviteExpiresAt:expiry,
     sessionVersion:(base.sessionVersion||0)+1,updatedAt:now};
@@ -127,6 +138,12 @@ export async function manageEmployee(input,baseUrl){
   await deleteUserRegistrations(id);
   const origin=new URL(baseUrl).origin;
   return {ok:true,member:publicMember(updated),inviteUrl:origin+'/calendario-anual/#ativar='+encodeURIComponent(code)+'&email='+encodeURIComponent(email),expiresAt:expiry};
+ }
+ if(operation==='updateSegments'){
+  if(!selected)return error('Marque um ou mais segmentos válidos.');
+  const updated={...existing,segments:selected,segment:segmentsLabel(selected),updatedAt:now};
+  await db().setJSON(id,updated);
+  return {ok:true,member:publicMember(updated)};
  }
  if(!['suspend','disable','enable'].includes(operation))return error('Operação inválida.');
  const next={suspend:'Suspenso',disable:'Desativado',enable:'Pendente'}[operation];
