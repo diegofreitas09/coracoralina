@@ -132,7 +132,7 @@
     if(!holidaysInfo||!holidaysMonth)return;
     const month=Math.max(1,Math.min(12,Number(holidaysMonth.value)||11));
     const n=getHolidays(month).length;
-    holidaysInfo.textContent=n?`${n} ${n===1?'feriado ou data especial':'feriados ou datas especiais'} em ${MONTHS[month-1]} de 2026. Os registros podem ser editados antes de divulgar.`:`Nenhum feriado cadastrado em ${MONTHS[month-1]} de 2026 no calendário escolar. Você pode acrescentar uma data manualmente.`;
+    holidaysInfo.textContent=n?`${n} ${n===1?'feriado ou data especial':'feriados ou datas especiais'} em ${MONTHS[month-1]} de ${ACTIVE_YEAR}. Os registros podem ser editados antes de divulgar.`:`Nenhum feriado cadastrado em ${MONTHS[month-1]} de ${ACTIVE_YEAR} no calendário escolar. Você pode acrescentar uma data manualmente.`;
   }
   function fillMonth(month){
     if(template!=='comunicado')return;
@@ -477,5 +477,5 @@
     if(!drafts.aniversario)drafts.aniversario=birthdayDraft(month);
     setForm(getDraft());updateHolidayInfo();updateAssessmentInfo();updateBirthdayInfo();render();
   });
-  window.addEventListener('cora-backup-restored',()=>{try{drafts=JSON.parse(localStorage.getItem(ID)||'{}')||{}}catch{drafts={}}if(!drafts.comunicado?.month)drafts.comunicado=holidayDraft(calendarMonth());if(!drafts.cronograma||/2\s*[ªaºo]?\s*chamada/i.test(String(drafts.cronograma.title||'')))drafts.cronograma=assessmentDraft(calendarMonth(),'cronograma');if(!drafts.avaliacao)drafts.avaliacao=ACTIVE_YEAR===2026?{...DEFAULTS.avaliacao}:assessmentDraft(calendarMonth(),'avaliacao');if(!drafts.aniversario)drafts.aniversario=birthdayDraft(calendarMonth());setForm(getDraft());ensureComunicadoMonth();updateHolidayInfo();updateAssessmentInfo();updateBirthdayInfo();render()});
+  window.addEventListener('cora-backup-restored',()=>{try{drafts=JSON.parse(localStorage.getItem(ID)||'{}')||{}}catch{drafts={}}if(!drafts.comunicado?.month)drafts.comunicado={...holidayDraft(calendarMonth()),__linkedCalendar:true};if(!drafts.cronograma||/2\s*[ªaºo]?\s*chamada/i.test(String(drafts.cronograma.title||'')))drafts.cronograma=assessmentDraft(calendarMonth(),'cronograma');if(!drafts.avaliacao)drafts.avaliacao=ACTIVE_YEAR===2026?{...DEFAULTS.avaliacao}:assessmentDraft(calendarMonth(),'avaliacao');if(!drafts.aniversario)drafts.aniversario=birthdayDraft(calendarMonth());setForm(getDraft());ensureComunicadoMonth();updateHolidayInfo();updateAssessmentInfo();updateBirthdayInfo();render()});
 })();
