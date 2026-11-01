@@ -5,8 +5,8 @@ import { getStore } from '@netlify/blobs';
 
 const COOKIE='cora_portal_session';
 const YEAR=2026;
-// Aniversariantes de novembro do planejamento institucional; apenas dia/mês, nunca o ano de nascimento.
-const DEFAULT_BIRTHDAYS=[{"id":"cora-nov-nadja","name":"Nadja","role":"Professora","day":1,"month":11},{"id":"cora-nov-emanuel","name":"Prof. Emanuel","role":"Professor","day":10,"month":11},{"id":"cora-nov-ana-paula","name":"Ana Paula","role":"","day":10,"month":11},{"id":"cora-nov-aparecida","name":"Aparecida","role":"","day":16,"month":11},{"id":"cora-nov-mikael","name":"Mikael","role":"","day":16,"month":11},{"id":"cora-nov-mendonca","name":"Mendonça","role":"","day":21,"month":11},{"id":"cora-nov-ruth","name":"Ruth","role":"","day":25,"month":11},{"id":"cora-nov-john","name":"John","role":"","day":26,"month":11}];
+// Aniversariantes de novembro e dezembro confirmados no planejamento institucional; somente dia/mês.
+const DEFAULT_BIRTHDAYS=[{"id":"cora-nov-nadja","name":"Nadja","role":"Professora","day":1,"month":11},{"id":"cora-nov-emanuel","name":"Prof. Emanuel","role":"Professor","day":10,"month":11},{"id":"cora-nov-ana-paula","name":"Ana Paula","role":"","day":10,"month":11},{"id":"cora-nov-aparecida","name":"Aparecida","role":"","day":16,"month":11},{"id":"cora-nov-mikael","name":"Mikael","role":"","day":16,"month":11},{"id":"cora-nov-mendonca","name":"Mendonça","role":"","day":21,"month":11},{"id":"cora-nov-ruth","name":"Ruth","role":"","day":25,"month":11},{"id":"cora-nov-john","name":"John","role":"","day":26,"month":11},{"id":"cora-dec-1","name":"Diego","role":"","day":9,"month":12},{"id":"cora-dec-2","name":"Breno","role":"","day":11,"month":12},{"id":"cora-dec-3","name":"Renan","role":"","day":24,"month":12}];
 const HEADERS={'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'};
 const answer=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{...HEADERS,...extra}});
 const vars=()=>({gestao:process.env.CORA_GESTAO_PASSWORD,equipe:process.env.CORA_EQUIPE_PASSWORD,secret:process.env.CORA_SESSION_SECRET});
@@ -23,6 +23,18 @@ const cleanEvent=e=>({id:str(e.id,140),date:str(e.date,10),title:str(e.title,170
 const cleanNotice=e=>({id:str(e.id,120),title:str(e.title,130),body:str(e.body,1800),type:['Informativo','Urgente','Reunião','Avaliação'].includes(e.type)?e.type:'Informativo',publishAt:str(e.publishAt,30),expiresAt:str(e.expiresAt,30),eventDate:str(e.eventDate,10),leadDays:Math.max(0,Math.min(30,Number(e.leadDays)||0))});
 const cleanBirthday=b=>({id:str(b.id,140),name:str(b.name,100),role:str(b.role,85),day:Number(b.day),month:Number(b.month)});
 const validBirthday=b=>b.id&&b.name&&Number.isInteger(b.month)&&b.month>=1&&b.month<=12&&Number.isInteger(b.day)&&b.day>=1&&b.day<=new Date(Date.UTC(2024,b.month,0)).getUTCDate();
+// Migração versionada para respeitar alterações posteriores da Gestão.
+const BIRTHDAY_SEED_VERSION=2;
+function migrateBirthdays(state){
+ if(Number(state?.birthdaySeedVersion||0)>=BIRTHDAY_SEED_VERSION)return state;
+ const draft=state||{year:YEAR,updatedAt:new Date().toISOString(),events:[],notices:[],config:{defaultLeadDays:3}};
+ const existing=Array.isArray(draft.birthdays)?draft.birthdays:DEFAULT_BIRTHDAYS.filter(x=>x.month===11);
+ const birthdays=[...existing];
+ const same=(a,b)=>a.day===b.day&&a.month===b.month&&str(a.name,100).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase()===str(b.name,100).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+ for(const item of DEFAULT_BIRTHDAYS.filter(x=>x.month===12))if(!birthdays.some(x=>same(x,item)))birthdays.push(item);
+ birthdays.sort((a,b)=>a.month-b.month||a.day-b.day||a.name.localeCompare(b.name,'pt-BR'));
+ return {...draft,birthdays,birthdaySeedVersion:BIRTHDAY_SEED_VERSION};
+}
 const validISO=s=>/^2026-\d\d-\d\d$/.test(s)&&!Number.isNaN(Date.parse(s+'T12:00:00Z'));
 export default async function handler(request){
  const url=new URL(request.url),action=url.searchParams.get('action')||'me';
@@ -42,11 +54,12 @@ export default async function handler(request){
  if(!role)return answer({error:'Sessão expirada. Faça login.'},401);
  const store=getStore('cora-calendar-publications');
  if(action==='state'&&request.method==='GET'){
-  const state=await store.get('published-2026',{type:'json',consistency:'strong'});
-  // Migração não destrutiva: publicações antigas não têm campo birthdays.
-  // A lista institucional aparece à equipe mesmo antes da primeira republicação.
-  const birthList=Array.isArray(state?.birthdays)?state.birthdays:DEFAULT_BIRTHDAYS;
-  return answer({role,publication:state?{...state,birthdays:birthList}:{year:YEAR,updatedAt:new Date().toISOString(),events:[],notices:[],birthdays:birthList,config:{defaultLeadDays:3}}});
+  let state=await store.get('published-2026',{type:'json',consistency:'strong'});
+  if(Number(state?.birthdaySeedVersion||0)<BIRTHDAY_SEED_VERSION){
+   state=migrateBirthdays(state);
+   await store.setJSON('published-2026',state);
+  }
+  return answer({role,publication:state});
  }
  if(action==='publish'&&request.method==='POST'){
   if(role!=='gestao')return answer({error:'Apenas a Gestão pode publicar.'},403);
@@ -58,9 +71,10 @@ export default async function handler(request){
   const notices=input.notices.map(cleanNotice).filter(n=>n.id&&n.title);
   if(input.birthdays!==undefined&&(!Array.isArray(input.birthdays)||input.birthdays.length>500))return answer({error:'Lista de aniversariantes inválida'},400);
   const previous=await store.get('published-2026',{type:'json',consistency:'strong'});
-  const birthdays=(input.birthdays===undefined?(Array.isArray(previous?.birthdays)?previous.birthdays:DEFAULT_BIRTHDAYS):input.birthdays.map(cleanBirthday).filter(validBirthday))
-    .filter((b,i,a)=>a.findIndex(p=>p.id===b.id)===i).sort((a,b)=>a.month-b.month||a.day-b.day||a.name.localeCompare(b.name,'pt-BR'));
-  const state={year:YEAR,updatedAt:new Date().toISOString(),events,notices,birthdays,config:{defaultLeadDays:Math.max(0,Math.min(30,Number(input.config?.defaultLeadDays)||3))}};
+  const baseBirthdays=input.birthdays===undefined?(Array.isArray(previous?.birthdays)?previous.birthdays:DEFAULT_BIRTHDAYS):input.birthdays.map(cleanBirthday).filter(validBirthday);
+  const migrated=migrateBirthdays({...previous,birthdays:baseBirthdays});
+  const birthdays=migrated.birthdays.filter((b,i,a)=>a.findIndex(p=>p.id===b.id)===i).sort((a,b)=>a.month-b.month||a.day-b.day||a.name.localeCompare(b.name,'pt-BR'));
+  const state={year:YEAR,updatedAt:new Date().toISOString(),events,notices,birthdays,birthdaySeedVersion:BIRTHDAY_SEED_VERSION,config:{defaultLeadDays:Math.max(0,Math.min(30,Number(input.config?.defaultLeadDays)||3))}};
   await store.setJSON('published-2026',state);
   return answer({ok:true,updatedAt:state.updatedAt,counts:{events:events.length,notices:notices.length,birthdays:birthdays.length}});
  }
