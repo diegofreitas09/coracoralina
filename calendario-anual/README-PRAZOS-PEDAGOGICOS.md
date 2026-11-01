@@ -37,7 +37,7 @@ Os prazos aprovados aparecem no calendário mensal da Gestão; para 2026, apenas
 
 ## Limitações de envio
 
-O sino da Equipe e as notificações locais usam o prazo publicado, não executam uma tarefa no aparelho fechado. **Uma entrega push automática exata cinco dias antes, com o aplicativo fechado, exige suporte explícito no agendador do servidor Netlify e um dispositivo inscrito.** O envio remoto de cinco dias não deve ser presumido funcionando com base apenas nesta alteração. Não há envio automático de e-mails nem confirmação individual de recebimento de provas nesta versão.
+O sino da Equipe e as notificações locais usam o prazo publicado, não executam uma tarefa no aparelho fechado. O agendador Netlify `cora-reminders` verifica os prazos publicados duas vezes por hora e agenda um **Web Push exatamente cinco dias corridos antes, por volta das 9h no horário de Fortaleza**, com deduplicação. A entrega no app fechado depende de o professor ter ativado as notificações, de haver um registro Web Push válido e do serviço de notificações do aparelho. Esse envio deve ser validado após deploy em produção; não é possível garantir que cada aparelho o receba. Não há envio automático de e-mails nem confirmação individual de recebimento de provas nesta versão.
 
 ## Fontes gerais
 
