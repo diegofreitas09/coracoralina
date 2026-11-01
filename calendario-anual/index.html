@@ -6,11 +6,13 @@
   <meta name="theme-color" content="#102a4c" />
   <meta name="description" content="Calendário Anual do Colégio Cora Coralina: planejamento, eventos e arquivos por mês." />
   <title>Calendário Anual · Cora Coralina</title>
-  <link rel="manifest" href="manifest.webmanifest?v=20261101" />
-  <link rel="icon" href="icon.svg?v=20261101" type="image/svg+xml" />
+  <link rel="manifest" href="manifest.webmanifest?v=20261101-3" />
+  <link rel="icon" href="app-icon-192.png?v=20261101-3" type="image/png" />
+  <link rel="apple-touch-icon" sizes="192x192" href="app-icon-192.png?v=20261101-3" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Agenda Cora" />
   <link rel="stylesheet" href="styles.css?v=confirmacao13" />
+  <link rel="stylesheet" href="install-pwa.css?v=20261101-3" />
   <link rel="stylesheet" href="year-transfer.css?v=importacao25" />
   <link rel="stylesheet" href="studio.css?v=modelo21" />
   <link rel="stylesheet" href="portal.css?v=aniversariantes17" />
@@ -35,7 +37,7 @@
       </div>
     </header>
     <main class="content">
-      <div class="welcome"><div><div class="eyebrow">PLANEJAMENTO · 2026</div><h1>Calendário Anual <span id="welcomeYear">2026</span></h1><p>Organize eventos, documentos e atividades mês a mês. Tudo em um só lugar.</p></div><div class="welcome-actions"><button id="addEventBtn" class="btn btn-outline">＋ Novo evento</button><button id="jumpBirthdays" type="button" class="btn btn-ghost">♧ Aniversariantes</button><button id="uploadBtn" class="btn btn-dark">＋ Adicionar arquivos</button></div></div>
+      <div class="welcome"><div><div class="eyebrow">PLANEJAMENTO · 2026</div><h1>Calendário Anual <span id="welcomeYear">2026</span></h1><p>Organize eventos, documentos e atividades mês a mês. Tudo em um só lugar.</p></div><div class="welcome-actions"><button id="addEventBtn" class="btn btn-outline">＋ Novo evento</button><button id="jumpBirthdays" type="button" class="btn btn-ghost">♧ Aniversariantes</button><button id="uploadBtn" class="btn btn-dark">＋ Adicionar arquivos</button><button id="installCalendarApp" type="button" class="btn btn-outline calendar-install-entry">Instalar / atualizar app</button></div></div>
       <section class="stats" aria-label="Indicadores"><div class="stat"><div class="stat-icon">▦</div><div><strong id="statMonths">12</strong><span>Meses do ano</span></div></div><div class="stat"><div class="stat-icon">◉</div><div><strong id="statEvents">0</strong><span>Eventos cadastrados</span></div></div><div class="stat"><div class="stat-icon">▤</div><div><strong id="statFiles">0</strong><span>Arquivos organizados</span></div></div><div class="stat"><div class="stat-icon">◎</div><div><strong id="statCurrent">0</strong><span>Atividades no mês</span></div></div></section>
       <section class="official-banner" id="officialBanner" aria-label="Calendário institucional de 2026">
         <div class="official-banner-icon">2026</div>
@@ -142,7 +144,31 @@
 <input id="filePicker" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.webp" multiple hidden />
 <input id="restorePicker" type="file" accept=".json" hidden />
 <dialog id="eventModal"><form id="eventForm" method="dialog"><div class="modal-head"><h3 id="modalTitle">Novo evento</h3><button type="button" id="closeModal" class="icon-button">✕</button></div><label>Nome do evento<input id="eventTitle" placeholder="Ex.: Reunião de planejamento" required maxlength="170" /></label><div class="form-row"><label>Data<input id="eventDate" type="date" required min="2026-01-01" max="2026-12-31" /></label><label>Categoria<select id="eventType"><option value="Pedagógico">Pedagógico</option><option value="Avaliação">Avaliação</option><option value="Simulado">Simulado</option><option value="Sondagem">Sondagem</option><option value="2ª Chamada">2ª Chamada</option><option value="Reunião">Reunião</option><option value="Evento">Evento</option><option value="Feriado">Feriado</option><option value="Outros">Outros</option></select></label></div><label>Observações (opcional)<textarea id="eventNotes" rows="3" placeholder="Informações e orientações..."></textarea></label><div class="modal-actions"><button type="button" class="btn btn-ghost" id="cancelEvent">Cancelar</button><button type="submit" class="btn btn-primary">Salvar evento</button></div></form></dialog>
+<dialog id="calendarInstallDialog" class="calendar-install-dialog" aria-labelledby="calendarInstallTitle">
+  <div class="calendar-install-heading">
+    <img src="app-icon-192.png?v=20261101-3" width="80" height="80" alt="Novo ícone 3D do Calendário Cora Coralina" />
+    <div><span class="calendar-install-eyebrow">COLÉGIO CORA CORALINA</span><h2 id="calendarInstallTitle">Instalar aplicativo</h2><p>Calendário Anual • Ícone 3D azul e dourado</p></div>
+    <button type="button" id="calendarInstallClose" class="calendar-install-close" aria-label="Fechar">×</button>
+  </div>
+  <p id="calendarInstallStatus" class="calendar-install-status" role="status">Preparando as opções para seu dispositivo...</p>
+  <div class="calendar-install-warning"><strong>Importante: proteja seus dados.</strong> Antes de desinstalar uma versão antiga, use <b>Fazer backup</b>. Eventos, planejamentos e documentos podem estar salvos somente neste aparelho.</div>
+  <div class="calendar-install-steps">
+    <h3>Como instalar ou atualizar o ícone</h3>
+    <ol>
+      <li>Abra o calendário no <strong>Google Chrome</strong> do celular.</li>
+      <li>Toque em <strong>Instalar agora</strong>, quando disponível, ou abra o menu <strong>⋮ → Instalar app / Adicionar à tela inicial</strong>.</li>
+      <li>Se o app já estiver instalado e o Android mantiver o ícone antigo, faça o backup, remova o aplicativo anterior e instale-o novamente pelo Chrome.</li>
+    </ol>
+  </div>
+  <div class="calendar-install-actions">
+    <button type="button" class="btn btn-primary" id="calendarInstallNow" hidden>Instalar agora</button>
+    <button type="button" class="btn btn-outline" id="calendarInstallBackup">Fazer backup</button>
+    <a class="btn btn-ghost calendar-install-link" href="./" target="_blank" rel="noopener">Abrir no navegador</a>
+  </div>
+  <p class="calendar-install-foot">Este é um aplicativo web instalável (PWA), não um arquivo APK. O Android controla a atualização do ícone dos aplicativos já instalados.</p>
+</dialog>
 <div id="toast" role="status" aria-live="polite"></div>
+<script src="install-pwa.js?v=20261101-3" defer></script>
 <script src="studio-assets.js" defer></script>
 <script src="school-brand.js" defer></script>
 <script src="official-calendar-data.js" defer></script>

@@ -1,0 +1,21 @@
+.calendar-install-entry{white-space:nowrap;border-color:#b6c7de!important;color:#133b70!important;background:#eff5fd!important;font-weight:700!important}
+.calendar-install-entry:hover{background:#e1ecfb!important}
+.calendar-install-dialog{box-sizing:border-box;width:min(560px,calc(100vw - 24px));max-height:calc(100dvh - 26px);overflow:auto;border:1px solid #dbe5f1;border-radius:20px;padding:24px;background:#fff;color:#173050;box-shadow:0 30px 90px #081e3a6b;font-family:inherit}
+.calendar-install-dialog::backdrop{background:#07182caa;backdrop-filter:blur(4px)}
+.calendar-install-heading{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.calendar-install-heading img{height:80px;width:80px;flex:none;border-radius:18px;object-fit:cover}
+.calendar-install-heading h2{font-size:23px;line-height:1.15;color:#102d53;letter-spacing:-.5px;margin:4px 0}
+.calendar-install-heading p{font-size:12px;color:#64758c;margin:0}
+.calendar-install-eyebrow{font-size:10px;font-weight:800;letter-spacing:1px;color:#2869a9}
+.calendar-install-close{background:#eef3f9;border:0;color:#30476b;border-radius:50%;font-size:23px;width:33px;height:33px;cursor:pointer;flex:none;margin-left:auto;align-self:flex-start}
+.calendar-install-status{background:#eff6ff;border:1px solid #c8def9;border-radius:12px;padding:12px 14px;color:#1a518a;font-size:13px;line-height:1.55;margin:0 0 12px}
+.calendar-install-warning{border-left:3px solid #e8a426;background:#fff8e9;color:#664b15;padding:12px 14px;border-radius:8px;font-size:13px;line-height:1.6}
+.calendar-install-warning strong{display:block;margin-bottom:3px}
+.calendar-install-steps h3{font-size:15px;margin:18px 0 6px;color:#193f75}
+.calendar-install-steps ol{padding-left:22px;color:#33475d;line-height:1.6;font-size:13px;margin:0 0 15px}
+.calendar-install-steps li{margin-bottom:9px}
+.calendar-install-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.calendar-install-actions .btn{min-height:40px;font-size:13px}
+.calendar-install-link{display:inline-flex!important;align-items:center;justify-content:center;text-decoration:none!important}
+.calendar-install-foot{font-size:11px;color:#738199;line-height:1.5;margin:14px 0 0}
+@media(max-width:520px){.calendar-install-dialog{padding:17px}.calendar-install-heading h2{font-size:19px}.calendar-install-heading img{width:66px;height:66px}.calendar-install-actions{flex-direction:column;align-items:stretch}.calendar-install-actions .btn{width:100%;text-align:center;justify-content:center}}
