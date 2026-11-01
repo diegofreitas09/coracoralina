@@ -69,7 +69,7 @@
     const stamp = new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
     items.forEach(function(e) {
       const range = interval(e),t=timed(e);
-      lines.push('BEGIN:VEVENT','UID:'+String(e.id).replace(/[^a-zA-Z0-9_-]/g,'')+'@calendario-cora-2026','DTSTAMP:'+stamp,
+      lines.push('BEGIN:VEVENT','UID:'+String(e.id).replace(/[^a-zA-Z0-9_-]/g,'')+'@agenda-escolar-cora','DTSTAMP:'+stamp,
         'DTSTART'+(t?':':';VALUE=DATE:')+range[0], 'DTEND'+(t?':':';VALUE=DATE:')+range[1],
         'SUMMARY:'+icsEscape(e.title),'DESCRIPTION:'+icsEscape([e.notes||'',e.meet?'Google Meet: '+e.meet:''].filter(Boolean).join('\n')),
         'LOCATION:'+icsEscape(e.mode==='online'?'Google Meet':e.place||''),
