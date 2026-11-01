@@ -72,7 +72,8 @@
     $('#filesMonthTitle').textContent = MONTHS[selectedMonth];
     $('#todayMonth').textContent = `${MONTHS[selectedMonth]} de ${YEAR}`;
     if($('#welcomeYear'))$('#welcomeYear').textContent=YEAR;
-    window.dispatchEvent(new CustomEvent('cora-month-changed',{detail:{month:selectedMonth}}));
+    window.CoraYears?.setActiveMonth?.(YEAR,selectedMonth);
+    window.dispatchEvent(new CustomEvent('cora-month-changed',{detail:{month:selectedMonth,year:YEAR}}));
   }
   function renderNav() {
     $('#monthNav').innerHTML = MONTHS.map((name,i) => `<button type="button" data-month="${i}" class="${selectedMonth===i?'active':''}" aria-current="${selectedMonth===i?'date':'false'}"><span>${name}</span>${eventsFor(i).length+filesFor(i).length?`<span class="count">${eventsFor(i).length+filesFor(i).length}</span>`:''}</button>`).join('');
@@ -206,7 +207,7 @@
     g.globalAlpha=.10;for(let i=0;i<6;i++){g.strokeStyle='#fff';g.lineWidth=4;g.beginPath();g.arc(1360,90,i*135+60,0,Math.PI*2);g.stroke();}g.globalAlpha=1;
     const badge=$('#schoolLogo');if(badge?.complete && badge.naturalWidth){rounded(g,98,72,124,150,14,'#fff');g.drawImage(badge,102,77,116,139);}else{rounded(g,99,100,82,82,15,'#ffffff23');text(g,'C',122,161,53,'#fff','700');}text(g,'COLÉGIO CORA CORALINA',239,153,29,'#d6e7ff','700');
     rounded(g,104,330,390,54,24,'#ffffff25');text(g,'PLANEJAMENTO EDUCACIONAL',133,366,22,'#d8eaff','700');
-    text(g,'CALENDÁRIO',101,514,106,'#fff','800');text(g,'ANUAL',101,650,140,'#fff','800');text(g,'2026',101,818,170,'#a9ceff','800');
+    text(g,'CALENDÁRIO',101,514,106,'#fff','800');text(g,'ANUAL',101,650,140,'#fff','800');text(g,String(YEAR),101,818,170,'#a9ceff','800');
     g.fillStyle='#ffffff57';g.fillRect(107,934,1420,2);text(g,'JANEIRO — DEZEMBRO  •  EVENTOS E DOCUMENTOS',106,995,31,'#e6f1ff','700');text(g,'Exportação completa do planejamento escolar',106,1045,24,'#b5d3f5');return c;
   }
   function headerCanvas(name,sub){const [c,g]=canvasBase();g.fillStyle='#102a4c';g.fillRect(0,0,PAGE_W,155);text(g,'CORA CORALINA  /  CALENDÁRIO ANUAL 2026',76,75,22,'#c8d9ef','700');text(g,name,76,133,48,'#fff','700');const badge=$('#schoolLogo');if(badge?.complete&&badge.naturalWidth){rounded(g,PAGE_W-163,11,112,136,10,'#fff');g.drawImage(badge,PAGE_W-160,13,106,130);}text(g,sub,78,201,25,GREY);return [c,g];}
@@ -280,7 +281,7 @@
     const btn=$('#exportBtn');if(btn.disabled)return;btn.disabled=true;btn.textContent='Gerando PDF...';notify('Montando capa, 12 meses e documentos.');
     try{
       const {PDFDocument}=await getPDFLib();const pdf=await PDFDocument.create();
-      pdf.setTitle('Calendário Anual 2026 — Colégio Cora Coralina');pdf.setAuthor('Colégio Cora Coralina');
+      pdf.setTitle('Calendário Anual '+YEAR+' — Colégio Cora Coralina');pdf.setAuthor('Colégio Cora Coralina');
       await attachCanvas(pdf,coverCanvas());
       const problems=[];
       for(let month=0;month<12;month++){
@@ -375,7 +376,7 @@
     if(database){database.close();database=null;}
     events=[];allFiles=[];loadEvents();
     $('#eventDate').min=`${YEAR}-01-01`;$('#eventDate').max=`${YEAR}-12-31`;
-    selectedMonth=isCurrentYear()?new Date().getMonth():selectedMonth;
+    selectedMonth=0;
     render();
     try{database=await openDB();if(Number(y)!==YEAR){database.close();return;}await refreshFiles();render();}
     catch(error){console.error(error);notify('Documentos deste ano não puderam ser carregados.');}
