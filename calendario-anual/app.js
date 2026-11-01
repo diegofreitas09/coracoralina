@@ -9,7 +9,7 @@
   const uid = () => crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, match => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[match]));
   const isCurrentYear = () => new Date().getFullYear() === YEAR;
-  let selectedMonth = isCurrentYear() ? new Date().getMonth() : 0;
+  let selectedMonth = window.CoraYears?.month ?? (isCurrentYear() ? new Date().getMonth() : 0);
   let events = [];
   let allFiles = [];
   let editing = null;
