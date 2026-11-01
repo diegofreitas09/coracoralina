@@ -5,6 +5,13 @@ import { getStore } from '@netlify/blobs';
 
 const COOKIE='cora_portal_session';
 const YEAR=2026;
+
+const STAGES_2026=[{number:1,start:'2026-01-20',end:'2026-04-17'},{number:2,start:'2026-04-20',end:'2026-06-30'},{number:3,start:'2026-08-03',end:'2026-09-25'},{number:4,start:'2026-10-05',end:'2026-11-27'}];
+const schoolYear=v=>{const n=Number(v);return Number.isInteger(n)&&n>=2026&&n<=2099?n:null};
+const publishedKey=y=>'published-'+y;
+const validYearDate=(s,y)=>{const value=String(s||'');if(!new RegExp('^'+y+'-[0-9]{2}-[0-9]{2}$').test(value))return false;const date=new Date(value+'T12:00:00Z');return !Number.isNaN(date.getTime())&&date.toISOString().slice(0,10)===value};
+const stagesFor=(a,y)=>[1,2,3,4].map(n=>{const s=(Array.isArray(a)?a:[]).find(x=>Number(x.number)===n)||{};return {number:n,start:validYearDate(s.start,y)?s.start:'',end:validYearDate(s.end,y)?s.end:''}});
+
 // Aniversariantes de novembro e dezembro confirmados no planejamento institucional; somente dia/mês.
 const DEFAULT_BIRTHDAYS=[{"id":"cora-nov-nadja","name":"Nadja","role":"Professora","day":1,"month":11},{"id":"cora-nov-emanuel","name":"Prof. Emanuel","role":"Professor","day":10,"month":11},{"id":"cora-nov-ana-paula","name":"Ana Paula","role":"","day":10,"month":11},{"id":"cora-nov-aparecida","name":"Aparecida","role":"","day":16,"month":11},{"id":"cora-nov-mikael","name":"Mikael","role":"","day":16,"month":11},{"id":"cora-nov-mendonca","name":"Mendonça","role":"","day":21,"month":11},{"id":"cora-nov-ruth","name":"Ruth","role":"","day":25,"month":11},{"id":"cora-nov-john","name":"John","role":"","day":26,"month":11},{"id":"cora-dec-1","name":"Diego","role":"","day":9,"month":12},{"id":"cora-dec-2","name":"Breno","role":"","day":11,"month":12},{"id":"cora-dec-3","name":"Renan","role":"","day":24,"month":12}];
 const HEADERS={'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'};
@@ -35,7 +42,7 @@ function migrateBirthdays(state){
  birthdays.sort((a,b)=>a.month-b.month||a.day-b.day||a.name.localeCompare(b.name,'pt-BR'));
  return {...draft,birthdays,birthdaySeedVersion:BIRTHDAY_SEED_VERSION};
 }
-const validISO=s=>/^2026-\d\d-\d\d$/.test(s)&&!Number.isNaN(Date.parse(s+'T12:00:00Z'));
+const validISO=(s,y)=>validYearDate(s,y);
 export default async function handler(request){
  const url=new URL(request.url),action=url.searchParams.get('action')||'me';
  if(request.method==='OPTIONS')return new Response('',{status:405,headers:HEADERS});
@@ -53,30 +60,45 @@ export default async function handler(request){
  if(action==='logout'&&request.method==='POST')return answer({ok:true},200,{'set-cookie':`${COOKIE}=; Max-Age=0; ${baseCookie}`});
  if(!role)return answer({error:'Sessão expirada. Faça login.'},401);
  const store=getStore('cora-calendar-publications');
+
  if(action==='state'&&request.method==='GET'){
-  let state=await store.get('published-2026',{type:'json',consistency:'strong'});
-  if(Number(state?.birthdaySeedVersion||0)<BIRTHDAY_SEED_VERSION){
-   state=migrateBirthdays(state);
-   await store.setJSON('published-2026',state);
+  const year=schoolYear(url.searchParams.get('year')||YEAR);
+  if(!year)return answer({error:'Ano letivo inválido'},400);
+  const yearsStored=await store.get('published-years',{type:'json',consistency:'strong'});
+  const availableYears=Array.from(new Set([2026,...(Array.isArray(yearsStored)?yearsStored:[]).filter(schoolYear)])).sort((a,b)=>a-b);
+  let state=await store.get(publishedKey(year),{type:'json',consistency:'strong'});
+  if(year===2026&&Number(state?.birthdaySeedVersion||0)<BIRTHDAY_SEED_VERSION){
+    state=migrateBirthdays(state);
+    await store.setJSON(publishedKey(2026),state);
   }
-  return answer({role,publication:state});
+  if(state&&!Array.isArray(state.stages))state={...state,stages:year===2026?STAGES_2026:stagesFor([],year)};
+  return answer({role,year,availableYears,publication:state});
  }
  if(action==='publish'&&request.method==='POST'){
   if(role!=='gestao')return answer({error:'Apenas a Gestão pode publicar.'},403);
   if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Requisição inválida'},400);
-  const size=Number(request.headers.get('content-length')||0);if(size>420000)return answer({error:'Publicação muito grande'},413);
-  let input;try{input=await request.json()}catch{return answer({error:'JSON inválido'},400)};
+  const size=Number(request.headers.get('content-length')||0);
+  if(size>420000)return answer({error:'Publicação muito grande'},413);
+  let input;try{input=await request.json()}catch{return answer({error:'JSON inválido'},400)}
+  const year=schoolYear(input.year||YEAR);if(!year)return answer({error:'Ano letivo inválido'},400);
   if(!Array.isArray(input.events)||!Array.isArray(input.notices)||input.events.length>5000||input.notices.length>300)return answer({error:'Dados inválidos'},400);
-  const events=input.events.map(cleanEvent).filter(e=>validISO(e.date)&&e.id&&e.title);
+  const events=input.events.map(cleanEvent).filter(e=>validISO(e.date,year)&&e.id&&e.title);
+  if(events.length!==input.events.length)return answer({error:'Eventos com datas inválidas ou de outro ano: revise o calendário.'},400);
   const notices=input.notices.map(cleanNotice).filter(n=>n.id&&n.title);
-  if(input.birthdays!==undefined&&(!Array.isArray(input.birthdays)||input.birthdays.length>500))return answer({error:'Lista de aniversariantes inválida'},400);
-  const previous=await store.get('published-2026',{type:'json',consistency:'strong'});
-  const baseBirthdays=input.birthdays===undefined?(Array.isArray(previous?.birthdays)?previous.birthdays:DEFAULT_BIRTHDAYS):input.birthdays.map(cleanBirthday).filter(validBirthday);
-  const migrated=migrateBirthdays({...previous,birthdaySeedVersion:previous?.birthdaySeedVersion,birthdays:baseBirthdays});
+  if(input.birthdays!==undefined&&(!Array.isArray(input.birthdays)||input.birthdays.length>500))return answer({error:'Aniversariantes inválidos'},400);
+  const previous=await store.get(publishedKey(year),{type:'json',consistency:'strong'});
+  const legacy=year===2026?previous:await store.get(publishedKey(2026),{type:'json',consistency:'strong'});
+  const baseBirthdays=input.birthdays===undefined?(Array.isArray(legacy?.birthdays)?legacy.birthdays:DEFAULT_BIRTHDAYS):input.birthdays.map(cleanBirthday).filter(validBirthday);
+  const migrated=migrateBirthdays({...legacy,birthdays:baseBirthdays});
   const birthdays=migrated.birthdays.filter((b,i,a)=>a.findIndex(p=>p.id===b.id)===i).sort((a,b)=>a.month-b.month||a.day-b.day||a.name.localeCompare(b.name,'pt-BR'));
-  const state={year:YEAR,updatedAt:new Date().toISOString(),events,notices,birthdays,birthdaySeedVersion:BIRTHDAY_SEED_VERSION,config:{defaultLeadDays:Math.max(0,Math.min(30,Number(input.config?.defaultLeadDays)||3))}};
-  await store.setJSON('published-2026',state);
-  return answer({ok:true,updatedAt:state.updatedAt,counts:{events:events.length,notices:notices.length,birthdays:birthdays.length}});
+  const stages=stagesFor(input.stages??(previous?.stages||(year===2026?STAGES_2026:[])),year);
+  if(stages.some(st=>Boolean(st.start)!==Boolean(st.end)||(st.start&&st.end&&st.start>st.end)))return answer({error:'Etapa com início e fim inconsistentes'},400);
+  const state={year,updatedAt:new Date().toISOString(),events,notices,birthdays,stages,birthdaySeedVersion:BIRTHDAY_SEED_VERSION,config:{defaultLeadDays:Math.max(0,Math.min(30,Number(input.config?.defaultLeadDays??3)))}};
+  await store.setJSON(publishedKey(year),state);
+  const previousYears=await store.get('published-years',{type:'json',consistency:'strong'});
+  const years=Array.from(new Set([2026,year,...(Array.isArray(previousYears)?previousYears:[]).filter(schoolYear)])).sort((a,b)=>a-b);
+  await store.setJSON('published-years',years);
+  return answer({ok:true,year,availableYears:years,updatedAt:state.updatedAt,counts:{events:events.length,notices:notices.length,birthdays:birthdays.length,stages:stages.filter(x=>x.start&&x.end).length}});
  }
  return answer({error:'Recurso inexistente'},404);
 }
