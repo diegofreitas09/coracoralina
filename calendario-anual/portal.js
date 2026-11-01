@@ -5,24 +5,37 @@
  'use strict';
  const API='/calendario-anual/api', $=s=>document.querySelector(s);
  const MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
- const EVENTS_KEY='cora_calendario_eventos_2026_v1',NOTICE_KEY='cora_portal_draft_notices_2026';
+ const eventsKey=y=>'cora_calendario_eventos_'+y+'_v1',noticeKey=y=>'cora_portal_draft_notices_'+y;
  const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const dateStr=(date)=>{const d=new Date(date);return Number.isNaN(d.getTime())?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
  const isoNow=()=>{const d=new Date();return `${dateStr(d)}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`};
  const app=$('#app'),root=document.createElement('div');root.id='coraPortal';document.body.prepend(root);
- let role='',chosen='gestao',data=null,month=new Date().getFullYear()===2026?new Date().getMonth():0,tab='resumo',managerNotices=[],leadDays=3,timer=null,showBell=false;
+ let role='',chosen='gestao',data=null,year=Number(window.CoraYears?.activeYear)||2026,availableYears=[2026],month=new Date().getFullYear()===2026?new Date().getMonth():0,tab='resumo',managerNotices=[],leadDays=3,timer=null,showBell=false;
  const endpoint=action=>`${API}?action=${encodeURIComponent(action)}`;
- async function api(action,payload){
+ async function api(action,payload,query=''){
   const opts={credentials:'same-origin',cache:'no-store',headers:{'accept':'application/json'}};
   if(payload!==undefined){opts.method='POST';opts.headers['content-type']='application/json';opts.headers['x-cora-request']='portal';opts.body=JSON.stringify(payload);}
-  const response=await fetch(endpoint(action),opts);let body={};try{body=await response.json()}catch{}
+  const response=await fetch(endpoint(action)+(query?'&'+query:''),opts);let body={};try{body=await response.json()}catch{}
   if(!response.ok){const e=new Error(body.error||`Erro ${response.status}`);e.status=response.status;throw e;}
   return body;
  }
  function toast(message){let t=$('.cp-portal-toast');if(t)t.remove();t=document.createElement('div');t.className='cp-portal-toast';t.textContent=message;document.body.append(t);setTimeout(()=>t.remove(),4500)}
  function officialEvents(){return Array.isArray(window.CORA_OFFICIAL_2026?.events)?window.CORA_OFFICIAL_2026.events:[]}
- function loadEventDraft(){try{const local=JSON.parse(localStorage.getItem(EVENTS_KEY)||'[]');return Array.isArray(local)&&local.length?local:officialEvents()}catch{return officialEvents()}}
- function loadNoticeDraft(){try{const v=JSON.parse(localStorage.getItem(NOTICE_KEY)||'[]');return Array.isArray(v)?v:[]}catch{return []}}
+ function loadEventDraft(y=year){
+  try{
+   const local=JSON.parse(localStorage.getItem(eventsKey(y))||'[]');
+   if(Array.isArray(local)){
+     if(y!==2026)return local.filter(e=>String(e.date||'').startsWith(y+'-'));
+     const removed=new Set(JSON.parse(localStorage.getItem('cora_official_2026_removed_v1')||'[]'));
+     const merged=new Map();
+     for(const e of officialEvents())if(!removed.has(e.id))merged.set(e.id,e);
+     for(const e of local)merged.set(e.id,e);
+     return [...merged.values()].filter(e=>String(e.date||'').startsWith('2026-'));
+   }
+  }catch{}
+  return y===2026?officialEvents():[];
+ }
+ function loadNoticeDraft(y=year){try{const v=JSON.parse(localStorage.getItem(noticeKey(y))||'[]');return Array.isArray(v)?v:[]}catch{return []}}
  function logo(){return window.CORA_SCHOOL_LOGO||window.CORA_STUDIO_ASSETS?.logo||''}
  function gateway(error=''){
   document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');role='';
@@ -35,12 +48,22 @@
  async function enter(){if(role==='gestao')manager();else await team();}
  function manager(){
   document.body.classList.remove('portal-locked','portal-loading');
-  managerNotices=loadNoticeDraft();try{leadDays=Number(localStorage.getItem('cora_default_lead_days_2026'))||3}catch{}
+  managerNotices=loadNoticeDraft();try{leadDays=Number(localStorage.getItem('cora_default_lead_days_'+year))||3}catch{}
   root.innerHTML=`<div class="cp-manager-bar"><strong>⚙ Gestão</strong><small>Publicações para a Equipe Pedagógica</small><span class="cp-spacer"></span><span id="cpPubStatus" class="cp-status">Ainda não publicado neste acesso</span><button id="cpTogglePanel" class="cp-btn gold">🔔 Publicações e alertas</button><button id="cpPublishNow" class="cp-btn">Publicar para equipe</button><button id="cpLogout" class="cp-btn soft">Sair</button></div><section id="cpManagerPanel" class="cp-manager-panel cp-hidden"><h2>Comunicação com a equipe</h2><p>Os avisos ficam como rascunho neste dispositivo até você clicar em “Publicar para equipe”. Os eventos locais serão enviados junto com os avisos.</p><div class="cp-form-grid"><label>Título do aviso<input id="cpNoticeTitle" maxlength="130" placeholder="Ex.: Reunião de planejamento"></label><label>Tipo<select id="cpNoticeType"><option>Informativo</option><option>Urgente</option><option>Reunião</option><option>Avaliação</option></select></label><label>Data de início da publicação<input id="cpNoticePublish" type="datetime-local" value="${isoNow()}"></label><label class="cp-wide">Mensagem<textarea id="cpNoticeBody" placeholder="Escreva o recado, orientações ou uma alteração do calendário"></textarea></label><label>Data do evento (opcional)<input type="date" id="cpNoticeEventDate" min="2026-01-01" max="2026-12-31"></label><label>Alertar com antecedência<select id="cpNoticeLead"><option value="0">No dia</option><option value="1">1 dia antes</option><option value="2">2 dias antes</option><option value="3" selected>3 dias antes</option><option value="5">5 dias antes</option><option value="7">7 dias antes</option><option value="14">14 dias antes</option><option value="30">30 dias antes</option></select></label><label>Antecedência padrão de eventos<select id="cpDefaultLead"><option value="0">No dia</option><option value="1">1 dia</option><option value="2">2 dias</option><option value="3">3 dias</option><option value="5">5 dias</option><option value="7">7 dias</option><option value="14">14 dias</option></select></label><div class="cp-wide"><button type="button" class="cp-btn soft" id="cpAddNotice" aria-live="polite">Adicionar aviso</button><span id="cpNoticeSaveFeedback" class="cp-save-feedback" role="status" aria-live="polite"></span></div></div><h3>Avisos preparados</h3><div id="cpNoticeRows"></div><div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:13px"><button class="cp-btn gold" id="cpPublishPanel">Publicar calendário + avisos</button><span class="cp-status">Atualizações não são enviadas automaticamente ao salvar o rascunho.</span></div></section>`;
   $('#cpDefaultLead').value=String(leadDays);
+  $('#cpPublishNow').textContent='Publicar '+year+' para equipe';
+  const field=$('#cpNoticeEventDate');if(field){field.min=year+'-01-01';field.max=year+'-12-31';}
+  window.addEventListener('cora-year-changed',e=>{
+   if(role!=='gestao')return;
+   year=Number(e.detail?.year)||2026;managerNotices=loadNoticeDraft(year);
+   renderNoticeRows();
+   const current=$('#cpPubStatus');if(current)current.textContent='Ano '+year+' · pronto para publicar';
+   const btn=$('#cpPublishNow');if(btn)btn.textContent='Publicar '+year+' para equipe';
+   for(const field of ['cpNoticeEventDate']){const input=$('#'+field);if(input){input.min=year+'-01-01';input.max=year+'-12-31';input.value=''}}
+  });
   $('#cpTogglePanel').onclick=()=>$('#cpManagerPanel').classList.toggle('cp-hidden');
   $('#cpLogout').onclick=logout;$('#cpPublishNow').onclick=publish;$('#cpPublishPanel').onclick=publish;
-  $('#cpDefaultLead').onchange=()=>{leadDays=Number($('#cpDefaultLead').value)||3;localStorage.setItem('cora_default_lead_days_2026',String(leadDays))};
+  $('#cpDefaultLead').onchange=()=>{leadDays=Number($('#cpDefaultLead').value)||3;localStorage.setItem('cora_default_lead_days_'+year,String(leadDays))};
   const addNoticeBtn=$('#cpAddNotice'),saveFeedback=$('#cpNoticeSaveFeedback');
   function setNoticeState(state=''){
     const added=state==='saved',duplicate=state==='duplicate';
@@ -63,7 +86,7 @@
     const duplicate=managerNotices.some(n=>normalize(n.title)===normalize(notice.title)&&normalize(n.body)===normalize(notice.body)&&String(n.eventDate||'')===notice.eventDate&&String(n.type||'')===notice.type);
     if(duplicate){setNoticeState('duplicate');toast('Este aviso já estava cadastrado. Não foi duplicado.');return;}
     managerNotices.push(notice);
-    try{localStorage.setItem(NOTICE_KEY,JSON.stringify(managerNotices));}
+    try{localStorage.setItem(noticeKey(year),JSON.stringify(managerNotices));}
     catch(e){managerNotices.pop();toast('Não foi possível salvar o aviso neste dispositivo.');return;}
     $('#cpNoticeTitle').value='';$('#cpNoticeBody').value='';
     setNoticeState('saved');
@@ -71,7 +94,7 @@
     toast('✓ Aviso adicionado como rascunho. Publique para a Equipe Pedagógica receber.');
   };
   renderNoticeRows();
-  api('state').then(x=>{
+  api('state',undefined,'year='+year).then(x=>{
     const status=$('#cpPubStatus');
     if(status&&x.publication)status.textContent='Última publicação: '+new Date(x.publication.updatedAt).toLocaleString('pt-BR');
     // Somente a Gestão incorpora a lista institucional ao cadastro local.
@@ -79,17 +102,18 @@
   }).catch(()=>{});
 
  }
- function renderNoticeRows(){const area=$('#cpNoticeRows');if(!area)return;area.innerHTML=managerNotices.length?managerNotices.map(n=>`<div class="cp-notice-row"><span><span class="cp-notice-saved">✓ Adicionado</span> <strong>${safe(n.title)}</strong> · ${safe(n.type)} · ${safe(n.publishAt).replace('T',' ')}${n.eventDate?' · Evento '+safe(n.eventDate):''}</span><button class="cp-btn soft" data-cp-remove="${safe(n.id)}">Excluir</button></div>`).join(''):'<p class="cp-muted">Nenhum aviso criado. O calendário oficial ainda pode ser publicado.</p>';area.querySelectorAll('[data-cp-remove]').forEach(b=>b.onclick=()=>{managerNotices=managerNotices.filter(n=>n.id!==b.dataset.cpRemove);localStorage.setItem(NOTICE_KEY,JSON.stringify(managerNotices));renderNoticeRows()});}
+ function renderNoticeRows(){const area=$('#cpNoticeRows');if(!area)return;area.innerHTML=managerNotices.length?managerNotices.map(n=>`<div class="cp-notice-row"><span><span class="cp-notice-saved">✓ Adicionado</span> <strong>${safe(n.title)}</strong> · ${safe(n.type)} · ${safe(n.publishAt).replace('T',' ')}${n.eventDate?' · Evento '+safe(n.eventDate):''}</span><button class="cp-btn soft" data-cp-remove="${safe(n.id)}">Excluir</button></div>`).join(''):'<p class="cp-muted">Nenhum aviso criado. O calendário oficial ainda pode ser publicado.</p>';area.querySelectorAll('[data-cp-remove]').forEach(b=>b.onclick=()=>{managerNotices=managerNotices.filter(n=>n.id!==b.dataset.cpRemove);localStorage.setItem(noticeKey(year),JSON.stringify(managerNotices));renderNoticeRows()});}
  async function publish(){
-  const events=loadEventDraft(),btn=$('#cpPublishNow');if(!btn)return;btn.disabled=true;
+  const year=Number(window.CoraYears?.activeYear)||2026;const events=loadEventDraft(year),btn=$('#cpPublishNow');if(!btn)return;btn.disabled=true;
   try{
    // Evita que uma primeira publicação apague o cadastro institucional anterior.
-   const previous=await api('state');
+   const previous=await api('state',undefined,'year='+year);
    window.CoraBirthdays?.importBaseline?.(previous.publication?.birthdays||[]);
    const birthdays=window.CoraBirthdays?.all?.()||previous.publication?.birthdays||[];
-   const res=await api('publish',{events,notices:managerNotices,birthdays,config:{defaultLeadDays:leadDays}});
+   const stages=window.CoraStages?.get?.(year)||[];const projects=window.CoraYears?.getProjects?.(year)||[];
+   const res=await api('publish',{year,events,notices:managerNotices,birthdays,stages,projects,config:{defaultLeadDays:leadDays}});
    $('#cpPubStatus').textContent='Publicado: '+new Date(res.updatedAt).toLocaleString('pt-BR');
-   toast(`Publicado para a equipe: ${res.counts.events} eventos, ${res.counts.notices} avisos e ${res.counts.birthdays??birthdays.length} aniversariantes.`);
+   toast(`Publicado ${year} para a equipe: ${res.counts.events} eventos, ${res.counts.notices} avisos e ${res.counts.birthdays??birthdays.length} aniversariantes.`);
   }catch(e){toast('Não foi possível publicar: '+e.message);}finally{btn.disabled=false;}
  }
  function teamNav(){return `<div class="cp-team-head"><img id="cpTeamLogo" alt="Brasão do Colégio Cora Coralina"><div><small>COLÉGIO CORA CORALINA · AMBIENTE DE CONSULTA</small><h1>Equipe Pedagógica</h1></div><span class="cp-spacer"></span><button class="cp-btn cp-bell" id="cpBell" aria-label="Abrir notificações">🔔<em id="cpBellCount" style="display:none">0</em></button><button class="cp-btn" id="cpRefresh">Atualizar</button><button class="cp-btn" id="cpTeamLogout">Sair</button></div>`}
