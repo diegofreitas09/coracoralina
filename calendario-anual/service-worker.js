@@ -1,4 +1,4 @@
-const CACHE='cora-2026-portal-v26';
+const CACHE='cora-2026-portal-v25';
 const ASSETS=['./','./index.html','./styles.css','./year-transfer.css','./year-transfer.js','./app.js','./studio.css','./portal.css','./portal.js','./birthdays.css','./birthdays.js','./official-calendar-data.js','./cards.js','./manifest.webmanifest','./icon.svg','./icon-cora-192.svg','./icon-cora-maskable.svg'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS).catch(()=>{})).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
