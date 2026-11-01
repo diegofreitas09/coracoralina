@@ -1,0 +1,128 @@
+/* Gestão Cora Coralina · painel 2026/2027 · foco em clareza, interação e leitura mobile */
+:root{--navy:#102e50;--navy2:#0c284a;--blue:#236ba5;--ink:#1d3851;--wash:#f2f6fb;--border:#dce6ef;--radius:17px}
+#app{background:linear-gradient(135deg,#f5f8fc 0%,#edf3f9 100%)}
+#app .sidebar{background:linear-gradient(180deg,#102e50,#10284a 62%,#0b2443);box-shadow:6px 0 26px #1737590c;z-index:4}
+#app .brand{padding-bottom:20px;margin-bottom:8px}
+#app .brand strong{font-size:15px;letter-spacing:-.3px}
+#app #monthNav button{min-height:37px;border-radius:9px;transition:background .15s,color .15s}
+#app #monthNav button.active{background:#29547e;color:#fff;box-shadow:inset 3px 0 #89c2f0}
+#app .topbar{background:#fff;border-bottom:1px solid #e5edf4;min-height:69px}
+#app .content{padding-top:25px}
+#app .welcome{background:linear-gradient(118deg,#0f3154,#165382);padding:23px 26px;border-radius:20px;color:white;box-shadow:0 14px 30px #0d315329}
+#app .welcome .eyebrow{color:#abdbef}
+#app .welcome h1{font-size:clamp(24px,2.7vw,36px);color:white;letter-spacing:-.8px}
+#app .welcome h1 span{color:#f4cf62}
+#app .welcome p{color:#d7e9f5;line-height:1.5}
+#app .welcome-actions .btn{min-height:42px}
+#app .welcome-actions #addEventBtn{background:#fff;color:#153e60;border-color:transparent;box-shadow:0 5px 16px #001e3220}
+#app .welcome-actions #addEventBtn:hover{background:#f3f9ff}
+#app .welcome-actions #uploadBtn{background:#f3bf54;color:#153454;border-color:#f3bf54}
+#app .stats{gap:11px;margin:20px 0 25px}
+#app .stat{border:1px solid #e2eaf1;box-shadow:0 5px 18px #15395e08;border-radius:16px;min-height:90px;padding:15px}
+#app .stat-icon{border-radius:12px;background:#edf5fc;color:#1d6193}
+#app .stat strong{font-size:clamp(21px,2vw,29px);letter-spacing:-1px}
+#app .month-area,#app .files-section{scroll-margin-top:20px}
+#app .panels{gap:15px}
+#app .panel{box-shadow:0 8px 22px #183b5709;border:1px solid #e0e8f1;border-radius:17px}
+#app .panel-title{padding:15px 18px}
+#app .panel-title strong{font-size:14px;color:#18456e}
+#app .panel-title .text-btn{border:1px solid #cce0f0;background:#eaf4fd;border-radius:9px;min-height:36px;padding:7px 11px;color:#1b629a}
+#app .day{transition:background .14s,box-shadow .14s}
+#app .day:hover:not(.blank),#app .day:focus-visible{background:#e9f4ff;box-shadow:inset 0 0 0 2px #63a2d2;z-index:1;outline:none}
+#app .day.today .date-num{background:#145d98}
+#app .event{padding:13px 6px;align-items:center}
+#app .event:hover{background:#f8fbff}
+#app .event-date{min-width:45px;background:#e8f2fc}
+#app .event-info strong{font-size:13px;line-height:1.4}
+#app .event-actions{gap:6px}
+#app .event-actions button{display:grid;place-items:center;height:32px;width:32px;background:#f1f6fb;border:1px solid #deebf5;border-radius:8px;color:#315f82;font-size:16px;transition:background .15s}
+#app .event-actions [data-edit]{background:#e8f3ff;color:#165f98;border-color:#cce0f4}
+#app .event-actions [data-delete]{color:#a35050}
+#app .event-actions button:active{transform:scale(.96)}
+#app .event-actions button:hover{background:#d8ebfa}
+#app .official-banner{border-radius:17px}
+#app .studio-section,#app .assess-panel,#app .stage-panel{scroll-margin-top:24px}
+#app .assess-panel{box-shadow:0 8px 25px #142f4d09}
+#app .studio-shortcuts .shortcut-btn{border-radius:15px}
+#app .year-projects-section{border-radius:16px}
+#app .planning-deadline-box{border:1px solid #d7e5f0;background:linear-gradient(180deg,#f9fcff,#f1f7fc);padding:17px 18px;border-radius:15px;margin:16px 0;scroll-margin-top:40px}
+#app .planning-deadline-box h3{margin:4px 0 5px;color:#123e63;font-size:17px}
+#app .planning-deadline-box>p{font-size:12px;color:#687d92;margin:0 0 12px}
+#app .planning-deadline-box .deadline-item{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;margin:7px 0;background:#fff;border:1px solid #e1eaf3;border-radius:11px}
+#app .planning-deadline-box .deadline-item time{flex:0 0 auto;background:#eaf3fb;border-radius:7px;color:#1b588b;padding:5px 7px;font-size:12px;font-weight:800}
+#app .planning-deadline-box .deadline-item span{line-height:1.4;color:#31546f;font-size:12px}
+#app .planning-deadline-box .deadline-empty{font-size:12px;color:#758698}
+#app .planning-deadline-box .deadline-source{margin-top:11px;color:#617d98;font-size:11px}
+#app .planning-deadline-box .deadline-source a{color:#1d649b;overflow-wrap:anywhere}
+dialog.cora-event-dialog{width:min(670px,calc(100vw - 24px));max-height:min(92dvh,830px);overflow:auto;background:#fff;border:1px solid #d7e5f2;border-radius:20px;box-shadow:0 30px 95px #041d3675;z-index:10000}
+dialog.cora-event-dialog::backdrop{background:#0b213bb8;backdrop-filter:blur(3px)}
+dialog.cora-event-dialog form{padding:22px clamp(18px,3.5vw,31px) 25px}
+dialog.cora-event-dialog .modal-head{align-items:flex-start;gap:15px;border-bottom:1px solid #e3ebf2;padding:0 0 14px;margin:0 0 17px}
+dialog.cora-event-dialog .modal-head h3{margin:3px 0;font-size:24px;color:#12385d}
+dialog.cora-event-dialog .modal-head p{font-size:12px;color:#6f8296;margin:0}
+dialog.cora-event-dialog .modal-eyebrow{font-size:10px;letter-spacing:1.3px;color:#3974a2;font-weight:850}
+dialog.cora-event-dialog .icon-button{border:1px solid #e0e8f1;border-radius:9px;min-width:35px;min-height:35px;background:#f2f6fa;color:#234969}
+dialog.cora-event-dialog label{font-size:12px;color:#31536f;margin-bottom:12px}
+dialog.cora-event-dialog input,dialog.cora-event-dialog select,dialog.cora-event-dialog textarea{border-color:#cfdfed;background:#fff;color:#183955;min-height:43px}
+dialog.cora-event-dialog input:focus,dialog.cora-event-dialog select:focus,dialog.cora-event-dialog textarea:focus{outline:2px solid #8ac5ec;outline-offset:1px}
+dialog.cora-event-dialog [hidden]{display:none!important}
+dialog.cora-event-dialog .modal-help{background:#f3f8fd;border-left:3px solid #4488bc;border-radius:6px;padding:10px 12px;color:#506d85;font-size:11px;margin:5px 0 14px}
+dialog.cora-event-dialog .modal-actions{border-top:1px solid #edf2f6;padding-top:14px}
+.cp-manager-bar{box-shadow:0 8px 24px #07233a24}
+.cp-manager-bar .cp-btn{border-radius:10px}
+#app .year-block select{min-width:62px;background:#183e61;color:#fff;border:1px solid #49799f;border-radius:9px;padding:6px;font-size:15px;font-weight:800}
+@media(max-width:1180px){
+ #app.layout{display:block}
+ #app .sidebar{position:relative;top:auto;width:100%;height:auto;display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:13px clamp(12px,3vw,25px)}
+ #app .brand{border:0;padding:0;margin:0;min-width:170px}
+ #app .brand .school-logo{height:57px!important;width:49px!important;min-width:49px!important;max-width:49px!important;flex-basis:49px!important}
+ #app .brand strong{font-size:14px}#app .brand small{font-size:9px}
+ #app .year-label,#app .sidebar-foot{display:none}
+ #app .year-block{display:flex;justify-content:flex-end;align-items:center;margin-left:auto;padding:0;gap:6px;font-size:16px}
+ #app .year-block button{min-height:35px;min-width:35px}
+ #app #monthNav{flex:1 1 100%;display:flex;flex-wrap:nowrap;gap:5px;overflow-x:auto;max-width:100%;align-content:initial;padding:5px 0;scrollbar-width:thin}
+ #app #monthNav button{white-space:nowrap;flex:0 0 auto;min-height:36px;padding:8px 12px}
+ #app #monthNav button.active{border-left:0;border-bottom:3px solid #82bfee;padding:8px 12px 5px}
+ #app .main-shell{width:100%}
+ #app .content{max-width:1040px;padding:22px 18px 0}
+ #app .topbar{padding:10px 18px;min-height:48px;height:auto}
+ #app .panels{grid-template-columns:minmax(0,1fr)}
+ #app .events-list{max-height:none}
+ #app .welcome{flex-wrap:wrap}
+}
+@media(max-width:700px){
+ #app .content{padding:14px 12px 0}
+ #app .welcome{padding:19px 17px}
+ #app .welcome-actions{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+ #app .welcome-actions .btn{font-size:11px;white-space:normal;padding:10px}
+ #app .welcome-actions #addEventBtn,#app .welcome-actions #uploadBtn{grid-column:span 1}
+ #app .welcome h1{font-size:25px}
+ #app .welcome p{font-size:12px}
+ #app .topbar .top-actions{display:flex;gap:7px}
+ #app .topbar .top-actions .btn{flex:1;white-space:normal;min-height:37px;text-align:center}
+ #app .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ #app .stat{min-height:75px;padding:12px;gap:8px}
+ #app .stat span{line-height:1.2}
+ #app .section-heading{display:flex;flex-direction:column;align-items:stretch;gap:10px}
+ #app .month-switch{width:100%;justify-content:space-between}
+ #app .panels{gap:12px}
+ #app .day{min-height:50px}
+ #app .day.has-event{min-height:64px}
+ #app .event-actions{flex-direction:row;align-items:center;align-self:flex-start;flex-wrap:wrap;gap:5px}
+ #app .event{flex-wrap:wrap;gap:9px}
+ #app .event-info{flex:1 1 57%}
+ #app .event-actions{flex:0 0 auto}
+ #app .event-actions button{width:36px;height:36px}
+ #app .panel-title{padding:12px}
+ #app .planning-deadline-box{padding:13px}
+ dialog.cora-event-dialog .form-row{grid-template-columns:1fr 1fr;gap:9px}
+ dialog.cora-event-dialog .modal-actions .btn{flex:1}
+}
+@media(max-width:390px){
+ #app .brand{min-width:140px}
+ #app .year-badge{display:none}
+ #app .welcome-actions{grid-template-columns:1fr}
+ #app .welcome-actions .btn{grid-column:auto}
+ dialog.cora-event-dialog .form-row{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){#app .day,#app .event-actions button{transition:none}}
