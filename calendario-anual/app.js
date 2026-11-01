@@ -300,28 +300,51 @@
   footerCanvas(g);
   return c;
 }
+  // Compactação por mês: duas colunas, mantendo a leitura e sem folhas quase vazias.
+  const LISTING_ROWS=18, LISTING_PER_PAGE=LISTING_ROWS*2;
   function listingCanvas(month,kind,items,part,total){
     const title=kind==='events'?'Eventos detalhados':kind==='projects'?'Projetos do mês':'Índice de documentos';
-    const [c,g]=headerCanvas(`${MONTHS[month]} — ${title}`,`Página ${part+1} de ${total} • Anexo ao calendário de ${MONTHS[month]}`);
-    const first=part*16;
-    items.slice(first,first+16).forEach((item,i)=>{
-      const y=254+i*51;
-      if(i%2===0){g.fillStyle='#f1f5fa';g.fillRect(72,y-29,PAGE_W-144,45);}
-      if(kind==='projects'){
-        text(g,String(first+i+1).padStart(2,'0'),88,y,23,BLUE,'700');
-        text(g,ellipsis(g,String(item),1290),145,y,24,INK,'700');
-      }else if(kind==='events'){
-        const day=Number(item.date.slice(8,10)).toString().padStart(2,'0');
-        text(g,day+'/'+String(month+1).padStart(2,'0'),88,y,24,BLUE,'700');
-        text(g,ellipsis(g,item.title,950),220,y,24,INK,'700');
-        text(g,ellipsis(g,item.type+'  '+(item.notes||''),350),1220,y,20,GREY);
+    const all=Array.isArray(items)?items:[];
+    const [c,g]=headerCanvas(MONTHS[month]+' — '+title,
+      'Página '+(part+1)+' de '+total+' • Anexo ao calendário de '+MONTHS[month]+' · '+YEAR);
+    const first=part*LISTING_PER_PAGE;
+    const portion=all.slice(first,first+LISTING_PER_PAGE);
+    // A coluna da direita começa apenas após a metade da lista desta página.
+    // Assim, 18 ou 22 eventos ficam equilibrados, sem uma coluna vazia.
+    const rows=Math.ceil(portion.length/2);
+    const gap=32,left=75,top=258,colW=(PAGE_W-150-gap)/2,rowHeight=47;
+    g.fillStyle='#f1f6fc';g.fillRect(left,219,PAGE_W-150,28);
+    text(g,'DATA  •  EVENTO / DESCRIÇÃO',left+12,240,16,BLUE,'700');
+    text(g,kind==='events'?'ATIVIDADES DO MÊS':'ITENS DO MÊS',left+colW+gap+12,240,16,BLUE,'700');
+    g.strokeStyle='#dce6f2';g.lineWidth=2;g.beginPath();
+    g.moveTo(left+colW+gap/2,250);g.lineTo(left+colW+gap/2,1105);g.stroke();
+    portion.forEach((item,i)=>{
+      const col=i<rows?0:1,row=i<rows?i:i-rows;
+      const x=left+col*(colW+gap),y=top+row*rowHeight;
+      if(row%2===0){g.fillStyle='#f1f5fa';g.fillRect(x,y-21,colW,44);}
+      const labelX=x+(kind==='events'?104:62);
+      const contentWidth=colW-(labelX-x)-14;
+      if(kind==='events'){
+        const date=String(item.date||'').slice(8,10)+'/'+String(month+1).padStart(2,'0');
+        text(g,date,x+12,y+2,20,BLUE,'700');
+        g.font='700 19px Arial, sans-serif';
+        text(g,ellipsis(g,item.title||'Atividade sem título',contentWidth),labelX,y+1,19,INK,'700');
+        const details=[item.type,item.time,item.notes].filter(Boolean).join(' • ');
+        if(details){g.font='400 15px Arial, sans-serif';text(g,ellipsis(g,details,contentWidth),labelX,y+21,15,GREY);}
+      }else if(kind==='projects'){
+        text(g,String(first+i+1).padStart(2,'0'),x+12,y+2,19,BLUE,'700');
+        g.font='700 19px Arial, sans-serif';
+        text(g,ellipsis(g,String(item),contentWidth),labelX,y+2,19,INK,'700');
       }else{
-        text(g,String(first+i+1).padStart(2,'0'),88,y,23,BLUE,'700');
-        text(g,ellipsis(g,item.name,940),145,y,23,INK,'700');
-        text(g,fileLabel(item)+'  •  '+fileSize(item.size),1150,y,20,GREY);
+        text(g,String(first+i+1).padStart(2,'0'),x+12,y+2,19,BLUE,'700');
+        g.font='700 18px Arial, sans-serif';
+        text(g,ellipsis(g,item.name||'Documento',contentWidth),labelX,y,18,INK,'700');
+        g.font='400 15px Arial, sans-serif';
+        text(g,ellipsis(g,fileLabel(item)+' • '+fileSize(item.size),contentWidth),labelX,y+21,15,GREY);
       }
     });
-    footerCanvas(g,title.toUpperCase());return c;
+    footerCanvas(g,title.toUpperCase()+' • '+portion.length+' de '+all.length+' itens');
+    return c;
   }
   function pdfErrorCanvas(file,error){const [c,g]=headerCanvas('Documento não incorporado',file.name);text(g,'O arquivo consta no índice do mês, mas não foi possível',85,335,32,INK);text(g,'anexar seu conteúdo ao PDF completo.',85,385,32,INK);text(g,'Motivo: '+String(error).slice(0,140),85,468,23,GREY);footerCanvas(g);return c;}
   function scriptFrom(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error('Não foi possível carregar a biblioteca PDF'));document.head.appendChild(s);});}
@@ -355,9 +378,15 @@
       for(let month=0;month<12;month++){
         await attachCanvas(pdf,calendarCanvas(month));
         const projects=window.CoraYears?.getProjects?.(YEAR)?.[month]||[];
-        if(projects.length>6)for(let part=0;part<Math.ceil((projects.length-6)/16);part++)await attachCanvas(pdf,listingCanvas(month,'projects',projects.slice(6),part,Math.ceil((projects.length-6)/16)));
-        const items=eventsFor(month);for(let part=0;part<Math.ceil(items.length/16);part++)await attachCanvas(pdf,listingCanvas(month,'events',items,part,Math.ceil(items.length/16)));
-        const files=filesFor(month);for(let part=0;part<Math.ceil(files.length/16);part++)await attachCanvas(pdf,listingCanvas(month,'files',files,part,Math.ceil(files.length/16)));
+        const extraProjects=projects.slice(6);
+        for(let part=0,total=Math.ceil(extraProjects.length/LISTING_PER_PAGE);part<total;part++)
+          await attachCanvas(pdf,listingCanvas(month,'projects',extraProjects,part,total));
+        const items=eventsFor(month);
+        for(let part=0,total=Math.ceil(items.length/LISTING_PER_PAGE);part<total;part++)
+          await attachCanvas(pdf,listingCanvas(month,'events',items,part,total));
+        const files=filesFor(month);
+        for(let part=0,total=Math.ceil(files.length/LISTING_PER_PAGE);part<total;part++)
+          await attachCanvas(pdf,listingCanvas(month,'files',files,part,total));
         for(const file of files){if(!/\.(pdf|png|jpg|jpeg|webp)$/i.test(file.name))continue;
           try{await appendFile(pdf,file);}catch(error){problems.push(file.name);await attachCanvas(pdf,pdfErrorCanvas(file,error.message||error));}
         }
