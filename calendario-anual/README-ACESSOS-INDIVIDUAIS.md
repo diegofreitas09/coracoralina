@@ -44,3 +44,26 @@ Campos: ID, nome, e-mail, perfil, segmento, situação, ativação, desligamento
 ## Segurança operacional
 
 O servidor armazena somente derivação de senha com scrypt e salt, nunca a senha legível. Convites são armazenados pelo hash e são de uso único. Erros de login têm mensagem genérica e tentativas incorretas causam bloqueio temporário.
+
+
+## Histórico de login e atualização da planilha
+
+A autenticação registra por colaborador: data de ativação, primeiro acesso monitorado, último login válido e quantidade de logins monitorados.
+
+A ativação inicial conta como um acesso. Novos logins com e-mail e senha aumentam a contagem; recarregar o Calendário não conta novamente. A contagem é iniciada na implantação deste recurso, e não recupera os acessos anteriores.
+
+### Planilha Cora Família
+
+Na aba **Acessos Calendário**, foram acrescentadas K: Quantidade de acessos e L: Primeiro acesso monitorado. As colunas G (Ativação), I (Último acesso), K (Quantidade) e L (Primeiro acesso) têm fórmulas que buscam dados da aba **Auditoria de Logins**, usando o e-mail em C como chave.
+
+**Sem sincronização automática neste momento.** O Netlify ainda não possui uma autorização configurada para escrever no Google Sheets. A Gestão mostra números do servidor; a transferência para a planilha exige uma ação manual.
+
+Para atualizar:
+
+1. Entre em **Gestão → Acessos da equipe**.
+2. Clique em **Copiar relatório para planilha**.
+3. No Google Sheets, abra a aba **Auditoria de Logins**, selecione A1 e cole. O conteúdo copiado preenche A:G.
+4. Retorne à aba **Acessos Calendário**. As fórmulas atualizam automaticamente G, I, K e L pelo e-mail do professor.
+5. Repita a operação quando desejar um novo retrato da auditoria.
+
+Não compartilhe o relatório ou convites em grupos. Não armazene senhas no Sheets. A situação F é cadastral: para suspender ou desligar uma conta de verdade use a Gestão. Uma sincronização automática futura dependerá de credenciais e autorização Google configuradas para o servidor; nunca publique um token secreto no site.
