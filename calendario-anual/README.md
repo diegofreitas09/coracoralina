@@ -47,3 +47,15 @@ Se o site Netlify for conectado ao repositório `diegofreitas09/coracoralina`, s
 - O PDF oficial é uma **reprodução visual compactada** das 14 páginas do arquivo institucional enviado; não é uma extração de texto nem substitui o documento original de alta resolução. É gerado no navegador, sem depender de serviço externo.
 - Fonte de referência: `CORA-CALENDÁRIO ANUAL-2026 (3).pdf` enviado pela escola. Para alterações posteriores da programação, conferência com a coordenação é indispensável. A Aula da Virada de novembro é um exemplo de divergência entre o calendário anual (10/11) e o planejamento específico (12/11).
 - Os eventos oficiais também integram a geração de PDF completo da visão editável do aplicativo; o PDF original visual permanece disponível em botão separado.
+
+## Gestão multianual (2024 em diante)
+
+A tela principal contém um seletor de ano letivo. `year-manager.js` mantém cada ano separado, reaproveitando a estrutura do calendário oficial de 2026. A opção **Criar / copiar ano** permite escolher um ano de origem e criar outro sem sobrescrever o histórico. Há duas políticas de datas: manter dia/mês, ou preservar a posição do dia da semana para atividades, mantendo feriados fixos. Datas móveis, recessos, cronogramas de prova e reuniões **sempre exigem validação humana**.
+
+Os dados de cada ano ficam em `localStorage` com chaves `cora_calendario_eventos_ANO_v1`, `cora_calendario_projetos_ANO_v1`, `cora_planejamento_ANO_v1`, `cora_cards_ANO_v1`, e em `IndexedDB` `cora_calendario_documentos_ANO_v1`. As chaves originais de 2026 foram preservadas para não perder dados existentes. Os registros oficiais de 2026 e seus projetos continuam em `official-calendar-data.js`; as imagens originais estão disponíveis apenas como referência histórica de 2026.
+
+Todos os registros copiados para o novo ano começam **Em revisão**. Eles podem ser modificados individualmente e aprovados por mês, sem alterar o ano de origem. A visualização por Professores, Famílias e Planejamento é uma **prévia editorial**, não autenticação nem proteção de dados. Para sincronização real entre usuários/dispositivos, serão necessários autenticação, permissões por perfil, banco central e um fluxo de publicação.
+
+`year-pdf.js` produz: (1) um panorama executivo dos 12 meses em uma página A4; (2) um PDF completo com uma página A4 para cada mês, com grade de dias, atividades e projetos; (3) cards-resumo por tipo/período em PNG/PDF. O PDF exibe um identificador derivado do conteúdo do ano por SHA-256 (quando disponível), útil para controle de versão, mas **não constitui assinatura digital certificada nem prova externa de autenticidade**. A antiga versão 2026 permanece como modelo histórico.
+
+**Atenção:** backups e exportações são necessários porque ainda não existe publicação central. Não armazenar informações pessoais sensíveis de alunos em calendários ou documentos acessíveis publicamente. A assinatura do Google Agenda por URL existente cobre apenas o calendário oficial estático de 2026; os anos editados localmente exigem exportação .ics ou implantação futura de uma API de publicação.
