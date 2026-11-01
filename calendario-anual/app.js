@@ -106,7 +106,12 @@
     const list = eventsFor(selectedMonth);
     if (!list.length) { $('#eventList').innerHTML = '<div class="empty"><div class="empty-icon">▦</div>Nenhum evento neste mês.<br/>Clique no calendário para começar.</div>'; return; }
     $('#eventList').innerHTML = list.map(event => `<div class="event"><div class="event-date"><b>${Number(event.date.slice(8,10))}</b><small>${MONTHS[selectedMonth].slice(0,3)}</small></div><div class="event-info"><strong>${escapeHtml(event.title)}</strong>${event.notes?`<small>${escapeHtml(event.notes)}</small>`:''}<span class="tag">${escapeHtml(event.type)}</span>${event.time?`<small class="event-meta">Horário: ${escapeHtml(event.time)} ${event.mode==='online'?' · On-line':''}</small>`:''}${event.status==='Em revisão'?'<small class="review-event">Em revisão · não divulgar</small>':''}${event.audience&&event.audience!=='Todos'?`<small class="event-meta">Para: ${escapeHtml(event.audience)}</small>`:''}</div><div class="event-actions"><button data-google="${escapeHtml(event.id)}" aria-label="Adicionar ao Google Agenda" title="Google Agenda">G</button><button data-edit="${escapeHtml(event.id)}" aria-label="Editar evento" title="Editar">✎</button><button data-delete="${escapeHtml(event.id)}" aria-label="Excluir evento" title="Excluir">✕</button></div></div>`).join('');
-    $('#eventList').querySelectorAll('[data-edit]').forEach(button=>button.addEventListener('click',()=>{const event=events.find(item=>item.id===button.dataset.edit);if(event) openEventModal(event.date,event);}));
+    $('#eventList').querySelectorAll('[data-edit]').forEach(button=>button.addEventListener('click',eventClick=>{
+      eventClick.preventDefault();
+      const item=events.find(event=>String(event.id)===String(button.dataset.edit));
+      if(item)openEventModal(item.date,item);
+      else notify('Evento não encontrado neste ano. Atualize o calendário.');
+    }));
     $('#eventList').querySelectorAll('[data-delete]').forEach(button=>button.addEventListener('click',()=>{if(!confirm('Excluir este evento?'))return;const item=events.find(e=>e.id===button.dataset.delete);if(item?.id?.startsWith('oficial-2026-')){const removed=readRemovedOfficial();removed.add(item.id);try{localStorage.setItem(OFFICIAL_REMOVED_KEY,JSON.stringify([...removed]));}catch{}}events=events.filter(item=>item.id!==button.dataset.delete);saveEvents();render();}));
   }
   function fileSize(bytes) {return bytes<1024?'0 KB':bytes<1024*1024?`${Math.round(bytes/1024)} KB`:`${(bytes/1024/1024).toFixed(1)} MB`;}
@@ -141,8 +146,10 @@
     $('#eventMeetWrap').hidden=$('#eventMode').value!=='online';
     $('#eventAudience').value=event?.audience||'Todos';
     $('#eventStatus').value=event?.status||'Publicado';
-    $('#eventModal').showModal();
-    $('#eventTitle').focus();
+    // Native dialog entra no topo da página, inclusive no navegador do Android.
+    const modal=$('#eventModal');
+    if(!modal.open)modal.showModal();
+    requestAnimationFrame(()=>$('#eventTitle')?.focus({preventScroll:true}));
   }
   function autoMonth(filename) {
     const n=filename.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
@@ -425,9 +432,18 @@
     $('#prevMonth').addEventListener('click',()=>{selectedMonth=(selectedMonth+11)%12;render();});
     $('#nextMonth').addEventListener('click',()=>{selectedMonth=(selectedMonth+1)%12;render();});
     $('#todayMonth').addEventListener('click',()=>{selectedMonth=isCurrentYear()?new Date().getMonth():0;render();});
-    ['addEventBtn','quickEvent'].forEach(id=>$('#'+id).addEventListener('click',()=>{markEventAdded('');openEventModal();}));
+    ['addEventBtn','quickEvent'].forEach(id=>$('#'+id).addEventListener('click',()=>{
+      markEventAdded('');
+      openEventModal();
+    }));
     $('#closeModal').addEventListener('click',()=>$('#eventModal').close());
     $('#cancelEvent').addEventListener('click',()=>$('#eventModal').close());
+    $('#eventMode').addEventListener('change',()=>{
+      $('#eventMeetWrap').hidden=$('#eventMode').value!=='online';
+    });
+    $('#eventModal').addEventListener('close',()=>{
+      $('#eventTitle').setCustomValidity('');
+    });
     $('#eventForm').addEventListener('submit',event=>{
       event.preventDefault();
       const date=$('#eventDate').value,title=$('#eventTitle').value.trim();
@@ -443,7 +459,8 @@
         return;
       }
       const previous=events;
-      events=editing?events.filter(e=>e.id!==editing).concat(item):events.concat(item);
+      // Preserva a posição do evento editado e evita que ele seja duplicado.
+      events=editing?events.map(e=>e.id===editing?item:e):events.concat(item);
       if(!saveEvents()){events=previous;return;}
       selectedMonth=Number(date.slice(5,7))-1;
       $('#eventModal').close();
