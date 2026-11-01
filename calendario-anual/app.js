@@ -397,7 +397,8 @@
       event.preventDefault();
       const date=$('#eventDate').value,title=$('#eventTitle').value.trim();
       if(!/^\d{4}-\d\d-\d\d$/.test(date)||!date.startsWith(YEAR+'-')||!title){notify(`Informe um título e uma data de ${YEAR}.`);return;}
-      const item={id:editing||uid(),title,date,type:$('#eventType').value,notes:$('#eventNotes').value.trim(),time:$('#eventTime').value,duration:Math.min(480,Math.max(15,Number($('#eventDuration').value)||60)),mode:$('#eventMode').value,place:$('#eventPlace').value.trim(),meet:$('#eventMode').value==='online'?$('#eventMeet').value.trim():'',audience:$('#eventAudience').value,status:$('#eventStatus').value,needsReview:$('#eventStatus').value==='Em revisão'};
+      const original=editing?events.find(e=>e.id===editing):null;
+      const item={...(original||{}),id:editing||uid(),title,date,type:$('#eventType').value,notes:$('#eventNotes').value.trim(),time:$('#eventTime').value,duration:Math.min(480,Math.max(15,Number($('#eventDuration').value)||60)),mode:$('#eventMode').value,place:$('#eventPlace').value.trim(),meet:$('#eventMode').value==='online'?$('#eventMeet').value.trim():'',audience:$('#eventAudience').value,status:$('#eventStatus').value,needsReview:$('#eventStatus').value==='Em revisão'};
       const normalize=s=>String(s||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('pt-BR');
       const duplicated=!editing&&events.some(e=>e.date===date&&normalize(e.title)===normalize(title)&&String(e.type||'')===item.type);
       if(duplicated){
@@ -412,6 +413,7 @@
       selectedMonth=Number(date.slice(5,7))-1;
       $('#eventModal').close();
       render();
+      window.dispatchEvent(new CustomEvent('cora-events-updated',{detail:{year:YEAR,month:selectedMonth,eventId:item.id}}));
       markEventAdded('saved');
       notify(editing?'✓ Evento atualizado com sucesso.':'✓ Evento adicionado ao calendário. Para enviar à equipe, clique em Publicar.');
     });
@@ -441,7 +443,7 @@
     if(database){database.close();database=null;}
     events=[];allFiles=[];loadEvents();
     $('#eventDate').min=`${YEAR}-01-01`;$('#eventDate').max=`${YEAR}-12-31`;
-    selectedMonth=0;
+    selectedMonth=Number(window.CoraYears?.month)||0;
     render();
     try{database=await openDB();if(Number(y)!==YEAR){database.close();return;}await refreshFiles();render();}
     catch(error){console.error(error);notify('Documentos deste ano não puderam ser carregados.');}
@@ -453,6 +455,7 @@
     $('#eventDate').min=`${YEAR}-01-01`;$('#eventDate').max=`${YEAR}-12-31`;
     window.addEventListener('cora-year-changed',e=>switchYear(e.detail.year));
     window.addEventListener('cora-audience-changed',()=>render());
+    window.addEventListener('cora-projects-changed',e=>{if(Number(e.detail?.year)===YEAR)render();});
     window.addEventListener('cora-data-changed',e=>{if(Number(e.detail.year)===YEAR){loadEvents();render();}});
     try{database=await openDB();await refreshFiles();}catch(error){console.error(error);notify('Os arquivos não podem ser salvos neste navegador.');}
     render();
