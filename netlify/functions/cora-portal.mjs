@@ -2,6 +2,7 @@
 // Passwords and session keys are set in Netlify project environment variables, never in Git.
 import { createHmac, createHash, timingSafeEqual, randomBytes, scryptSync } from 'node:crypto';
 import { getStore } from '@netlify/blobs';
+import {currentMember,loginEmployee,activateEmployee,listEmployees,manageEmployee,statuses,markDelivery} from './cora-team-auth.mjs';
 import {vapidKeys,registrations,saveRegistration,deleteRegistration,dispatchPush,deliveryId,hasDelivered,markDelivered,testDevicePush} from './lib/cora-push-core.mjs';
 
 const COOKIE='cora_portal_session';
@@ -18,13 +19,13 @@ const DEFAULT_BIRTHDAYS=[{"id":"cora-nov-nadja","name":"Nadja","role":"Professor
 const HEADERS={'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'};
 const answer=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{...HEADERS,...extra}});
 const vars=()=>({gestao:process.env.CORA_GESTAO_PASSWORD,equipe:process.env.CORA_EQUIPE_PASSWORD,secret:process.env.CORA_SESSION_SECRET});
-const configured=()=>{const v=vars();return Boolean(v.gestao&&v.equipe&&v.secret&&v.secret.length>=32)};
+const configured=()=>{const v=vars();return Boolean(v.gestao&&v.secret&&v.secret.length>=32)};
 const originAllowed=(request)=>{const origin=request.headers.get('origin');return !origin||origin===new URL(request.url).origin};
 const hash=x=>createHash('sha256').update(String(x||'')).digest();
 const equal=(a,b)=>timingSafeEqual(hash(a),hash(b));
 const token=(role)=>{const payload=Buffer.from(JSON.stringify({role,exp:Date.now()+12*3600e3,nonce:randomBytes(12).toString('hex')})).toString('base64url');const sig=createHmac('sha256',vars().secret).update(payload).digest('base64url');return `${payload}.${sig}`};
 const cookie=(request)=>{const c=request.headers.get('cookie')||'';const m=c.match(/(?:^|;\s*)cora_portal_session=([^;]+)/);return m?.[1]||''};
-const roleOf=(request)=>{const t=cookie(request),parts=t.split('.');if(parts.length!==2)return null;const expected=createHmac('sha256',vars().secret).update(parts[0]).digest('base64url');if(!equal(parts[1],expected))return null;try{const p=JSON.parse(Buffer.from(parts[0],'base64url').toString());return p.exp>Date.now()&&['gestao','equipe'].includes(p.role)?p.role:null}catch{return null}};
+const roleOf=(request)=>{const t=cookie(request),parts=t.split('.');if(parts.length!==2)return null;const expected=createHmac('sha256',vars().secret).update(parts[0]).digest('base64url');if(!equal(parts[1],expected))return null;try{const p=JSON.parse(Buffer.from(parts[0],'base64url').toString());return p.exp>Date.now()&&p.role==='gestao'?'gestao':null}catch{return null}};
 const baseCookie=`Path=/calendario-anual/; HttpOnly; Secure; SameSite=Strict`;
 const str=(v,len=255)=>String(v??'').trim().slice(0,len);
 const cleanEvent=e=>{
@@ -89,55 +90,31 @@ function migrateBirthdays(state){
  return {...draft,birthdays,birthdaySeedVersion:BIRTHDAY_SEED_VERSION};
 }
 
-// Identidade pessoal do professor. O login coletivo "equipe" nunca deve compartilhar uma entrega entre professores.
-// Somente o próprio professor consegue editar a sua autodeclaração; não equivale a recebimento confirmado.
-const TEACHER_COOKIE='cora_teacher_session';
-const TEACHER_STORE='cora-calendar-delivery-teachers';
-const teacherKey=name=>'teacher-'+createHash('sha256').update(
- String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLowerCase()
-).digest('hex');
-const teacherCookieValue=(id)=>{
- const body=Buffer.from(JSON.stringify({id,exp:Date.now()+12*3600e3,nonce:randomBytes(8).toString('hex')})).toString('base64url');
- const sig=createHmac('sha256',vars().secret).update('teacher:'+body).digest('base64url');
- return body+'.'+sig;
-};
-const teacherIdFromCookie=request=>{
- const cookies=request.headers.get('cookie')||'';
- const matched=cookies.match(/(?:^|;\s*)cora_teacher_session=([^;]+)/);
- const parts=String(matched?.[1]||'').split('.');
- if(parts.length!==2)return '';
- const expected=createHmac('sha256',vars().secret).update('teacher:'+parts[0]).digest('base64url');
- if(!equal(expected,parts[1]))return '';
- try{
-  const body=JSON.parse(Buffer.from(parts[0],'base64url').toString('utf8'));
-  return body.exp>Date.now()&&/^teacher-[a-f0-9]{64}$/.test(String(body.id||''))?body.id:'';
- }catch{return ''}
-};
-const teacherPassHash=(pin,salt)=>scryptSync(pin,salt,32).toString('hex');
-const publicStatuses=(record,year)=>{
- const matches={};
- for(let n=1;n<=4;n++){
-  const item=record?.statuses?.[year+'-'+n];
-  if(item&&['entregue','nao_entregou'].includes(item.status))
-   matches[n]={status:item.status,updatedAt:item.updatedAt};
- }
- return matches;
-};
-
 const validISO=(s,y)=>validYearDate(s,y);
 export default async function handler(request){
  const url=new URL(request.url),action=url.searchParams.get('action')||'me';
  if(request.method==='OPTIONS')return new Response('',{status:405,headers:HEADERS});
  if(!configured())return answer({error:'Configuracao segura pendente: definir as tres variaveis CORA_* nas configuracoes protegidas do Netlify.',configured:false},503);
  if(!originAllowed(request))return answer({error:'Origem não autorizada'},403);
- const role=roleOf(request);
- if(action==='me'&&request.method==='GET')return answer({configured:true,role:role||null});
+ const member=await currentMember(request,vars().secret),role=roleOf(request)||(member?'equipe':null);
+ if(action==='me'&&request.method==='GET')return answer({configured:true,role,member:member?{name:member.name,email:member.email,profile:member.profile}:null});
  if(action==='login'&&request.method==='POST'){
   const size=Number(request.headers.get('content-length')||0);if(size>2048)return answer({error:'Entrada muito longa'},413);
   let p;try{p=await request.json()}catch{return answer({error:'Entrada inválida'},400)};
-  const user=p.role==='gestao'?'gestao':p.role==='equipe'?'equipe':'';
-  if(!user||!equal(p.password,vars()[user]))return answer({error:'Acesso não autorizado'},401);
-  return answer({role:user,configured:true},200,{'set-cookie':`${COOKIE}=${token(user)}; Max-Age=43200; ${baseCookie}`});
+  if(p.role==='gestao'){
+   if(!equal(p.password,vars().gestao))return answer({error:'Acesso não autorizado.'},401);
+   return answer({role:'gestao',configured:true},200,{'set-cookie':`${COOKIE}=${token('gestao')}; Max-Age=43200; ${baseCookie}`});
+  }
+  if(p.role!=='equipe')return answer({error:'Ambiente inválido.'},400);
+  const result=await loginEmployee(p,vars().secret);
+  if(result.error)return answer({error:result.error},result.status||401);
+  return answer({role:'equipe',configured:true,member:result.member},200,{'set-cookie':result.cookie});
+ }
+ if(action==='activate'&&request.method==='POST'){
+  if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Solicitação não autorizada.'},400);
+  let input;try{input=await request.json()}catch{return answer({error:'Dados inválidos.'},400)}
+  const result=await activateEmployee(input,vars().secret);
+  return result.error?answer({error:result.error},result.status||400):answer({role:'equipe',member:result.member,ok:true},200,{'set-cookie':result.cookie});
  }
  if(action==='logout'&&request.method==='POST')return answer({ok:true},200,{'set-cookie':`${COOKIE}=; Max-Age=0; ${baseCookie}`});
  if(!role)return answer({error:'Sessão expirada. Faça login.'},401);
@@ -149,7 +126,7 @@ export default async function handler(request){
   if(role!=='equipe')return answer({error:'Somente colaboradores podem registrar aparelhos'},403);
   if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Requisição inválida'},400);
   let input;try{input=await request.json()}catch{return answer({error:'Dados inválidos'},400)}
-  try{return answer(await saveRegistration(input.subscription),200)}catch(e){return answer({error:e.message},400)}
+  try{return answer(await saveRegistration(input.subscription,{userId:member.id,version:member.sessionVersion}),200)}catch(e){return answer({error:e.message},400)}
  }
  if(action==='push-remove'&&request.method==='POST'){
   if(role!=='equipe')return answer({error:'Somente colaboradores podem cancelar inscrições'},403);
@@ -161,7 +138,7 @@ export default async function handler(request){
   if(role!=='equipe')return answer({error:'Acesso restrito a colaboradores'},403);
   if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Requisição inválida'},400);
   let body;try{body=await request.json()}catch{return answer({error:'Inscrição inválida'},400)}
-  try{return answer(await testDevicePush(body.subscription),200)}
+  try{return answer(await testDevicePush(body.subscription,member.id),200)}
   catch(error){return answer({error:'O serviço push não confirmou o envio: '+error.message},502)}
  }
  if(action==='push-status'&&request.method==='GET'){
@@ -169,69 +146,30 @@ export default async function handler(request){
   return answer({devices:(await registrations()).length},200);
  }
 
- // Autodeclarações por professor não alteram o calendário institucional publicado.
- if(action==='delivery-profile'&&(request.method==='GET'||request.method==='POST')){
-  if(role!=='equipe')return answer({error:'Área exclusiva da equipe pedagógica.'},403);
-  const people=getStore(TEACHER_STORE);
-  if(request.method==='GET'){
-   const id=teacherIdFromCookie(request);
-   if(!id)return answer({identified:false,statuses:{}});
-   const teacher=await people.get(id,{type:'json',consistency:'strong'});
-   if(!teacher)return answer({identified:false,statuses:{}});
-   const year=schoolYear(url.searchParams.get('year')||YEAR);
-   return answer({identified:true,name:teacher.name,statuses:publicStatuses(teacher,year||YEAR)});
-  }
-  if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Solicitação não autorizada.'},400);
+ if(action==='accounts'&&role==='gestao'){
+  if(request.method==='GET')return answer(await listEmployees());
+  if(request.method!=='POST'||request.headers.get('x-cora-request')!=='portal')return answer({error:'Solicitação inválida.'},400);
   let input;try{input=await request.json()}catch{return answer({error:'Dados inválidos.'},400)}
-  const name=str(input.name,100).replace(/\s+/g,' ').normalize('NFC');
-  const pass=String(input.password||'');
-  if(name.length<5||name.length>100||pass.length<8||pass.length>80)
-   return answer({error:'Informe seu nome completo e uma senha pessoal de pelo menos 8 caracteres.'},400);
-  const key=teacherKey(name);
-  let record=await people.get(key,{type:'json',consistency:'strong'});
-  if(record){
-   const supplied=Buffer.from(teacherPassHash(pass,record.salt),'hex');
-   const expected=Buffer.from(String(record.passwordHash||''),'hex');
-   if(supplied.length!==expected.length||!timingSafeEqual(supplied,expected))
-    return answer({error:'O nome já está registrado. Confira a senha pessoal ou procure a coordenação.'},401);
-  }else{
-   const salt=randomBytes(16).toString('hex');
-   record={name,salt,passwordHash:teacherPassHash(pass,salt),statuses:{},createdAt:new Date().toISOString()};
-   await people.setJSON(key,record);
-  }
-  const teacherSession=teacherCookieValue(key);
-  const year=schoolYear(input.year)||YEAR;
-  return answer({identified:true,name:record.name,statuses:publicStatuses(record,year)},200,
-   {'set-cookie':TEACHER_COOKIE+'='+teacherSession+'; Max-Age=43200; '+baseCookie});
+  const result=await manageEmployee(input,request.url);
+  return result.error?answer({error:result.error},result.status||400):answer(result);
  }
- if(action==='delivery-signout'&&request.method==='POST'){
-  if(role!=='equipe')return answer({error:'Área da equipe.'},403);
-  return answer({ok:true},200,{'set-cookie':TEACHER_COOKIE+'=; Max-Age=0; '+baseCookie});
+ if(action==='delivery-profile'&&request.method==='GET'){
+  if(role!=='equipe')return answer({error:'Acesso pessoal necessário.'},403);
+  const year=schoolYear(url.searchParams.get('year'))||YEAR;
+  return answer({identified:true,name:member.name,email:member.email,statuses:statuses(member,year)});
  }
  if(action==='delivery-mark'&&request.method==='POST'){
-  if(role!=='equipe')return answer({error:'Área da equipe.'},403);
-  if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Solicitação não autorizada.'},400);
-  const teacherId=teacherIdFromCookie(request);
-  if(!teacherId)return answer({error:'Identifique-se como professor antes de registrar uma entrega.'},401);
+  if(role!=='equipe')return answer({error:'Acesso pessoal necessário.'},403);
+  if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Solicitação inválida.'},400);
   let input;try{input=await request.json()}catch{return answer({error:'Dados inválidos.'},400)}
-  const year=schoolYear(input.year),stage=Number(input.stage),status=String(input.status||'');
-  if(!year||![1,2,3,4].includes(stage)||!['entregue','nao_entregou'].includes(status))
-   return answer({error:'Ano, etapa ou situação inválidos.'},400);
-  const pubStore=getStore('cora-calendar-publications');
-  let publication=await pubStore.get(publishedKey(year),{type:'json',consistency:'strong'});
-  if(year===2026)publication=includeOfficial2026Deliveries(publication);
-  if(!publication?.events?.some(e=>e.assessmentDelivery===true&&Number(e.stageNumber)===stage))
-   return answer({error:'A Gestão ainda não publicou essa entrega para a equipe.'},409);
-  const people=getStore(TEACHER_STORE);
-  const teacher=await people.get(teacherId,{type:'json',consistency:'strong'});
-  if(!teacher)return answer({error:'Cadastro pessoal não encontrado. Identifique-se novamente.'},401);
-  teacher.statuses=teacher.statuses&&typeof teacher.statuses==='object'?teacher.statuses:{};
-  const date=new Date().toISOString();
-  teacher.statuses[year+'-'+stage]={status,updatedAt:date};
-  await people.setJSON(teacherId,teacher);
-  return answer({ok:true,name:teacher.name,stage,status,updatedAt:date,statuses:publicStatuses(teacher,year)});
+  const result=await markDelivery(member,input,async(year,stage)=>{
+   const store=getStore('cora-calendar-publications');
+   let pub=await store.get(publishedKey(year),{type:'json',consistency:'strong'});
+   if(year===2026)pub=includeOfficial2026Deliveries(pub);
+   return Boolean(pub?.events?.some(e=>e.assessmentDelivery===true&&Number(e.stageNumber)===stage));
+  });
+  return result.error?answer({error:result.error},result.status||400):answer(result);
  }
-
  const store=getStore('cora-calendar-publications');
 
  if(action==='state'&&request.method==='GET'){
