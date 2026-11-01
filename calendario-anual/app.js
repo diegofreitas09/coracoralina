@@ -1,15 +1,15 @@
 (() => {
   'use strict';
-  const YEAR = 2026;
+  let YEAR = window.CoraYears?.activeYear || 2026;
   const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const WEEK = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
-  const STORE = 'cora_calendario_eventos_2026_v1';
-  const FILE_DB = 'cora_calendario_documentos_2026_v1';
+  let STORE = `cora_calendario_eventos_${YEAR}_v1`;
+  let FILE_DB = `cora_calendario_documentos_${YEAR}_v1`;
   const $ = (selector) => document.querySelector(selector);
   const uid = () => crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, match => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[match]));
-  const thisYear = new Date().getFullYear() === YEAR;
-  let selectedMonth = thisYear ? new Date().getMonth() : 0;
+  const isCurrentYear = () => new Date().getFullYear() === YEAR;
+  let selectedMonth = isCurrentYear() ? new Date().getMonth() : 0;
   let events = [];
   let allFiles = [];
   let editing = null;
@@ -23,16 +23,16 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toast.classList.remove('visible'), 5000);
   }
-  const OFFICIAL_REMOVED_KEY = 'cora_official_2026_removed_v1';
+  let OFFICIAL_REMOVED_KEY = `cora_official_${YEAR}_removed_v1`;
   function readRemovedOfficial() {try{return new Set(JSON.parse(localStorage.getItem(OFFICIAL_REMOVED_KEY)||'[]'));}catch{return new Set();}}
   function loadEvents() {
     try {
       const list=JSON.parse(localStorage.getItem(STORE)||'[]');
-      events=Array.isArray(list)?list.filter(item=>item&&String(item.date||'').startsWith('2026-')):[];
+      events=Array.isArray(list)?list.filter(item=>item&&String(item.date||'').startsWith(YEAR+'-')):[];
     } catch {events=[];notify('Não foi possível ler os eventos salvos.');}
     const previous=new Set(events.map(item=>item.id)),removed=readRemovedOfficial();
     let imported=0;
-    for(const item of (window.CORA_OFFICIAL_2026?.events||[])) {
+    for(const item of (YEAR===2026?(window.CORA_OFFICIAL_2026?.events||[]):[])) {
       if(!previous.has(item.id)&&!removed.has(item.id)){events.push({...item});imported++;}
     }
     if(imported)saveEvents();
@@ -65,12 +65,13 @@
     allFiles.sort((a,b) => (a.month - b.month) || String(a.name).localeCompare(String(b.name)));
   }
   const filesFor = month => allFiles.filter(item => item.month === month);
-  const eventsFor = month => events.filter(item => Number(item.date?.slice(5,7)) - 1 === month).sort((a,b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
+  const eventsFor = month => (window.CoraYears?.filterVisible(events)||events).filter(item => Number(item.date?.slice(5,7)) - 1 === month).sort((a,b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
   function render() {
     renderNav(); renderCalendar(); renderEvents(); renderFiles(); renderStats();
     $('#currentMonthTitle').innerHTML = `${MONTHS[selectedMonth]} <small>${YEAR}</small>`;
     $('#filesMonthTitle').textContent = MONTHS[selectedMonth];
     $('#todayMonth').textContent = `${MONTHS[selectedMonth]} de ${YEAR}`;
+    if($('#welcomeYear'))$('#welcomeYear').textContent=YEAR;
     window.dispatchEvent(new CustomEvent('cora-month-changed',{detail:{month:selectedMonth}}));
   }
   function renderNav() {
@@ -78,7 +79,7 @@
     $('#monthNav').querySelectorAll('[data-month]').forEach(button => button.addEventListener('click', () => {selectedMonth = Number(button.dataset.month);render();}));
   }
   function renderStats() {
-    $('#statEvents').textContent = events.length;
+    $('#statEvents').textContent = (window.CoraYears?.filterVisible(events)||events).length;
     $('#statFiles').textContent = allFiles.length;
     $('#statCurrent').textContent = eventsFor(selectedMonth).length;
   }
@@ -92,7 +93,7 @@
       const day = i-startDay+1;
       if (day<1||day>count) { html += '<div class="day blank"></div>'; continue; }
       const date = `${YEAR}-${String(selectedMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-      const list = events.filter(item=>item.date===date);
+      const list = (window.CoraYears?.filterVisible(events)||events).filter(item=>item.date===date);
       const isToday = today.getFullYear()===YEAR && today.getMonth()===selectedMonth && today.getDate()===day;
       html += `<button type="button" class="day ${isToday?'today':''} ${list.length?'has-event':''}" data-date="${date}" title="${list.length?escapeHtml(list.map(item=>item.title).join(' • ')):'Adicionar evento em '+day+'/'+(selectedMonth+1)+'/'+YEAR}" aria-label="${day} de ${MONTHS[selectedMonth]}: ${list.length} evento(s)"><span class="date-num">${day}</span>${list.length?`<span class="event-markers" aria-hidden="true">${list.slice(0,3).map(item=>`<i class="event-marker ${item.type==='Reunião'?'marker-meeting':item.type==='Avaliação'?'marker-exam':item.type==='Feriado'?'marker-holiday':'marker-general'}"></i>`).join('')}</span><span class="event-quantity">${list.length} ${list.length===1?'evento':'eventos'}</span>`:''}</button>`;
     }
@@ -102,7 +103,7 @@
   function renderEvents() {
     const list = eventsFor(selectedMonth);
     if (!list.length) { $('#eventList').innerHTML = '<div class="empty"><div class="empty-icon">▦</div>Nenhum evento neste mês.<br/>Clique no calendário para começar.</div>'; return; }
-    $('#eventList').innerHTML = list.map(event => `<div class="event"><div class="event-date"><b>${Number(event.date.slice(8,10))}</b><small>${MONTHS[selectedMonth].slice(0,3)}</small></div><div class="event-info"><strong>${escapeHtml(event.title)}</strong>${event.notes?`<small>${escapeHtml(event.notes)}</small>`:''}<span class="tag">${escapeHtml(event.type)}</span>${event.time?`<small class="event-meta">Horário: ${escapeHtml(event.time)} ${event.mode==='online'?' · On-line':''}</small>`:''}</div><div class="event-actions"><button data-google="${escapeHtml(event.id)}" aria-label="Adicionar ao Google Agenda" title="Google Agenda">G</button><button data-edit="${escapeHtml(event.id)}" aria-label="Editar evento" title="Editar">✎</button><button data-delete="${escapeHtml(event.id)}" aria-label="Excluir evento" title="Excluir">✕</button></div></div>`).join('');
+    $('#eventList').innerHTML = list.map(event => `<div class="event"><div class="event-date"><b>${Number(event.date.slice(8,10))}</b><small>${MONTHS[selectedMonth].slice(0,3)}</small></div><div class="event-info"><strong>${escapeHtml(event.title)}</strong>${event.notes?`<small>${escapeHtml(event.notes)}</small>`:''}<span class="tag">${escapeHtml(event.type)}</span>${event.time?`<small class="event-meta">Horário: ${escapeHtml(event.time)} ${event.mode==='online'?' · On-line':''}</small>`:''}${event.status==='Em revisão'?'<small class="review-event">Em revisão · não divulgar</small>':''}${event.audience&&event.audience!=='Todos'?`<small class="event-meta">Para: ${escapeHtml(event.audience)}</small>`:''}</div><div class="event-actions"><button data-google="${escapeHtml(event.id)}" aria-label="Adicionar ao Google Agenda" title="Google Agenda">G</button><button data-edit="${escapeHtml(event.id)}" aria-label="Editar evento" title="Editar">✎</button><button data-delete="${escapeHtml(event.id)}" aria-label="Excluir evento" title="Excluir">✕</button></div></div>`).join('');
     $('#eventList').querySelectorAll('[data-edit]').forEach(button=>button.addEventListener('click',()=>{const event=events.find(item=>item.id===button.dataset.edit);if(event) openEventModal(event.date,event);}));
     $('#eventList').querySelectorAll('[data-delete]').forEach(button=>button.addEventListener('click',()=>{if(!confirm('Excluir este evento?'))return;const item=events.find(e=>e.id===button.dataset.delete);if(item?.id?.startsWith('oficial-2026-')){const removed=readRemovedOfficial();removed.add(item.id);try{localStorage.setItem(OFFICIAL_REMOVED_KEY,JSON.stringify([...removed]));}catch{}}events=events.filter(item=>item.id!==button.dataset.delete);saveEvents();render();}));
   }
@@ -136,6 +137,8 @@
     $('#eventPlace').value=event?.place||'';
     $('#eventMeet').value=event?.meet||'';
     $('#eventMeetWrap').hidden=$('#eventMode').value!=='online';
+    $('#eventAudience').value=event?.audience||'Todos';
+    $('#eventStatus').value=event?.status||'Publicado';
     $('#eventModal').showModal();
     $('#eventTitle').focus();
   }
@@ -166,7 +169,7 @@
   async function downloadBackup(){
     try{
       const documents=[];for(const file of allFiles)documents.push({id:file.id,name:file.name,month:file.month,size:file.size,type:file.type,lastModified:file.lastModified,data:await toBase64(file.blob)});
-      downloadBlob(new Blob([JSON.stringify({app:'calendario-anual-cora',year:YEAR,version:3,exportedAt:new Date().toISOString(),events,documents,officialRemoved:[...readRemovedOfficial()],planning:JSON.parse(localStorage.getItem('cora_planejamento_2026_v1')||'{}'),cardDrafts:JSON.parse(localStorage.getItem('cora_cards_2026_v1')||'{}')})],{type:'application/json'}),`backup-calendario-cora-${YEAR}.json`);
+      downloadBlob(new Blob([JSON.stringify({app:'calendario-anual-cora',year:YEAR,version:3,exportedAt:new Date().toISOString(),events,documents,officialRemoved:[...readRemovedOfficial()],projects:window.CoraYears?.getProjects(YEAR)||[],planning:JSON.parse(localStorage.getItem('cora_planejamento_2026_v1')||'{}'),cardDrafts:JSON.parse(localStorage.getItem('cora_cards_2026_v1')||'{}')})],{type:'application/json'}),`backup-calendario-cora-${YEAR}.json`);
       notify('Backup com eventos, arquivos, planejamentos e cards criado.');
     }catch(error){console.error(error);notify('Falha ao gerar backup.');}
   }
@@ -176,8 +179,8 @@
       if(data.year!==YEAR||!Array.isArray(data.events)||!Array.isArray(data.documents))throw Error('Backup incompatível');
       if(!confirm('Restaurar backup? Eventos com o mesmo ID serão atualizados.'))return;
       const byId=new Map(events.map(item=>[item.id,item]));
-      for(const event of data.events){if(typeof event.title==='string' && /^2026-\d\d-\d\d$/.test(event.date||'')){byId.set(event.id||uid(),{id:event.id||uid(),title:event.title.slice(0,170),date:event.date,type:event.type||'Evento',notes:event.notes||'',time:event.time||'',duration:Number(event.duration)||60,mode:event.mode||'presencial',place:event.place||'',meet:event.meet||''});}}
-      events=[...byId.values()];if(Array.isArray(data.officialRemoved))try{localStorage.setItem(OFFICIAL_REMOVED_KEY,JSON.stringify(data.officialRemoved));}catch{}saveEvents();
+      for(const event of data.events){if(typeof event.title==='string' && /^\d{4}-\d\d-\d\d$/.test(event.date||'')&&event.date.startsWith(YEAR+'-')){byId.set(event.id||uid(),{id:event.id||uid(),title:event.title.slice(0,170),date:event.date,type:event.type||'Evento',notes:event.notes||'',time:event.time||'',duration:Number(event.duration)||60,mode:event.mode||'presencial',place:event.place||'',meet:event.meet||'',audience:event.audience||'Todos',status:event.status||'Publicado'});}}
+      events=[...byId.values()];if(Array.isArray(data.projects)&&data.projects.length===12)window.CoraYears?.saveProjects(YEAR,data.projects);if(Array.isArray(data.officialRemoved))try{localStorage.setItem(OFFICIAL_REMOVED_KEY,JSON.stringify(data.officialRemoved));}catch{}saveEvents();
       if(database)for(const file of data.documents){
         if(!file||typeof file.data!=='string'||!file.data.startsWith('data:'))continue;
         const response=await fetch(file.data);const blob=await response.blob();
@@ -208,7 +211,7 @@
   function headerCanvas(name,sub){const [c,g]=canvasBase();g.fillStyle='#102a4c';g.fillRect(0,0,PAGE_W,155);text(g,'CORA CORALINA  /  CALENDÁRIO ANUAL 2026',76,75,22,'#c8d9ef','700');text(g,name,76,133,48,'#fff','700');const badge=$('#schoolLogo');if(badge?.complete&&badge.naturalWidth){rounded(g,PAGE_W-163,11,112,136,10,'#fff');g.drawImage(badge,PAGE_W-160,13,106,130);}text(g,sub,78,201,25,GREY);return [c,g];}
   function footerCanvas(g,section='CALENDÁRIO ANUAL 2026'){g.fillStyle='#e4ebf3';g.fillRect(70,1130,PAGE_W-140,2);text(g,section,74,1162,18,GREY,'700');text(g,'COLÉGIO CORA CORALINA',PAGE_W-400,1162,18,GREY,'700');}
   function calendarCanvas(month){
-    const [c,g]=headerCanvas(`${MONTHS[month].toUpperCase()} 2026`,`${eventsFor(month).length} evento(s) cadastrado(s)  ·  ${filesFor(month).length} documento(s) anexado(s)`);
+    const [c,g]=headerCanvas(`${MONTHS[month].toUpperCase()} ${YEAR}`,`${eventsFor(month).length} evento(s) cadastrado(s)  ·  ${filesFor(month).length} documento(s) anexado(s)`);
     const x0=72, y0=275, w=(PAGE_W-144)/7, h=125;
     WEEK.forEach((name,i)=>{rounded(g,x0+i*w+3,230,w-6,38,5,'#edf3fa');text(g,name,x0+i*w+15,257,20,BLUE,'700');});
     const start=new Date(YEAR,month,1).getDay(),last=new Date(YEAR,month+1,0).getDate();
@@ -219,7 +222,7 @@
       g.strokeStyle='#dfe6ef';g.lineWidth=2;g.strokeRect(x,y,w,h);
       if(!valid)continue;
       text(g,day,x+13,y+34,25,INK,'700');
-      const dayDate=`2026-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const dayDate=`${YEAR}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
       const list=events.filter(item=>item.date===dayDate);
       g.font='700 18px Arial, sans-serif';
       list.slice(0,3).forEach((event,j)=>{
@@ -309,14 +312,14 @@
   function bind(){
     $('#prevMonth').addEventListener('click',()=>{selectedMonth=(selectedMonth+11)%12;render();});
     $('#nextMonth').addEventListener('click',()=>{selectedMonth=(selectedMonth+1)%12;render();});
-    $('#todayMonth').addEventListener('click',()=>{selectedMonth=thisYear?new Date().getMonth():0;render();});
+    $('#todayMonth').addEventListener('click',()=>{selectedMonth=isCurrentYear()?new Date().getMonth():0;render();});
     ['addEventBtn','quickEvent'].forEach(id=>$('#'+id).addEventListener('click',()=>openEventModal()));
     $('#closeModal').addEventListener('click',()=>$('#eventModal').close());
     $('#cancelEvent').addEventListener('click',()=>$('#eventModal').close());
     $('#eventForm').addEventListener('submit',event=>{
       event.preventDefault();const date=$('#eventDate').value,title=$('#eventTitle').value.trim();
-      if(!/^2026-\d\d-\d\d$/.test(date)||!title){notify('Informe um título e uma data de 2026.');return;}
-      const item={id:editing||uid(),title,date,type:$('#eventType').value,notes:$('#eventNotes').value.trim(),time:$('#eventTime').value,duration:Math.min(480,Math.max(15,Number($('#eventDuration').value)||60)),mode:$('#eventMode').value,place:$('#eventPlace').value.trim(),meet:$('#eventMode').value==='online'?$('#eventMeet').value.trim():''};
+      if(!/^\d{4}-\d\d-\d\d$/.test(date)||!date.startsWith(YEAR+'-')||!title){notify(`Informe um título e uma data de ${YEAR}.`);return;}
+      const item={id:editing||uid(),title,date,type:$('#eventType').value,notes:$('#eventNotes').value.trim(),time:$('#eventTime').value,duration:Math.min(480,Math.max(15,Number($('#eventDuration').value)||60)),mode:$('#eventMode').value,place:$('#eventPlace').value.trim(),meet:$('#eventMode').value==='online'?$('#eventMeet').value.trim():'',audience:$('#eventAudience').value,status:$('#eventStatus').value,needsReview:$('#eventStatus').value==='Em revisão'};
       if(editing)events=events.filter(e=>e.id!==editing);events.push(item);saveEvents();selectedMonth=Number(date.slice(5,7))-1;$('#eventModal').close();render();notify('Evento salvo.');
     });
     ['uploadBtn','secondaryUpload'].forEach(id=>$('#'+id).addEventListener('click',()=>$('#filePicker').click()));
@@ -330,18 +333,33 @@
     $('#backupBtn').addEventListener('click',downloadBackup);
     $('#restoreBtn').addEventListener('click',()=>$('#restorePicker').click());
     $('#restorePicker').addEventListener('change',async event=>{if(event.target.files[0])await restoreBackup(event.target.files[0]);event.target.value='';});
-    $('#exportBtn').addEventListener('click',exportPDF);
+    $('#exportBtn').addEventListener('click',()=>{if(window.CoraYears?.exportMonthlyPDF)return window.CoraYears.exportMonthlyPDF();return exportPDF();});
     window.addEventListener('cora-restore-official-request',()=>{
       try{localStorage.removeItem(OFFICIAL_REMOVED_KEY);}catch{}
       const ids=new Set(events.map(item=>item.id));let restored=0;
-      for(const item of (window.CORA_OFFICIAL_2026?.events||[]))if(!ids.has(item.id)){events.push({...item});restored++;}
+      for(const item of (YEAR===2026?(window.CORA_OFFICIAL_2026?.events||[]):[]))if(!ids.has(item.id)){events.push({...item});restored++;}
       saveEvents();render();notify(`Calendário oficial conferido: ${restored} evento(s) restaurado(s).`);
     });
+  }
+  async function switchYear(y){
+    if(Number(y)===YEAR)return;
+    YEAR=Number(y);STORE=`cora_calendario_eventos_${YEAR}_v1`;FILE_DB=`cora_calendario_documentos_${YEAR}_v1`;OFFICIAL_REMOVED_KEY=`cora_official_${YEAR}_removed_v1`;
+    editing=null;if($('#eventModal').open)$('#eventModal').close();
+    if(database){database.close();database=null;}
+    events=[];allFiles=[];loadEvents();
+    $('#eventDate').min=`${YEAR}-01-01`;$('#eventDate').max=`${YEAR}-12-31`;
+    selectedMonth=isCurrentYear()?new Date().getMonth():selectedMonth;
+    render();
+    try{database=await openDB();if(Number(y)!==YEAR){database.close();return;}await refreshFiles();render();}
+    catch(error){console.error(error);notify('Documentos deste ano não puderam ser carregados.');}
   }
   async function initialize(){
     const schoolLogo=$('#schoolLogo');if(schoolLogo&&window.CORA_SCHOOL_LOGO)schoolLogo.src=window.CORA_SCHOOL_LOGO;
     loadEvents();
     bind();
+    $('#eventDate').min=`${YEAR}-01-01`;$('#eventDate').max=`${YEAR}-12-31`;
+    window.addEventListener('cora-year-changed',e=>switchYear(e.detail.year));
+    window.addEventListener('cora-audience-changed',()=>render());
     try{database=await openDB();await refreshFiles();}catch(error){console.error(error);notify('Os arquivos não podem ser salvos neste navegador.');}
     render();
     if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
