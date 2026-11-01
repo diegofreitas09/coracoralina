@@ -2,7 +2,7 @@
 // Passwords and session keys are set in Netlify project environment variables, never in Git.
 import { createHmac, createHash, timingSafeEqual, randomBytes, scryptSync } from 'node:crypto';
 import { getStore } from '@netlify/blobs';
-import {currentMember,loginEmployee,activateEmployee,listEmployees,manageEmployee,statuses,markDelivery,accessPolicy,enforceIndividualAccess} from './cora-team-auth.mjs';
+import {currentMember,loginEmployee,activateEmployee,listEmployees,manageEmployee,statuses,markDelivery,accessPolicy,enforceIndividualAccess} from './lib/cora-team-auth.mjs';
 import {vapidKeys,registrations,saveRegistration,deleteRegistration,dispatchPush,deliveryId,hasDelivered,markDelivered,testDevicePush} from './lib/cora-push-core.mjs';
 
 const COOKIE='cora_portal_session';
