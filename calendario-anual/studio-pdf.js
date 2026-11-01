@@ -25,8 +25,8 @@
       obj(contentsId,()=>{push(`<< /Length ${content.length} >>\nstream\n`);push(content);push('\nendstream')});
       obj(imgId,()=>{push(`<< /Type /XObject /Subtype /Image /Width ${canvas.width} /Height ${canvas.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${img.length} >>\nstream\n`);push(img);push('\nendstream')});
     }
-    const title=String(opts.title||'Calendário Anual Cora Coralina 2026').replace(/[\\()\r\n]/g,' ').slice(0,120).replace(/[^\x20-\x7e]/g,'');
-    obj(infoId,`<< /Title (${title}) /Creator (Colégio Cora Coralina) /Producer (Calendario Anual 2026) >>`);
+    const title=String(opts.title||'Calendário Escolar Cora Coralina').replace(/[\\()\r\n]/g,' ').slice(0,120).replace(/[^\x20-\x7e]/g,'');
+    obj(infoId,`<< /Title (${title}) /Creator (Colégio Cora Coralina) /Producer (Calendario Escolar Cora Coralina) >>`);
     const startXref=total;push(`xref\n0 ${objects+1}\n0000000000 65535 f \n`);
     for(let i=1;i<=objects;i++)push(`${String(offsets[i]).padStart(10,'0')} 00000 n \n`);
     push(`trailer\n<< /Size ${objects+1} /Root 1 0 R /Info ${infoId} 0 R >>\nstartxref\n${startXref}\n%%EOF\n`);
