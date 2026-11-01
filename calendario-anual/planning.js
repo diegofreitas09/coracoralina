@@ -194,7 +194,7 @@
     if(manualNotes&&manualNotes!==String(sample.birthdays).trim())section('Comunicados e datas complementares',manualNotes);
     const scheduleEntries=lines(plan.schedule);
     const extraEvents=plan.includeCalendar?eventsFor(month).map(event=>`${event.date.slice(8,10)}/${event.date.slice(5,7)} – ${event.title}${event.notes?' — '+event.notes:''}`):[];
-    const normalized=v=>String(v).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^\\w]/g,'').toLowerCase();
+    const normalized=v=>String(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w]/g,'').toLowerCase();
     const scheduleKeys=new Set(scheduleEntries.map(normalized));
     const uniqueExtra=extraEvents.filter(item=>!scheduleKeys.has(normalized(item)));
     scheduleSection('Programação mensal e datas importantes',[...scheduleEntries,...uniqueExtra]);
