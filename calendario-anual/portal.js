@@ -10,7 +10,7 @@
  const dateStr=(date)=>{const d=new Date(date);return Number.isNaN(d.getTime())?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
  const isoNow=()=>{const d=new Date();return `${dateStr(d)}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`};
  const app=$('#app'),root=document.createElement('div');root.id='coraPortal';document.body.prepend(root);
- let role='',chosen='gestao',data=null,year=Number(window.CoraYears?.activeYear)||2026,availableYears=[2026],month=new Date().getFullYear()===2026?new Date().getMonth():0,tab='resumo',managerNotices=[],leadDays=3,timer=null,showBell=false;
+ let role='',chosen='gestao',data=null,year=Number(window.CoraYears?.activeYear)||2026,availableYears=[2026],month=new Date().getFullYear()===2026?new Date().getMonth():0,tab='resumo',selectedStage=0,managerNotices=[],leadDays=3,timer=null,showBell=false;
  const endpoint=action=>`${API}?action=${encodeURIComponent(action)}`;
  async function api(action,payload,query=''){
   const opts={credentials:'same-origin',cache:'no-store',headers:{'accept':'application/json'}};
@@ -199,8 +199,8 @@
   }else if(tab==='etapas'){
    const stages=Array.isArray(data?.stages)?data.stages:[];
    const fmt=val=>val?val.slice(8,10)+'/'+val.slice(5,7)+'/'+val.slice(0,4):'A definir';
-   content='<div class="cp-main-heading"><h2>Etapas letivas de '+year+'</h2></div><p class="cp-muted">Consulte os limites de cada etapa para planejar avaliações e simulados.</p>'+
-   '<div class="cp-stage-grid">'+[1,2,3,4].map(number=>{
+   content='<div class="cp-main-heading"><h2>Etapas letivas de '+year+'</h2><select id="cpStagePicker" aria-label="Selecionar etapa"><option value="0">Todas as etapas</option>'+[1,2,3,4].map(n=>'<option value="'+n+'" '+(selectedStage===n?'selected':'')+'>'+n+'ª etapa</option>').join('')+'</select></div><p class="cp-muted">Consulte os limites de cada etapa para planejar avaliações e simulados.</p>'+
+   '<div class="cp-stage-grid">'+[1,2,3,4].filter(n=>!selectedStage||n===selectedStage).map(number=>{
      const st=stages.find(x=>Number(x.number)===number)||{};
      const today=dateStr(new Date());
      const active=st.start&&st.end&&today>=st.start&&today<=st.end;
@@ -218,6 +218,7 @@
   here.innerHTML=`${showBell?'':`<div class="cp-overview"><div class="cp-metric"><small>Atividades publicadas</small><strong>${events.length}</strong></div><div class="cp-metric"><small>Avaliações e simulados</small><strong>${assess.length}</strong></div><div class="cp-metric"><small>Avisos disponíveis</small><strong>${notes.length}</strong></div></div>${tabs}`}${content}<p class="cp-updated">Última publicação da Gestão: ${data?new Date(data.updatedAt).toLocaleString('pt-BR'):'ainda não publicada'} · Atualização automática enquanto o aplicativo estiver aberto.</p>`;
   here.querySelectorAll('[data-cp-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.cpTab;showBell=false;drawTeam()});
   $('#cpMonthPicker')?.addEventListener('change',e=>{month=Number(e.target.value);drawTeam()});
+  $('#cpStagePicker')?.addEventListener('change',e=>{selectedStage=Number(e.target.value)||0;drawTeam()});
   $('#cpBackFromBell')?.addEventListener('click',()=>{showBell=false;drawTeam();});
   $('#cpMarkRead')?.addEventListener('click',()=>{let arr=[];try{arr=JSON.parse(localStorage.getItem('cora_team_seen_alerts_'+year)||'[]')}catch{}const seen=new Set(Array.isArray(arr)?arr:[]);upcoming().forEach(a=>seen.add(a.id));localStorage.setItem('cora_team_seen_alerts_'+year,JSON.stringify([...seen]));drawTeam()});
   $('#cpSeeBirthdays')?.addEventListener('click',()=>{tab='aniversarios';month=new Date().getMonth();showBell=false;drawTeam();});
