@@ -71,16 +71,39 @@
     toast('✓ Aviso adicionado como rascunho. Publique para a Equipe Pedagógica receber.');
   };
   renderNoticeRows();
-  api('state').then(x=>{const status=$('#cpPubStatus');if(status&&x.publication)status.textContent='Última publicação: '+new Date(x.publication.updatedAt).toLocaleString('pt-BR')}).catch(()=>{});
+  api('state').then(x=>{
+    const status=$('#cpPubStatus');
+    if(status&&x.publication)status.textContent='Última publicação: '+new Date(x.publication.updatedAt).toLocaleString('pt-BR');
+    // Somente a Gestão incorpora a lista institucional ao cadastro local.
+    window.CoraBirthdays?.importBaseline?.(x.publication?.birthdays||[]);
+  }).catch(()=>{});
+
  }
  function renderNoticeRows(){const area=$('#cpNoticeRows');if(!area)return;area.innerHTML=managerNotices.length?managerNotices.map(n=>`<div class="cp-notice-row"><span><span class="cp-notice-saved">✓ Adicionado</span> <strong>${safe(n.title)}</strong> · ${safe(n.type)} · ${safe(n.publishAt).replace('T',' ')}${n.eventDate?' · Evento '+safe(n.eventDate):''}</span><button class="cp-btn soft" data-cp-remove="${safe(n.id)}">Excluir</button></div>`).join(''):'<p class="cp-muted">Nenhum aviso criado. O calendário oficial ainda pode ser publicado.</p>';area.querySelectorAll('[data-cp-remove]').forEach(b=>b.onclick=()=>{managerNotices=managerNotices.filter(n=>n.id!==b.dataset.cpRemove);localStorage.setItem(NOTICE_KEY,JSON.stringify(managerNotices));renderNoticeRows()});}
- async function publish(){const events=loadEventDraft(),btn=$('#cpPublishNow');if(!btn)return;btn.disabled=true;try{
-   const res=await api('publish',{events,notices:managerNotices,config:{defaultLeadDays:leadDays}});
-   $('#cpPubStatus').textContent='Publicado: '+new Date(res.updatedAt).toLocaleString('pt-BR');toast(`Publicado para a equipe: ${res.counts.events} eventos e ${res.counts.notices} avisos.`);
-  }catch(e){toast('Não foi possível publicar: '+e.message);}finally{btn.disabled=false;}}
+ async function publish(){
+  const events=loadEventDraft(),btn=$('#cpPublishNow');if(!btn)return;btn.disabled=true;
+  try{
+   // Evita que uma primeira publicação apague o cadastro institucional anterior.
+   const previous=await api('state');
+   window.CoraBirthdays?.importBaseline?.(previous.publication?.birthdays||[]);
+   const birthdays=window.CoraBirthdays?.all?.()||previous.publication?.birthdays||[];
+   const res=await api('publish',{events,notices:managerNotices,birthdays,config:{defaultLeadDays:leadDays}});
+   $('#cpPubStatus').textContent='Publicado: '+new Date(res.updatedAt).toLocaleString('pt-BR');
+   toast(`Publicado para a equipe: ${res.counts.events} eventos, ${res.counts.notices} avisos e ${res.counts.birthdays??birthdays.length} aniversariantes.`);
+  }catch(e){toast('Não foi possível publicar: '+e.message);}finally{btn.disabled=false;}
+ }
  function teamNav(){return `<div class="cp-team-head"><img id="cpTeamLogo" alt="Brasão do Colégio Cora Coralina"><div><small>COLÉGIO CORA CORALINA · AMBIENTE DE CONSULTA</small><h1>Equipe Pedagógica</h1></div><span class="cp-spacer"></span><button class="cp-btn cp-bell" id="cpBell" aria-label="Abrir notificações">🔔<em id="cpBellCount" style="display:none">0</em></button><button class="cp-btn" id="cpRefresh">Atualizar</button><button class="cp-btn" id="cpTeamLogout">Sair</button></div>`}
  async function team(){document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};await refresh();clearInterval(timer);timer=setInterval(refresh,90000);}
  async function refresh(){try{const result=await api('state');data=result.publication;drawTeam()}catch(e){if(e.status===401){clearInterval(timer);gateway('Sessão expirada. Entre novamente.');return;}toast('Falha ao atualizar: '+e.message);}}
+ function publishedBirthdays(){
+  return (Array.isArray(data?.birthdays)?data.birthdays:[])
+    .filter(p=>p&&p.name&&Number(p.day)>=1&&Number(p.day)<=31&&Number(p.month)>=1&&Number(p.month)<=12)
+    .sort((a,b)=>Number(a.month)-Number(b.month)||Number(a.day)-Number(b.day)||String(a.name).localeCompare(String(b.name),'pt-BR'));
+ }
+ function birthdayEntry(p){
+  const date=String(p.day).padStart(2,'0')+'/'+String(p.month).padStart(2,'0');
+  return `<article class="cp-list-entry cp-birthday-entry"><time>${safe(date)}</time><div><strong>${safe(p.name)}</strong><span class="cp-tag">Aniversário</span>${p.role?`<p>${safe(p.role)}</p>`:''}</div></article>`;
+ }
  const isSecond=e=>/2[ªaº°]?\s*chamada|segunda\s+chamada/i.test(`${e.title} ${e.notes||''}`);
  const isAssessment=e=>/avaliaç|avaliação|simulado|sondagem|recomposiç|prova/i.test(`${e.title} ${e.type||''}`);
  function filteredEvents(){return (data?.events||[]).filter(e=>String(e.date||'').startsWith('2026-')).sort((a,b)=>a.date.localeCompare(b.date))}
@@ -94,17 +117,27 @@
  function drawTeam(){const here=$('#cpView');if(!here)return;
   const events=filteredEvents(),notes=activeNotices(),assess=events.filter(e=>isAssessment(e)&&!isSecond(e)),alertList=upcoming(),unread=alertList.filter(a=>a.unread).length;
   const badge=$('#cpBellCount');if(badge){badge.style.display=unread?'block':'none';badge.textContent=String(unread)}
-  const sections=[['resumo','Visão Geral'],['calendario','Calendário 2026'],['avaliacoes','Avaliações e Simulados'],['avisos','Avisos'],['pdf','PDF Anual']];
+  const sections=[['resumo','Visão Geral'],['calendario','Calendário 2026'],['avaliacoes','Avaliações e Simulados'],['aniversarios','🎂 Aniversariantes'],['avisos','Avisos'],['pdf','PDF Anual']];
   const tabs=`<div class="cp-tabs">${sections.map(([id,label])=>`<button class="${tab===id?'active':''}" data-cp-tab="${id}">${label}</button>`).join('')}</div>`;
   let content='';
   if(!data){content='<div class="cp-paper"><h2>Nenhuma publicação disponível</h2><p class="cp-muted">A Gestão ainda não publicou o calendário e os comunicados para a equipe. O conteúdo ficará disponível aqui após a primeira publicação.</p></div>'}
   else if(showBell){content=`<div class="cp-bell-panel"><div class="cp-main-heading"><div class="cp-alert-heading-left"><button type="button" class="cp-btn soft cp-back-alert" id="cpBackFromBell" aria-label="Voltar à Equipe Pedagógica">← Voltar</button><h2>🔔 Central de alertas</h2></div><button class="cp-btn soft" id="cpMarkRead">Marcar como lidos</button></div>${alertList.length?alertList.map(a=>`<div class="cp-list-entry"><time>${safe(String(a.date).slice(0,10))}</time><div><strong>${safe(a.title)}</strong><p>${safe(a.desc||'')}</p>${a.unread?'<span class="cp-tag">Novo</span>':''}</div></div>`).join(''):'<p class="cp-muted">Nenhuma atividade ou aviso exige atenção no período configurado.</p>'}</div>`;}
   else if(tab==='resumo'){
    const today=dateStr(new Date());const future=events.filter(e=>e.date>=today).slice(0,9);
-   content=`<div class="cp-main-heading"><h2>Atividades e próximos compromissos</h2></div><div class="cp-list">${future.length?future.map(eventHtml).join(''):'<p class="cp-muted">Nenhum evento futuro publicado em 2026.</p>'}</div><h2 style="color:#12375e;margin-top:28px">Comunicados recentes</h2>${notes.slice(0,3).map(noticeHtml).join('')||'<p class="cp-muted">Sem avisos recentes.</p>'}`;
+   const thisMonth=new Date().getMonth()+1;
+   const birthdayList=publishedBirthdays().filter(p=>Number(p.month)===thisMonth);
+   content=`<div class="cp-main-heading"><h2>Atividades e próximos compromissos</h2></div><div class="cp-list">${future.length?future.map(eventHtml).join(''):'<p class="cp-muted">Nenhum evento futuro publicado em 2026.</p>'}</div>
+   <div class="cp-birthday-teaser"><div class="cp-main-heading"><h2>🎂 Aniversariantes de ${MONTHS[thisMonth-1]}</h2><button class="cp-btn soft" id="cpSeeBirthdays">Ver todos os meses</button></div>
+   <div class="cp-list">${birthdayList.length?birthdayList.map(birthdayEntry).join(''):'<p class="cp-muted">Nenhum aniversariante publicado para este mês.</p>'}</div></div>
+   <h2 style="color:#12375e;margin-top:28px">Comunicados recentes</h2>${notes.slice(0,3).map(noticeHtml).join('')||'<p class="cp-muted">Sem avisos recentes.</p>'}`;
   }else if(tab==='calendario'||tab==='avaliacoes'){
    const arr=(tab==='avaliacoes'?assess:events).filter(e=>Number(e.date.slice(5,7))===month+1);
    content=`<div class="cp-main-heading"><h2>${tab==='avaliacoes'?'Avaliações, simulados e sondagens':'Calendário escolar'}</h2><select id="cpMonthPicker" aria-label="Mês do calendário">${MONTHS.map((m,i)=>`<option value="${i}" ${month===i?'selected':''}>${m} de 2026</option>`).join('')}</select></div><div class="cp-list">${arr.length?arr.map(eventHtml).join(''):'<p class="cp-muted">Nenhuma atividade publicada neste mês.</p>'}</div>`;
+  }else if(tab==='aniversarios'){
+   const names=publishedBirthdays().filter(p=>Number(p.month)===month+1);
+   content=`<div class="cp-birthday-panel"><div class="cp-main-heading"><h2>🎂 Aniversariantes do mês</h2><select id="cpMonthPicker" aria-label="Escolher mês dos aniversariantes">${MONTHS.map((m,i)=>`<option value="${i}" ${month===i?'selected':''}>${m}</option>`).join('')}</select></div>
+    <p class="cp-muted">Consulte também os próximos meses e prepare as homenagens com antecedência.</p>
+    <div class="cp-list">${names.length?names.map(birthdayEntry).join(''):'<p class="cp-muted">Nenhum aniversariante informado neste mês.</p>'}</div></div>`;
   }else if(tab==='avisos')content=`<div class="cp-main-heading"><h2>Avisos da Gestão</h2></div>${notes.length?notes.map(noticeHtml).join(''):'<p class="cp-muted">Ainda não há avisos para a equipe.</p>'}`;
   else content=`<div class="cp-main-heading"><h2>Calendário anual oficial 2026</h2><select id="cpMonthPicker" aria-label="Mês do PDF">${MONTHS.map((m,i)=>`<option value="${i}" ${month===i?'selected':''}>${m} de 2026</option>`).join('')}</select></div><div class="cp-pdf-sample"><div class="cp-paper"><img class="cp-pdf-image" id="cpPdfMonth" alt="Página do calendário oficial do mês selecionado"><p class="cp-muted">Visualização do documento institucional; conteúdo somente para consulta.</p></div><div class="cp-paper"><h3>Calendário oficial para download</h3><p class="cp-muted">Arquivo com capa, 12 meses e anotações, em formato PDF. Selecione o mês para visualizar a página correspondente.</p><button class="cp-btn gold" id="cpDownloadOfficial">↓ Baixar calendário completo (PDF)</button><p class="cp-status" id="cpPdfProgress"></p></div></div>`;
   here.innerHTML=`${showBell?'':`<div class="cp-overview"><div class="cp-metric"><small>Atividades publicadas</small><strong>${events.length}</strong></div><div class="cp-metric"><small>Avaliações e simulados</small><strong>${assess.length}</strong></div><div class="cp-metric"><small>Avisos disponíveis</small><strong>${notes.length}</strong></div></div>${tabs}`}${content}<p class="cp-updated">Última publicação da Gestão: ${data?new Date(data.updatedAt).toLocaleString('pt-BR'):'ainda não publicada'} · Atualização automática enquanto o aplicativo estiver aberto.</p>`;
@@ -112,6 +145,7 @@
   $('#cpMonthPicker')?.addEventListener('change',e=>{month=Number(e.target.value);drawTeam()});
   $('#cpBackFromBell')?.addEventListener('click',()=>{showBell=false;drawTeam();});
   $('#cpMarkRead')?.addEventListener('click',()=>{let arr=[];try{arr=JSON.parse(localStorage.getItem('cora_team_seen_alerts_2026')||'[]')}catch{}const seen=new Set(Array.isArray(arr)?arr:[]);upcoming().forEach(a=>seen.add(a.id));localStorage.setItem('cora_team_seen_alerts_2026',JSON.stringify([...seen]));drawTeam()});
+  $('#cpSeeBirthdays')?.addEventListener('click',()=>{tab='aniversarios';month=new Date().getMonth();showBell=false;drawTeam();});
   $('#cpDownloadOfficial')?.addEventListener('click',downloadPdf);
   if(tab==='pdf'&&!showBell&&data)loadPage(month+2).then(url=>{const x=$('#cpPdfMonth');if(x)x.src=url}).catch(()=>toast('Imagem indisponível neste momento.'));
  }
