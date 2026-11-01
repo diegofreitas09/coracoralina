@@ -227,7 +227,82 @@
   function teddyIllustration(g,x,y){rounded(g,x,y,780,390,40,'#f5a721');if(toys){g.save();g.beginPath();g.roundRect(x,y,780,390,35);g.clip();const aspect=toys.width/toys.height,target=780/390,sw=toys.width,sh=toys.height;let dw=780,dh=390;if(aspect>target)dw=390*aspect;else dh=780/aspect;g.drawImage(toys,x+(780-dw)/2,y+(390-dh)/2,dw,dh);g.restore()}else {text(g,'♡',x+390,y+240,220,WHITE,'700','center')}}
   function solidarity(g,d){drawBase(g,gradient(g,0,H,DARK,'#073d76'));g.fillStyle='#103965';g.beginPath();g.arc(50,130,360,0,Math.PI*2);g.fill();g.fillStyle=GOLD;g.beginPath();g.arc(1075,780,230,0,Math.PI*2);g.fill();emblem(g,37,27,91,118);text(g,d.subtitle.toUpperCase(),W/2,88,26,WHITE,'600','center');g.fillStyle=GOLD;g.fillRect(250,104,580,5);const tparts=String(d.title).split(/\s+E\s+/i);if(tparts.length>1){multiline(g,tparts[0],W/2,227,985,{size:70,lineHeight:85,color:GOLD,weight:'900',align:'center',maxLines:2});multiline(g,'E '+tparts.slice(1).join(' E '),W/2,330,985,{size:63,lineHeight:78,color:WHITE,weight:'900',align:'center',maxLines:2})}else multiline(g,d.title,W/2,216,960,{size:65,lineHeight:79,color:GOLD,weight:'900',align:'center',maxLines:3});multiline(g,d.body,W/2,415,900,{size:28,lineHeight:38,color:WHITE,weight:'700',align:'center',maxLines:3});const arr=parseItems(d.items);arr.slice(0,2).forEach((item,i)=>{const x=75+i*475;rounded(g,x,520,453,135,25,'#ffffff17');rounded(g,x+20,548,70,70,35,GOLD);text(g,i?'▤':'♡',x+55,603,50,INK,'bold','center');multiline(g,item,x+108,569,325,{size:24,lineHeight:29,color:WHITE,weight:'600',maxLines:3})});rounded(g,190,681,700,72,35,GOLD);fitted(g,`${d.time||'DOAÇÕES'} • ${d.date||'CONSULTE A ESCOLA'}`,540,733,625,{size:31,min:19});teddyIllustration(g,146,780);rounded(g,38,1210,1005,105,45,WHITE);multiline(g,d.footer,W/2,1273,930,{size:37,lineHeight:42,color:INK,weight:'700',align:'center',maxLines:1})}
   function meeting(g,d){drawBase(g,'#fcfeff');g.fillStyle=INK;g.beginPath();g.moveTo(0,0);g.lineTo(300,0);g.quadraticCurveTo(185,250,0,256);g.fill();g.strokeStyle=GOLD;g.lineWidth=10;g.beginPath();g.moveTo(327,0);g.quadraticCurveTo(205,246,0,279);g.stroke();emblem(g,414,38,233,276);multiline(g,d.title,W/2,432,960,{size:72,lineHeight:81,align:'center',maxLines:3});rounded(g,135,520,810,92,30,GOLD);fitted(g,d.subtitle.toUpperCase(),W/2,584,766,{size:48,min:28});multiline(g,d.body,W/2,692,927,{size:36,lineHeight:50,weight:'600',align:'center',maxLines:5});rounded(g,63,922,955,231,32,'#e7f1fc');const data=[['DATA',d.date||'A definir'],['HORÁRIO',d.time||'A definir'],['LOCAL',d.place||'A definir']];data.forEach(([label,val],i)=>{const x=83+i*311;if(i)g.fillStyle=GOLD,g.fillRect(x-13,962,3,150);text(g,label,x+142,991,28,INK,'800','center');multiline(g,val,x+145,1051,280,{size:36,lineHeight:39,weight:'800',align:'center',maxLines:2})});multiline(g,d.footer,W/2,1245,960,{size:43,color:INK,weight:'italic',align:'center',maxLines:2});wave(g,true)}
-  function schedule(g,d,page=0){drawBase(g,'#fcfeff');g.strokeStyle='#d7e7f8';g.lineWidth=1;for(let x=0;x<W;x+=40){g.beginPath();g.moveTo(x,0);g.lineTo(x,H);g.stroke()}for(let y=0;y<H;y+=40){g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke()}emblem(g,442,22,195,244);rounded(g,72,282,935,119,29,GOLD);multiline(g,d.title,W/2,361,894,{size:58,lineHeight:58,color:INK,weight:'900',align:'center',maxLines:2});rounded(g,200,419,680,77,31,INK);fitted(g,d.subtitle,W/2,471,643,{size:41,min:24,color:WHITE});multiline(g,d.body,W/2,564,920,{size:24,lineHeight:28,color:INK,align:'center',maxLines:2,weight:'600'});const arr=parseItems(d.items).slice(page*8,page*8+8);const fills=['#e5e0ff','#fee0e6','#def6e8','#fff1bf','#d9ebff','#e6e2fa'];const rowHeight=Math.min(118,Math.floor(630/Math.max(arr.length,1)));arr.forEach((v,i)=>{const y=645+i*(rowHeight+7);rounded(g,45,y,990,rowHeight,17,WHITE);rounded(g,45,y,220,rowHeight,17,fills[i]);strokeRound(g,45,y,990,rowHeight,17,'#dfebf6',2);const [day,label]=splitItem(v);fitted(g,day,154,y+rowHeight/2+11,202,{size:29,min:18,align:'center'});multiline(g,label,292,y+rowHeight/2-9,720,{size:27,lineHeight:29,color:INK,weight:'700',maxLines:2})});g.fillStyle=INK;g.fillRect(0,1269,W,81);footer(g,d.footer||'Cora Coralina 2026',WHITE)}
+  // Diagramação previsível: cada texto ocupa uma caixa com limites e alinhamento.
+  // O mesmo desenho é utilizado na prévia, no PNG e no PDF.
+  function boxedText(g,value,x,y,w,h,{
+    size=30,min=18,weight='700',color=INK,align='left',maxLines=3
+  }={}){
+    const raw=String(value??'').trim();
+    if(!raw)return;
+    const limit=Math.max(1,Math.floor(maxLines));
+    const contentWidth=w-10;
+    let fontSize=size,wrapped=[];
+    for(let n=size;n>=min;n-=1){
+      const options=lines(g,raw,contentWidth,n,weight);
+      const leading=n*1.22;
+      if(options.length<=limit && options.length*leading<=h-8){
+        fontSize=n;wrapped=options;break;
+      }
+    }
+    if(!wrapped.length){fontSize=min;wrapped=lines(g,raw,contentWidth,min,weight);}
+    const show=wrapped.slice(0,limit);
+    if(wrapped.length>limit && show.length){
+      let last=show[show.length-1];
+      g.font=`${weight} ${fontSize}px Arial, sans-serif`;
+      while(last.length>0 && g.measureText(last+'…').width>contentWidth)last=last.slice(0,-1);
+      show[show.length-1]=last+'…';
+    }
+    const lineHeight=fontSize*1.22;
+    g.save();
+    g.beginPath();g.rect(x,y,w,h);g.clip();
+    g.fillStyle=color;
+    g.textAlign=align;
+    g.textBaseline='middle';
+    g.font=`${weight} ${fontSize}px Arial, sans-serif`;
+    const xx=align==='center'?x+w/2:align==='right'?x+w-5:x+5;
+    const mid=y+h/2;
+    show.forEach((row,i)=>g.fillText(row,xx,mid+(i-(show.length-1)/2)*lineHeight));
+    g.restore();
+  }
+  function schedule(g,d,page=0){
+    drawBase(g,'#fcfeff');
+    // Fundo quadriculado sutil e bordas de respiro.
+    g.strokeStyle='#edf3fb';g.lineWidth=1;
+    for(let x=0;x<W;x+=46){g.beginPath();g.moveTo(x,0);g.lineTo(x,H-100);g.stroke();}
+    for(let y=0;y<H-100;y+=46){g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke();}
+    g.fillStyle=GOLD;g.fillRect(0,0,W,10);
+    emblem(g,455,29,170,196);
+    boxedText(g,'CALENDÁRIO PEDAGÓGICO · 2026',175,234,730,36,{size:23,min:20,weight:'800',align:'center',color:'#306294',maxLines:1});
+    rounded(g,72,287,936,152,29,GOLD);
+    const title=String(d.title||'').trim();
+    const cardTitle=/^CRONOGRAMA GERAL DE AVALIAÇÕES$/i.test(title)?'CRONOGRAMA GERAL\nDE AVALIAÇÕES':title;
+    boxedText(g,cardTitle,106,299,868,131,{size:57,min:33,weight:'900',align:'center',color:INK,maxLines:3});
+    rounded(g,198,457,684,71,30,INK);
+    boxedText(g,d.subtitle,220,466,640,52,{size:39,min:21,weight:'800',color:WHITE,align:'center',maxLines:2});
+    boxedText(g,d.body,100,541,880,76,{size:25,min:20,weight:'600',align:'center',maxLines:3});
+    g.fillStyle='#d8e4f1';g.fillRect(71,627,938,2);
+    boxedText(g,'DATA',76,637,240,29,{size:20,min:19,weight:'800',color:'#406a96',align:'center',maxLines:1});
+    boxedText(g,'ATIVIDADE / AVALIAÇÃO',350,637,650,29,{size:20,min:19,weight:'800',color:'#406a96',align:'left',maxLines:1});
+    const arr=parseItems(d.items).slice(page*8,page*8+8);
+    const fills=['#e5e0ff','#fee0e6','#def6e8','#fff1bf','#d9ebff','#e6e2fa','#e3f5f7','#fce8d8'];
+    const availableHeight=558,top=673,gap=8;
+    const rowHeight=arr.length?Math.min(104,Math.floor((availableHeight-(arr.length-1)*gap)/arr.length)):104;
+    if(!arr.length)boxedText(g,'Nenhuma avaliação ou simulado cadastrado para este período.',95,745,890,115,{size:29,min:23,align:'center'});
+    arr.forEach((entry,i)=>{
+      const y=top+i*(rowHeight+gap);
+      rounded(g,64,y,952,rowHeight,16,WHITE);
+      rounded(g,64,y,254,rowHeight,16,fills[i]);
+      strokeRound(g,64,y,952,rowHeight,16,'#dce8f4',2);
+      g.fillStyle='#c8d8e9';g.fillRect(318,y+8,2,Math.max(5,rowHeight-16));
+      const [day,description]=splitItem(entry);
+      boxedText(g,day||'DATA',77,y+5,226,rowHeight-10,{size:rowHeight>=78?31:26,min:19,weight:'800',align:'center',maxLines:2});
+      boxedText(g,description||'Atividade a definir',341,y+5,660,rowHeight-10,{size:rowHeight>=78?29:24,min:17,weight:'700',align:'left',maxLines:rowHeight<75?2:3});
+    });
+    g.fillStyle=INK;g.fillRect(0,1251,W,99);
+    boxedText(g,d.footer||'Colégio Cora Coralina · 2026',70,1273,940,50,{size:27,min:19,align:'center',color:WHITE,weight:'700',maxLines:2});
+    const pages=Math.max(1,Math.ceil(parseItems(d.items).length/8));
+    if(pages>1)boxedText(g,`Página ${page+1} de ${pages}`,815,42,208,32,{size:21,min:18,align:'right',color:INK,weight:'700',maxLines:1});
+  }
   function assessment(g,d,page=0){
     drawBase(g,'#f4f7ff');
     rounded(g,13,13,1054,245,23,INK);
@@ -267,7 +342,7 @@
   function saveDraft(){try{drafts[template]=getForm();localStorage.setItem(ID,JSON.stringify(drafts));$('cardSaveStatus').textContent='Rascunho salvo'}catch{$('cardSaveStatus').textContent='Salvamento indisponível'}}
   function setTemplate(name){if(!DEFAULTS[name])return;saveDraft();template=name;
     if((name==='cronograma'||name==='avaliacao')&&!drafts[name])drafts[name]=assessmentDraft(calendarMonth(),name);
-    setForm(getDraft());if(holidaysControls)holidaysControls.hidden=name!=='comunicado';if(assessmentsControls)assessmentsControls.hidden=name!=='cronograma'&&name!=='avaliacao';if(name==='comunicado'){updateHolidayInfo();const hint=$('cardItemsHint');if(hint)hint.textContent='No comunicado, os feriados do mês podem ser editados.';}if(name==='cronograma'||name==='avaliacao')updateAssessmentInfo();document.querySelectorAll('[data-template]').forEach(el=>{el.classList.toggle('is-selected',el.dataset.template===name);el.setAttribute('aria-pressed',el.dataset.template===name?'true':'false')});render()}
+    setForm(getDraft());if(holidaysControls)holidaysControls.hidden=name!=='comunicado';if(assessmentsControls)assessmentsControls.hidden=name!=='cronograma'&&name!=='avaliacao';if(name==='comunicado'){updateHolidayInfo();const hint=$('cardItemsHint');if(hint)hint.textContent='No comunicado, os feriados do mês podem ser editados.';}if(name==='cronograma'||name==='avaliacao')updateAssessmentInfo();const detailFields=$('cardExtraDetails');if(detailFields)detailFields.hidden=(name==='cronograma'||name==='avaliacao');document.querySelectorAll('[data-template]').forEach(el=>{el.classList.toggle('is-selected',el.dataset.template===name);el.setAttribute('aria-pressed',el.dataset.template===name?'true':'false')});render()}
   function createExportPages(){const pages=[];const n=pageCount(),d=getForm(),fn=template==='cronograma'?schedule:template==='avaliacao'?assessment:null;
     if(!fn)return [canvas];
     for(let i=0;i<n;i++){const c=document.createElement('canvas');c.width=W;c.height=H;fn(c.getContext('2d'),d,i);pages.push(c)}
