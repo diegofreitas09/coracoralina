@@ -75,8 +75,9 @@
   window.addEventListener('cora-backup-restored',()=>{readStorage();fillForm(current)});
   window.addEventListener('cora-year-changed',e=>{
     saveCurrent();YEAR=Number(e.detail.year);STORAGE=`cora_planejamento_${YEAR}_v1`;
-    EVENT_STORAGE=`cora_calendario_eventos_${YEAR}_v1`;readStorage();
+    EVENT_STORAGE=`cora_calendario_eventos_${YEAR}_v1`;current=0;readStorage();
     $('planMonth').innerHTML=MONTHS.map((x,i)=>`<option value="${i}">${x} de ${YEAR}</option>`).join('');
     fillForm(current);
   });
+  window.addEventListener('cora-planning-copied',e=>{if(Number(e.detail?.year)!==YEAR)return;saveCurrent();readStorage();fillForm(Number(e.detail.month)||0);});
 })();
