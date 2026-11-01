@@ -1,11 +1,24 @@
 {
-  "name": "Calendário Anual 2026 — Cora Coralina",
-  "short_name": "Calendário 2026",
-  "description": "Planejamento e arquivos por mês do Colégio Cora Coralina",
+  "name": "Agenda Escolar 2026 — Colégio Cora Coralina",
+  "short_name": "Agenda Cora",
+  "description": "Calendário escolar com eventos, lembretes e documentos do Colégio Cora Coralina",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f5f7fa",
   "theme_color": "#102a4c",
-  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "id": "./",
+  "lang": "pt-BR",
+  "categories": [
+    "education",
+    "productivity"
+  ]
 }
