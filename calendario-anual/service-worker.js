@@ -1,4 +1,4 @@
-const CACHE='cora-calendar-ferramentas-v48';
+const CACHE='cora-calendar-classroom-sae-v49';
 const ASSETS=['./','./index.html','./styles.css','./year-transfer.css','./year-transfer.js','./stages.js','./app.js','./studio.css','./portal.css','./portal.js','./assessment-deadlines.js','./assessment-deadlines.css','./management-redesign.css','./birthdays.css','./birthdays.js','./official-calendar-data.js','./cards.js','./manifest.webmanifest','./app-icon-192.png','./app-icon-512.png','./app-icon-maskable-512.png','./install-pwa.js','./install-pwa.css'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS).catch(()=>{})).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
