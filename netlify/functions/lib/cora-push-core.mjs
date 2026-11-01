@@ -76,3 +76,16 @@ export async function dispatchPush(message,{timeout=4500}={}){
  if(stale.size)await store().setJSON('registrations',all.filter(x=>!stale.has(x.id)));
  return {registered:all.length,sent,failed,expired};
 }
+
+export async function testDevicePush(subscription){
+ if(!allowedSubscription(subscription))throw new Error('Inscrição do aparelho inválida');
+ const all=await registrations();
+ if(!all.some(s=>s.id===fingerprint(subscription)))throw new Error('Este aparelho não está cadastrado');
+ const {publicKey,privateKey,subject}=vapidKeys();
+ await webpush.sendNotification(subscription,JSON.stringify({
+  title:'Teste de Web Push · Cora Coralina',
+  body:'Notificação enviada pelo servidor, inclusive com o aplicativo fechado. Confira a vibração e a barra de notificações.',
+  year:2026,tag:'cora-teste-'+Date.now(),kind:'test',url:'./?avisos=1'
+ }),{vapidDetails:{subject,publicKey,privateKey},urgency:'high',TTL:300,timeout:6500});
+ return {sent:true};
+}
