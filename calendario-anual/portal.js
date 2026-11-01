@@ -41,10 +41,10 @@
  function logo(){return window.CORA_SCHOOL_LOGO||window.CORA_STUDIO_ASSETS?.logo||''}
  function gateway(error=''){
   document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');role='';
-  root.innerHTML=`<div class="cp-gateway"><div class="cp-login-shell"><div class="cp-login-head"><img id="cpGatewayLogo" alt="Brasão Cora Coralina"><div><small>COLÉGIO CORA CORALINA · PDF SOLUÇÃO EDUCACIONAL</small><h1>Portal do Calendário Escolar</h1><p>Selecione seu ambiente de trabalho</p></div></div><div class="cp-role-grid"><button type="button" class="cp-role ${chosen==='gestao'?'active':''}" data-cp-role="gestao"><span class="cp-role-icon">⚙</span><strong>Gestão</strong><span>Organizar o ano, editar eventos e publicar avisos para toda a equipe</span></button><button type="button" class="cp-role ${chosen==='equipe'?'active':''}" data-cp-role="equipe"><span class="cp-role-icon">▦</span><strong>Equipe Pedagógica</strong><span>Consultar o calendário, receber alertas e baixar os materiais publicados</span></button></div><form id="cpLoginForm" class="cp-auth"><div><label for="cpPassword">Senha de acesso · <span id="cpRoleLabel">${chosen==='gestao'?'Gestão':'Equipe Pedagógica'}</span></label><input type="password" id="cpPassword" autocomplete="current-password" required placeholder="Digite sua senha"></div><button type="submit" class="cp-btn">Entrar no painel</button><p class="cp-error" role="alert">${safe(error)}</p></form><div class="cp-gateway-foot"><span>A Gestão publica · a Equipe acompanha</span><span>Calendário 2026 · Acesso restrito</span></div></div></div>`;
+  root.innerHTML=`<div class="cp-gateway"><div class="cp-login-shell"><div class="cp-login-head"><img id="cpGatewayLogo" alt="Brasão Cora Coralina"><div><small>COLÉGIO CORA CORALINA · PDF SOLUÇÃO EDUCACIONAL</small><h1>Portal do Calendário Escolar</h1><p>Selecione seu ambiente de trabalho</p></div></div><div class="cp-role-grid"><button type="button" class="cp-role ${chosen==='gestao'?'active':''}" data-cp-role="gestao"><span class="cp-role-icon">⚙</span><strong>Gestão</strong><span>Organizar o ano, editar eventos e publicar avisos para toda a equipe</span></button><button type="button" class="cp-role ${chosen==='equipe'?'active':''}" data-cp-role="equipe"><span class="cp-role-icon">▦</span><strong>Equipe Pedagógica</strong><span>Consultar o calendário, receber alertas e baixar os materiais publicados</span></button></div><form id="cpLoginForm" class="cp-auth"><div id="cpEmailWrap" ${chosen==='gestao'?'hidden':''}><label for="cpEmail">E-mail individual do colaborador</label><input type="email" id="cpEmail" autocomplete="username" placeholder="professor@exemplo.com" ${chosen==='equipe'?'required':''}></div><div><label for="cpPassword">Senha pessoal · <span id="cpRoleLabel">${chosen==='gestao'?'Gestão':'Equipe Pedagógica'}</span></label><input type="password" id="cpPassword" autocomplete="current-password" required placeholder="Digite sua senha"></div><button type="submit" class="cp-btn">Entrar no painel</button><p class="cp-error" role="alert">${safe(error)}</p></form><div class="cp-gateway-foot"><span>A Gestão publica · a Equipe acompanha</span><span>Calendário 2026 · Acesso restrito</span></div></div></div>`;
   $('#cpGatewayLogo').src=logo();
-  root.querySelectorAll('[data-cp-role]').forEach(b=>b.onclick=()=>{chosen=b.dataset.cpRole;root.querySelectorAll('[data-cp-role]').forEach(x=>x.classList.toggle('active',x===b));$('#cpRoleLabel').textContent=chosen==='gestao'?'Gestão':'Equipe Pedagógica';$('#cpPassword').focus()});
-  $('#cpLoginForm').onsubmit=async e=>{e.preventDefault();const btn=$('#cpLoginForm button[type=submit]');btn.disabled=true;try{const r=await api('login',{role:chosen,password:$('#cpPassword').value});role=r.role;await enter();}catch(err){gateway('Senha incorreta ou serviço indisponível. '+(err.status===503?'Contate a administração.':''));}finally{btn.disabled=false;}};
+  root.querySelectorAll('[data-cp-role]').forEach(b=>b.onclick=()=>{chosen=b.dataset.cpRole;root.querySelectorAll('[data-cp-role]').forEach(x=>x.classList.toggle('active',x===b));$('#cpRoleLabel').textContent=chosen==='gestao'?'Gestão':'Equipe Pedagógica';$('#cpEmailWrap').hidden=chosen==='gestao';$('#cpEmail').required=chosen==='equipe';(chosen==='equipe'?$('#cpEmail'):$('#cpPassword')).focus()});
+  $('#cpLoginForm').onsubmit=async e=>{e.preventDefault();const btn=$('#cpLoginForm button[type=submit]');btn.disabled=true;try{const r=await api('login',{role:chosen,email:chosen==='equipe'?$('#cpEmail').value.trim():'',password:$('#cpPassword').value});role=r.role;await enter();}catch(err){gateway((err.message||'Credenciais inválidas.')+' '+(err.status===503?'Contate a administração.':''));}finally{btn.disabled=false;}};
  }
  async function logout(){if(role==='equipe')try{await api('delivery-signout',{})}catch{}teacherProfile=null;try{await api('logout',{})}catch{}clearInterval(timer);timer=null;gateway();}
  async function enter(){if(role==='gestao')manager();else await team();}
@@ -389,12 +389,7 @@
     const isActive=n=>{const st=stages.find(x=>Number(x.number)===n);return Boolean(st?.start&&st?.end&&today>=st.start&&today<=st.end)};
     const names=['Primeira','Segunda','Terceira','Quarta'];
     const identified=Boolean(profile?.identified);
-    const identityHtml=identified?
-     '<div class="cp-delivery-identity is-authenticated"><div><small>IDENTIFICAÇÃO PESSOAL</small><strong>'+safe(profile.name)+'</strong><p>Suas marcações ficam vinculadas ao seu perfil e disponíveis em outros aparelhos.</p></div><button type="button" class="cp-btn soft" id="cpTeacherChange">Trocar professor</button></div>':
-     '<form class="cp-delivery-identity" id="cpTeacherForm"><div class="cp-delivery-identity-info"><small>IDENTIFICAÇÃO PESSOAL</small><strong>Registrar minha entrega</strong><p>Informe seu nome completo e crie ou utilize sua senha pessoal (mínimo 8 caracteres). A senha coletiva da equipe não identifica o professor.</p></div>'+
-     '<label>Nome do professor<input id="cpTeacherName" maxlength="100" autocomplete="name" placeholder="Nome completo" required></label>'+
-     '<label>Senha pessoal<input id="cpTeacherPassword" type="password" minlength="8" maxlength="80" autocomplete="off" placeholder="Sua senha pessoal" required></label>'+
-     '<button class="cp-btn" type="submit">Identificar</button></form>';
+    const identityHtml='<div class="cp-delivery-identity is-authenticated"><div><small>IDENTIFICAÇÃO PESSOAL</small><strong>'+safe(profile?.name||'Professor')+'</strong><p>Conta institucional: '+safe(profile?.email||'')+'. Seus registros são individuais.</p></div></div>';
     const cards=rows.length?rows.map(e=>{
       const stage=Number(e.stageNumber),state=profile?.statuses?.[stage],value=state?.status||'pendente';
       const ended=e.date<today,active=isActive(stage);
@@ -439,22 +434,6 @@
   else content=`<div class="cp-main-heading"><h2>Calendário anual ${year}</h2></div><div class="cp-paper"><h3>Documento publicado pela Gestão</h3><p>Inclui os 12 meses de ${year}, com atividades, etapas e projetos publicados.</p><button class="cp-btn gold" id="cpDownloadPublished">↓ Baixar PDF anual ${year}</button><p class="cp-status" id="cpPdfProgress"></p></div>`;
 
   here.innerHTML=`${flowHeader}${showBell?'':`<div class="cp-overview"><div class="cp-metric"><small>Atividades publicadas</small><strong>${events.length}</strong></div><div class="cp-metric"><small>Avaliações e simulados</small><strong>${assess.length}</strong></div><div class="cp-metric"><small>Avisos disponíveis</small><strong>${notes.length}</strong></div></div>${tabs}`}${alertPrompt}${content}<p class="cp-updated">Última publicação da Gestão: ${data?new Date(data.updatedAt).toLocaleString('pt-BR'):'ainda não publicada'} · Atualização automática enquanto o aplicativo estiver aberto.</p>`;
-  $('#cpTeacherForm')?.addEventListener('submit',async event=>{
-    event.preventDefault();if(teacherSaving)return;
-    const form=event.currentTarget,button=form.querySelector('button[type=submit]');
-    teacherSaving=true;button.disabled=true;
-    try{
-      const profile=await api('delivery-profile',{name:$('#cpTeacherName').value.trim(),password:$('#cpTeacherPassword').value,year});
-      teacherProfile=profile;drawTeam();toast('Identificação pessoal ativada para '+profile.name+'.');
-    }catch(error){
-      const feedback=$('#cpDeliveryFeedback');if(feedback)feedback.textContent=error.message||'Não foi possível identificar.';
-      button.disabled=false;
-    }finally{teacherSaving=false}
-  });
-  $('#cpTeacherChange')?.addEventListener('click',async()=>{
-    if(teacherSaving)return;
-    try{await api('delivery-signout',{});teacherProfile=null;drawTeam()}catch(error){toast('Não foi possível trocar professor: '+error.message)}
-  });
   here.querySelectorAll('[data-cp-delivery-status]').forEach(button=>button.addEventListener('click',async()=>{
     if(teacherSaving||!teacherProfile?.identified)return;
     const stage=Number(button.dataset.cpDeliveryStage),status=button.dataset.cpDeliveryStatus;
