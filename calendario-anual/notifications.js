@@ -5,6 +5,31 @@
   function save(v){try{localStorage.setItem(KEY,JSON.stringify(v));}catch(_){}}
   function seen(){try{return JSON.parse(localStorage.getItem(SEEN)||'{}')||{};}catch{return {};}}
   const supported=()=>('Notification' in window)&&('serviceWorker' in navigator)&&window.isSecureContext;
+  let remoteActive=false;
+  function vapidBytes(key){
+    const padding='='.repeat((4-key.length%4)%4),raw=atob((key+padding).replace(/-/g,'+').replace(/_/g,'/'));
+    return Uint8Array.from(raw,c=>c.charCodeAt(0));
+  }
+  async function syncRemoteSubscription(remove=false){
+    if(!supported()||!('PushManager' in window))return false;
+    const cfg=await fetch('/.netlify/functions/notifications-config',{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
+    if(!cfg?.available || !cfg.publicKey){remoteActive=false;return false;}
+    const reg=await navigator.serviceWorker.ready;
+    let subscription=await reg.pushManager.getSubscription();
+    if(!remove&&!subscription){
+      subscription=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:vapidBytes(cfg.publicKey)});
+    }
+    if(!subscription){remoteActive=false;return false;}
+    const res=await fetch('/.netlify/functions/notifications-subscribe',{
+      method:remove?'DELETE':'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({subscription:subscription.toJSON(),role:prefs().role})
+    });
+    if(!res.ok){remoteActive=false;return false;}
+    if(remove){await subscription.unsubscribe();remoteActive=false;}
+    else remoteActive=true;
+    return remoteActive;
+  }
   const installed=()=>Boolean(window.matchMedia?.('(display-mode: standalone)').matches||navigator.standalone);
   function status(message){if($('alertsStatus'))$('alertsStatus').textContent=message;}
   function update(){
@@ -12,7 +37,9 @@
     if(!supported()){status('Notificações indisponíveis neste navegador. Para alertas com o app fechado, use o Google Agenda.');return;}
     if(!p.enabled){status('Avisos desativados. Ative e permita as notificações no aparelho.');return;}
     if(Notification.permission!=='granted'){status('Permissão de notificações ainda não concedida.');return;}
-    status((installed()?'Aplicativo instalado. ':'')+'Lembretes locais ativos enquanto o aplicativo estiver aberto. Avisos com o app fechado exigem a ativação do servidor push.');
+    status(remoteActive?
+      'Notificações push cadastradas neste aparelho. Avisos programados: dia anterior às 18h e dia do evento às 7h (agenda oficial publicada).':
+      (installed()?'Aplicativo instalado. ':'')+'Lembretes locais ativos enquanto o aplicativo estiver aberto. Avisos com o app fechado exigem a ativação do servidor push.');
   }
   const start=e=>{
     const t=/^\d\d:\d\d$/.test(e.time||'')?e.time:'07:00';
@@ -54,13 +81,21 @@
     }
     if(permission!=='granted'){status('Permissão não concedida. Autorize notificações nas configurações do celular.');return;}
     save({enabled:true,role:$('alertsRole').value,lead:Number($('alertsLead').value)||1440});
+    update();
+    try{await syncRemoteSubscription();}catch(err){console.warn('Ativação push pendente',err);}
     update();await checkAlerts();
   }
   function init(){
     update();
     $('enableAlerts').addEventListener('click',enable);
-    $('disableAlerts').addEventListener('click',()=>{save({enabled:false,role:$('alertsRole').value,lead:Number($('alertsLead').value)||1440});update();});
-    for(const id of ['alertsRole','alertsLead'])$(id).addEventListener('change',()=>{save({...prefs(),role:$('alertsRole').value,lead:Number($('alertsLead').value)||1440});update();});
+    $('disableAlerts').addEventListener('click',async()=>{
+      save({enabled:false,role:$('alertsRole').value,lead:Number($('alertsLead').value)||1440});
+      try{await syncRemoteSubscription(true);}catch(_){}remoteActive=false;update();
+    });
+    for(const id of ['alertsRole','alertsLead'])$(id).addEventListener('change',async()=>{
+      save({...prefs(),role:$('alertsRole').value,lead:Number($('alertsLead').value)||1440});
+      if(prefs().enabled&&Notification.permission==='granted')try{await syncRemoteSubscription();}catch(_){}update();
+    });
     $('testAlerts').addEventListener('click',async()=>{
       if(!supported()||Notification.permission!=='granted'){status('Ative as notificações primeiro.');return;}
       try{await showNotice('Cora Coralina · Teste','Seu aplicativo pode apresentar lembretes locais.');status('Aviso de teste enviado.');}
@@ -71,7 +106,10 @@
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkAlerts();});
     setInterval(checkAlerts,60000);
     checkAlerts();
+    if(prefs().enabled&&supported()&&Notification.permission==='granted'){
+      syncRemoteSubscription().then(()=>update()).catch(()=>{remoteActive=false;update();});
+    }
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
+  if(document.readyState='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
   else init();
 })();
