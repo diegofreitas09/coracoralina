@@ -1,5 +1,5 @@
-const CACHE='cora-2026-portal-v14';
-const ASSETS=['./','./index.html','./styles.css','./app.js','./studio.css','./portal.css','./portal.js','./official-calendar-data.js','./cards.js'];
+const CACHE='cora-2026-portal-v16';
+const ASSETS=['./','./index.html','./styles.css','./app.js','./studio.css','./portal.css','./portal.js','./birthdays.css','./birthdays.js','./official-calendar-data.js','./cards.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS).catch(()=>{})).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||new URL(e.request.url).origin!==location.origin)return;const url=new URL(e.request.url);if(url.pathname.includes('/api')||url.pathname.includes('/.netlify/functions/'))return;if(e.request.mode==='navigate'||/\.(?:js|css)$/.test(url.pathname)){e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{if(r.ok){let cp=r.clone();caches.open(CACHE).then(c=>c.put(e.request,cp)).catch(()=>{})}return r}).catch(()=>caches.match(e.request)));return;}e.respondWith(caches.match(e.request).then(h=>h||fetch(e.request)));});
