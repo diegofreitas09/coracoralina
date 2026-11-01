@@ -190,8 +190,12 @@
   try{
    const subscription=await registerDeviceForPush();
    updatePushButton(true);
-   const result=await api('push-test',{subscription:subscription.toJSON()});
-   toast(result.sent?'Teste de push enviado pelo servidor. Confira a notificação no Android.':'Não foi possível confirmar o envio de teste.');
+   try{
+     const result=await api('push-test',{subscription:subscription.toJSON()});
+     toast(result.sent?'Celular inscrito! Teste de push enviado pelo servidor: confira a notificação do Android.':'Celular inscrito; teste ainda não confirmado.');
+   }catch(testError){
+     toast('Celular inscrito, mas o teste de envio falhou: '+String(testError.message||testError));
+   }
   }catch(e){
    toast('Não foi possível ativar o push: '+String(e?.message||e));
    updatePushButton(false);
