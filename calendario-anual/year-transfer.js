@@ -137,6 +137,7 @@
    const short=document.querySelector('.sidebar-foot');if(short)short.textContent=year===2026?'Ano base · Dados preservados':'Ano '+year+' · Rascunhos em revisão neste dispositivo';
    const importButton=$('carryMonthManual');if(importButton)importButton.hidden=year<=2026;
    const fullYearButton=$('carryWholeYear');if(fullYearButton)fullYearButton.hidden=year<=2026;
+   const topImport=$('importYearSuggestions');if(topImport){topImport.hidden=year<=2026;topImport.textContent='↻ Importar '+(year-1)+' → '+year;}
    const help=$('yearCarryHelp');if(help)help.textContent=year<=2026?'Ano de referência preservado. Selecione 2027 para iniciar um novo planejamento.':'Reaproveite atividades, projetos e planejamento do mês anterior, com datas revisáveis.';
    const footer=document.querySelector('main > footer');if(footer){const original=footer.dataset.original||footer.innerHTML;footer.dataset.original=original;footer.innerHTML=original.replace('CALENDÁRIO ANUAL 2026','CALENDÁRIO ANUAL '+year);}
    const originalSection=$('officialCalendarSection');if(year>2026&&originalSection)originalSection.hidden=true;
@@ -178,6 +179,7 @@
    $('yearCarryTools')?.appendChild(fullYearBtn);
    fullYearBtn.hidden=CoraYears.activeYear<=2026;
    fullYearBtn.addEventListener('click',()=>showFullYearWizard(CoraYears.activeYear));
+   $('importYearSuggestions')?.addEventListener('click',()=>showFullYearWizard(CoraYears.activeYear));
    $('editMonthProjects')?.addEventListener('click',()=>{
       const year=CoraYears.activeYear,month=CoraYears.month;
       const list=getProjects(year);
