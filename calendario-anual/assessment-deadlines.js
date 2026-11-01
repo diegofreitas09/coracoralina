@@ -70,9 +70,18 @@
   if(y>2026&&stages.filter(s=>s.start&&s.end).length<4)out.push('Defina as quatro etapas do ano letivo '+y+' antes de liberar o calendário.');
   for(const r of data.items){
    if(!r.due){out.push('Entrega da '+r.stage+'ª etapa ainda não definida.');continue;}
-   if(HOLIDAYS_2027[r.due])out.push('A entrega da '+r.stage+'ª etapa coincide com '+HOLIDAYS_2027[r.due]+' ('+display(r.due)+').');
+   if(y===2027&&HOLIDAYS_2027[r.due])out.push('A entrega da '+r.stage+'ª etapa coincide com '+HOLIDAYS_2027[r.due]+' ('+display(r.due)+').');
+   if(y===2027&&r.due>='2027-06-24'&&r.due<='2027-07-25')out.push('Prazo da '+r.stage+'ª etapa durante a Copa Feminina 2027 ('+display(r.due)+'): revisar recesso escolar.');
    for(const a of r.items){
-    if(y===2027)for(const d of [a.start,a.end])if(HOLIDAYS_2027[d])out.push(a.title+' coincide com '+HOLIDAYS_2027[d]+' ('+display(d)+').');
+    if(y===2027){
+     const start=new Date(a.start+'T12:00:00Z'),end=new Date(a.end+'T12:00:00Z');
+     if(start.getUTCDay()===0||start.getUTCDay()===6)out.push(a.title+' da '+r.stage+'ª etapa começa em fim de semana ('+display(a.start)+').');
+     for(let t=start.getTime(),limit=0;Number.isFinite(t)&&t<=end.getTime()&&limit<50;t+=86400000,limit++){
+      const d=new Date(t).toISOString().slice(0,10);
+      if(HOLIDAYS_2027[d])out.push(a.title+' inclui '+HOLIDAYS_2027[d]+' ('+display(d)+').');
+     }
+     if(a.start<='2027-07-25'&&a.end>='2027-06-24')out.push(a.title+' ocorre durante a Copa Feminina 2027; ajustar férias e avaliações.');
+    }
     const st=stages.find(s=>Number(s.number)===r.stage);
     if(st?.start&&st?.end&&(a.start<st.start||a.end>st.end))out.push(a.title+' da '+r.stage+'ª etapa ultrapassa os limites ('+display(st.start)+' a '+display(st.end)+').');
    }
