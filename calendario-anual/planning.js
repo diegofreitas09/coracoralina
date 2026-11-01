@@ -206,7 +206,25 @@
     for(let i=0;i<pages.length;i++){const p=pages[i],ctx=p.getContext('2d');ctx.fillStyle='#e7edf3';ctx.fillRect(LEFT,1661,RIGHT-LEFT,2);ctx.font='bold 17px Arial';ctx.fillStyle=MUTED;ctx.fillText(`CORA CORALINA · PLANEJAMENTO DE ${MONTHS[month].toUpperCase()} ${YEAR}`,LEFT,1697);ctx.fillText(`${i+1} / ${pages.length}`,1080,1697);ctx.textAlign='right';ctx.font='bold 15px Arial';ctx.fillStyle='#607e9e';ctx.fillText('Tecnologia: PDF Solução Educacional',RIGHT,1730);ctx.textAlign='left'}
     return window.CoraPDF.fromCanvases(pages,{pageWidth:595.28,pageHeight:841.89,title:`Planejamento ${MONTHS[month]} ${YEAR}`});
   }
-  function fallbackPrint(plan,month){const box=document.createElement('section');box.id='planningPrint';const birthdayLines=plan.includeBirthdays?birthdaysByMonth(month).map(prettyBirthday):[];const birthdaySection=plan.includeBirthdays?`<h3>Aniversariantes do mês</h3><ul>${(birthdayLines.length?birthdayLines:['Nenhum aniversariante cadastrado']).map(v=>`<li>${safe(v)}</li>`).join('')}</ul>`:'';box.innerHTML=`<h1>COLÉGIO CORA CORALINA</h1><h2>Planejamento de ${MONTHS[month]} de ${YEAR}</h2><p>${safe(plan.segment)}</p>`+birthdaySection+[['Projetos',plan.projects],['Datas',plan.schedule],['Orientações pedagógicas',plan.guidance],['Pauta',plan.agenda],['Encaminhamentos',plan.actions],['Comunicados complementares',plan.birthdays===sample.birthdays?'':plan.birthdays]].map(([label,txt])=>`<h3>${label}</h3><ul>${lines(txt).map(v=>`<li>${safe(v)}</li>`).join('')}</ul>`).join('');document.body.append(box);let style=document.getElementById('planningPrintStyle');if(!style){style=document.createElement('style');style.id='planningPrintStyle';style.textContent='@media screen{#planningPrint{display:none}}@media print{body>*:not(#planningPrint){display:none!important}#planningPrint{display:block!important;padding:18mm;color:#14385e;font:12pt Arial}#planningPrint h3{break-after:avoid}#planningPrint li{margin:8px 0}}';document.head.append(style)}window.addEventListener('afterprint',()=>box.remove(),{once:true});window.print()}
+  function fallbackPrint(plan,month){
+    const box=document.createElement('section');box.id='planningPrint';
+    const asList=(title,items,className='')=>{const values=Array.isArray(items)?items:lines(items);return values.length?`<section class="${className}"><h3>${safe(title)}</h3><ul>${values.map(v=>`<li>${safe(v)}</li>`).join('')}</ul></section>`:''};
+    const birthdayLines=plan.includeBirthdays?birthdaysByMonth(month).map(prettyBirthday):[];
+    const projects=lines(plan.projects).length?lines(plan.projects):(window.CoraYears?.getProjects?.(YEAR)?.[month]||[]);
+    const comm=plan.birthdays===sample.birthdays?'':plan.birthdays;
+    const extras=plan.includeCalendar?eventsFor(month).map(e=>e.date.slice(8,10)+'/'+e.date.slice(5,7)+' – '+e.title):[];
+    box.innerHTML=`<h1>COLÉGIO CORA CORALINA</h1><h2>Planejamento de ${MONTHS[month]} de ${YEAR}</h2><p>${safe(plan.segment)}</p>`+
+      asList('Projetos e campanhas do mês',projects)+
+      (plan.includeBirthdays?asList('Aniversariantes do mês',birthdayLines.length?birthdayLines:['Nenhum aniversariante cadastrado']):'')+
+      asList('Comunicados e datas complementares',comm)+
+      asList('Programação mensal e datas importantes',[...lines(plan.schedule),...extras],'printing-dates')+
+      asList('Orientações pedagógicas',plan.guidance)+asList('Pauta da reunião',plan.agenda)+
+      asList('Encaminhamentos e responsabilidades',plan.actions);
+    document.body.append(box);
+    let style=document.getElementById('planningPrintStyle');
+    if(!style){style=document.createElement('style');style.id='planningPrintStyle';style.textContent='@media screen{#planningPrint{display:none}}@media print{body>*:not(#planningPrint){display:none!important}#planningPrint{display:block!important;padding:15mm;color:#14385e;font:11pt Arial}#planningPrint h3{break-after:avoid}#planningPrint li{margin:5px 0}#planningPrint .printing-dates{break-inside:avoid;page-break-inside:avoid}}';document.head.append(style)}
+    window.addEventListener('afterprint',()=>box.remove(),{once:true});window.print();
+  }
   const safe=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   $('planMonth').innerHTML=MONTHS.map((x,i)=>`<option value="${i}">${x} de ${YEAR}</option>`).join('');
   $('planMeetingDate').min=YEAR+'-01-01';$('planMeetingDate').max=YEAR+'-12-31';readStorage();fillForm(current);
