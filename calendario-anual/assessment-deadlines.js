@@ -58,7 +58,7 @@
   const previous=get(source);
   const data={year:y,approved:false,source:'Referência '+source+' — revisar todas as datas',items:previous.items.map(s=>({
     stage:s.stage,due:s.due?alignWeek(s.due,y):'',deliveryTypes:s.deliveryTypes,
-    items:s.items.map(a=>({...a,start:a.start?alignWeek(a.start,y):'',end:a.end?alignWeek(a.end,y):''}))
+    items:s.items.map(a=>{const start=a.start?alignWeek(a.start,y):'';const duration=Math.round((Date.parse(a.end+'T12:00:00Z')-Date.parse(a.start+'T12:00:00Z'))/86400000);const end=start&&Number.isFinite(duration)?new Date(Date.parse(start+'T12:00:00Z')+duration*86400000).toISOString().slice(0,10):'';return {...a,start,end};})
   }))};
   const result=save(data);
   if(result.ok)render();
@@ -77,6 +77,7 @@
     if(st?.start&&st?.end&&(a.start<st.start||a.end>st.end))out.push(a.title+' da '+r.stage+'ª etapa ultrapassa os limites ('+display(st.start)+' a '+display(st.end)+').');
    }
   }
+  if(y===2027)out.push('Fortaleza sediará jogos da Copa do Mundo Feminina (24/06 a 25/07/2027): ajuste o recesso e o calendário conforme o Parecer CNE/CEB nº 7/2026, homologado pelo MEC.');
   if(y>2026)out.push('Confira feriados municipais, recessos, sábados letivos, carga horária e mínimo legal de 200 dias antes da publicação.');
   return [...new Set(out)];
  }
