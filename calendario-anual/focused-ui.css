@@ -1,0 +1,81 @@
+/* Interface limpa: calendário em primeiro plano, gestão avançada sob demanda */
+body:not(.is-managing) .topbar,
+body:not(.is-managing) .welcome,
+body:not(.is-managing) .stats,
+body:not(.is-managing) #officialBannerSection,
+body:not(.is-managing) .projects-hub,
+body:not(.is-managing) .summary-hub,
+body:not(.is-managing) .studio-shortcuts,
+body:not(.is-managing) .files-section,
+body:not(.is-managing) .official-calendar-section,
+body:not(.is-managing) .studio-section{display:none!important}
+body:not(.is-managing) .year-hub-head p,
+body:not(.is-managing) .year-hub-bottom,
+body:not(.is-managing) .year-hub #yearDataNote{display:none!important}
+body:not(.is-managing) .year-hub{margin-bottom:16px}
+.year-hub{padding:16px 20px}
+.year-hub-head h2{font-size:23px;margin:4px 0 3px}
+.year-hub-head .eyebrow{font-size:10px;letter-spacing:1.3px}
+.year-hub-controls{align-items:end;gap:9px;margin-top:12px}
+.year-hub-controls label{font-size:11px;font-weight:700;gap:3px}
+.year-hub-controls select{height:42px;min-height:42px;border-radius:9px}
+.year-hub-controls .btn{min-height:42px}
+.focus-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+.focus-actions .btn{font-size:12px;padding:10px 13px;border-radius:9px;min-height:41px;white-space:normal}
+#manageToggle{margin-left:auto;background:#edf3fa;color:#1e4b7e;border:1px solid #d4e2ef}
+body.is-managing #manageToggle{background:#123b67;color:white}
+.month-area{margin-top:7px}
+.month-area .section-heading{margin-bottom:14px}
+.month-area .section-heading .eyebrow{font-size:10px}
+.month-area .section-heading h2{font-size:25px;margin:2px 0}
+.month-area .panel{border-radius:14px;overflow:hidden}
+.month-area .panel-title{min-height:53px}
+.month-area .panel-title strong{font-size:15px}
+.month-area .upcoming-reminder{font-size:11px;line-height:1.4;max-height:59px;overflow:hidden}
+#calendar .day .event-markers{gap:3px;margin-top:5px}
+#calendar .day .event-quantity{font-size:8px}
+.alerts-dialog{width:min(500px,calc(100vw - 24px));max-height:90vh;overflow:auto;border:1px solid #dce7f2;border-radius:17px;background:#fff;color:#193754;box-shadow:0 25px 65px #08274e48;padding:23px}
+.alerts-dialog::backdrop{background:#071c3b9e}
+.alerts-dialog-head{display:flex;justify-content:space-between;gap:16px;align-items:start}
+.alerts-dialog h3{font-size:22px;margin:3px 0 10px}
+.alerts-dialog p{font-size:13px;line-height:1.6;color:#647d96;margin:7px 0 14px}
+.alerts-dialog label{display:block;font-size:12px;font-weight:750;margin:14px 0 6px}
+.alerts-dialog select{border:1px solid #cbdbe9;border-radius:9px;padding:11px;width:100%;background:white;color:#14395f;font-size:13px}
+.alerts-dialog small{display:block;color:#76889b;font-size:11px;line-height:1.5;margin-top:10px}
+.alerts-status{border:1px solid #dbe6f0;border-radius:9px;background:#f1f6fc;padding:11px;font-size:12px;color:#234f80;margin:13px 0}
+.alerts-buttons{display:flex;flex-wrap:wrap;gap:8px}
+.alerts-buttons .btn{font-size:12px;min-height:42px}
+.alerts-disclaimer{font-size:11px!important;color:#8090a1!important}
+@media screen and (max-width:780px),screen and (hover:none) and (pointer:coarse) and (max-width:1250px){
+  .layout{display:block!important;min-height:100vh}
+  .sidebar{width:100%!important;height:auto!important;position:relative!important;padding:10px 14px!important}
+  .sidebar .brand{padding:0 4px 10px!important}
+  .sidebar .school-logo{height:57px!important;width:50px!important;min-width:50px!important;max-width:50px!important;flex-basis:50px!important;padding:3px!important}
+  .sidebar .year-label,.sidebar .year-block,.sidebar .sidebar-foot{display:none!important}
+  #monthNav{display:flex!important;flex-direction:row!important;overflow-x:auto!important;white-space:nowrap;gap:7px!important;scrollbar-width:thin;margin:8px 0 0}
+  #monthNav button{flex:0 0 auto!important;min-width:90px;padding:9px 11px!important;border-radius:8px;color:#c6d8ed}
+  #monthNav button.active{background:#1b518b!important;border:0!important}
+  .main-shell{width:100%!important;min-width:0!important}
+  .content{padding:14px!important;min-width:0!important}
+  .year-hub{padding:14px!important;margin-bottom:15px!important}
+  .year-hub-head{flex-direction:row!important;align-items:center!important}
+  .year-hub-head .year-model-label{font-size:9px;padding:5px 7px}
+  .year-hub h2{font-size:19px!important}
+  .year-hub-controls{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+  .year-hub-controls label{min-width:0}
+  .year-hub-controls select{width:100%;font-size:13px}
+  .year-hub-controls #createYearBtn{grid-column:auto!important;font-size:12px;padding:7px}
+  .year-hub-controls label:last-child{grid-column:1/-1}
+  .focus-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .focus-actions .btn{margin:0!important;min-width:0;font-size:12px}
+  .month-area .section-heading{display:flex!important;flex-direction:row!important;align-items:center!important;flex-wrap:wrap;gap:8px}
+  .month-switch{width:100%}
+  .panels{display:grid!important;grid-template-columns:minmax(0,1fr)!important}
+  .panel{min-width:0}
+  .calendar{padding:6px}
+  .day{min-height:65px}
+  .day .event-quantity{display:none}
+  .day .event-markers{margin:8px 0 0 2px}
+  .events-list{max-height:400px}
+}
+@media(max-width:370px){.year-hub-controls{grid-template-columns:1fr}.year-hub-controls label:last-child{grid-column:auto}.focus-actions .btn{font-size:11px;padding:8px}}
