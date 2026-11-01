@@ -23,9 +23,19 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toast.classList.remove('visible'), 5000);
   }
+  const OFFICIAL_REMOVED_KEY = 'cora_official_2026_removed_v1';
+  function readRemovedOfficial() {try{return new Set(JSON.parse(localStorage.getItem(OFFICIAL_REMOVED_KEY)||'[]'));}catch{return new Set();}}
   function loadEvents() {
-    try { const list = JSON.parse(localStorage.getItem(STORE) || '[]'); events = Array.isArray(list) ? list.filter(item => item && String(item.date || '').startsWith('2026-')) : []; }
-    catch { events = []; notify('Não foi possível ler os eventos salvos.'); }
+    try {
+      const list=JSON.parse(localStorage.getItem(STORE)||'[]');
+      events=Array.isArray(list)?list.filter(item=>item&&String(item.date||'').startsWith('2026-')):[];
+    } catch {events=[];notify('Não foi possível ler os eventos salvos.');}
+    const previous=new Set(events.map(item=>item.id)),removed=readRemovedOfficial();
+    let imported=0;
+    for(const item of (window.CORA_OFFICIAL_2026?.events||[])) {
+      if(!previous.has(item.id)&&!removed.has(item.id)){events.push({...item});imported++;}
+    }
+    if(imported)saveEvents();
   }
   function saveEvents() {
     try { localStorage.setItem(STORE, JSON.stringify(events)); }
@@ -61,6 +71,7 @@
     $('#currentMonthTitle').innerHTML = `${MONTHS[selectedMonth]} <small>${YEAR}</small>`;
     $('#filesMonthTitle').textContent = MONTHS[selectedMonth];
     $('#todayMonth').textContent = `${MONTHS[selectedMonth]} de ${YEAR}`;
+    window.dispatchEvent(new CustomEvent('cora-month-changed',{detail:{month:selectedMonth}}));
   }
   function renderNav() {
     $('#monthNav').innerHTML = MONTHS.map((name,i) => `<button type="button" data-month="${i}" class="${selectedMonth===i?'active':''}" aria-current="${selectedMonth===i?'date':'false'}"><span>${name}</span>${eventsFor(i).length+filesFor(i).length?`<span class="count">${eventsFor(i).length+filesFor(i).length}</span>`:''}</button>`).join('');
@@ -93,7 +104,7 @@
     if (!list.length) { $('#eventList').innerHTML = '<div class="empty"><div class="empty-icon">▦</div>Nenhum evento neste mês.<br/>Clique no calendário para começar.</div>'; return; }
     $('#eventList').innerHTML = list.map(event => `<div class="event"><div class="event-date"><b>${Number(event.date.slice(8,10))}</b><small>${MONTHS[selectedMonth].slice(0,3)}</small></div><div class="event-info"><strong>${escapeHtml(event.title)}</strong>${event.notes?`<small>${escapeHtml(event.notes)}</small>`:''}<span class="tag">${escapeHtml(event.type)}</span></div><div class="event-actions"><button data-edit="${escapeHtml(event.id)}" aria-label="Editar evento" title="Editar">✎</button><button data-delete="${escapeHtml(event.id)}" aria-label="Excluir evento" title="Excluir">✕</button></div></div>`).join('');
     $('#eventList').querySelectorAll('[data-edit]').forEach(button=>button.addEventListener('click',()=>{const event=events.find(item=>item.id===button.dataset.edit);if(event) openEventModal(event.date,event);}));
-    $('#eventList').querySelectorAll('[data-delete]').forEach(button=>button.addEventListener('click',()=>{if(!confirm('Excluir este evento?'))return;events=events.filter(item=>item.id!==button.dataset.delete);saveEvents();render();}));
+    $('#eventList').querySelectorAll('[data-delete]').forEach(button=>button.addEventListener('click',()=>{if(!confirm('Excluir este evento?'))return;const item=events.find(e=>e.id===button.dataset.delete);if(item?.id?.startsWith('oficial-2026-')){const removed=readRemovedOfficial();removed.add(item.id);try{localStorage.setItem(OFFICIAL_REMOVED_KEY,JSON.stringify([...removed]));}catch{}}events=events.filter(item=>item.id!==button.dataset.delete);saveEvents();render();}));
   }
   function fileSize(bytes) {return bytes<1024?'0 KB':bytes<1024*1024?`${Math.round(bytes/1024)} KB`:`${(bytes/1024/1024).toFixed(1)} MB`;}
   function fileLabel(file){const ext=file.name.split('.').pop().toUpperCase();return ext.length>4?'ARQ':ext;}
@@ -149,7 +160,7 @@
   async function downloadBackup(){
     try{
       const documents=[];for(const file of allFiles)documents.push({id:file.id,name:file.name,month:file.month,size:file.size,type:file.type,lastModified:file.lastModified,data:await toBase64(file.blob)});
-      downloadBlob(new Blob([JSON.stringify({app:'calendario-anual-cora',year:YEAR,version:2,exportedAt:new Date().toISOString(),events,documents,planning:JSON.parse(localStorage.getItem('cora_planejamento_2026_v1')||'{}'),cardDrafts:JSON.parse(localStorage.getItem('cora_cards_2026_v1')||'{}')})],{type:'application/json'}),`backup-calendario-cora-${YEAR}.json`);
+      downloadBlob(new Blob([JSON.stringify({app:'calendario-anual-cora',year:YEAR,version:3,exportedAt:new Date().toISOString(),events,documents,officialRemoved:[...readRemovedOfficial()],planning:JSON.parse(localStorage.getItem('cora_planejamento_2026_v1')||'{}'),cardDrafts:JSON.parse(localStorage.getItem('cora_cards_2026_v1')||'{}')})],{type:'application/json'}),`backup-calendario-cora-${YEAR}.json`);
       notify('Backup com eventos, arquivos, planejamentos e cards criado.');
     }catch(error){console.error(error);notify('Falha ao gerar backup.');}
   }
@@ -160,7 +171,7 @@
       if(!confirm('Restaurar backup? Eventos com o mesmo ID serão atualizados.'))return;
       const byId=new Map(events.map(item=>[item.id,item]));
       for(const event of data.events){if(typeof event.title==='string' && /^2026-\d\d-\d\d$/.test(event.date||'')){byId.set(event.id||uid(),{id:event.id||uid(),title:event.title.slice(0,170),date:event.date,type:event.type||'Evento',notes:event.notes||''});}}
-      events=[...byId.values()];saveEvents();
+      events=[...byId.values()];if(Array.isArray(data.officialRemoved))try{localStorage.setItem(OFFICIAL_REMOVED_KEY,JSON.stringify(data.officialRemoved));}catch{}saveEvents();
       if(database)for(const file of data.documents){
         if(!file||typeof file.data!=='string'||!file.data.startsWith('data:'))continue;
         const response=await fetch(file.data);const blob=await response.blob();
@@ -183,7 +194,7 @@
   function coverCanvas(){
     const [c,g]=canvasBase();const grad=g.createLinearGradient(0,0,PAGE_W,PAGE_H);grad.addColorStop(0,'#0b2547');grad.addColorStop(1,'#2865ac');g.fillStyle=grad;g.fillRect(0,0,PAGE_W,PAGE_H);
     g.globalAlpha=.10;for(let i=0;i<6;i++){g.strokeStyle='#fff';g.lineWidth=4;g.beginPath();g.arc(1360,90,i*135+60,0,Math.PI*2);g.stroke();}g.globalAlpha=1;
-    rounded(g,99,100,82,82,15,'#ffffff23');text(g,'C',122,161,53,'#fff','700');text(g,'COLÉGIO CORA CORALINA',205,153,29,'#d6e7ff','700');
+    const badge=$('#schoolLogo');if(badge?.complete && badge.naturalWidth){rounded(g,98,72,124,150,14,'#fff');g.drawImage(badge,102,77,116,139);}else{rounded(g,99,100,82,82,15,'#ffffff23');text(g,'C',122,161,53,'#fff','700');}text(g,'COLÉGIO CORA CORALINA',239,153,29,'#d6e7ff','700');
     rounded(g,104,330,390,54,24,'#ffffff25');text(g,'PLANEJAMENTO EDUCACIONAL',133,366,22,'#d8eaff','700');
     text(g,'CALENDÁRIO',101,514,106,'#fff','800');text(g,'ANUAL',101,650,140,'#fff','800');text(g,'2026',101,818,170,'#a9ceff','800');
     g.fillStyle='#ffffff57';g.fillRect(107,934,1420,2);text(g,'JANEIRO — DEZEMBRO  •  EVENTOS E DOCUMENTOS',106,995,31,'#e6f1ff','700');text(g,'Exportação completa do planejamento escolar',106,1045,24,'#b5d3f5');return c;
@@ -314,8 +325,15 @@
     $('#restoreBtn').addEventListener('click',()=>$('#restorePicker').click());
     $('#restorePicker').addEventListener('change',async event=>{if(event.target.files[0])await restoreBackup(event.target.files[0]);event.target.value='';});
     $('#exportBtn').addEventListener('click',exportPDF);
+    window.addEventListener('cora-restore-official-request',()=>{
+      try{localStorage.removeItem(OFFICIAL_REMOVED_KEY);}catch{}
+      const ids=new Set(events.map(item=>item.id));let restored=0;
+      for(const item of (window.CORA_OFFICIAL_2026?.events||[]))if(!ids.has(item.id)){events.push({...item});restored++;}
+      saveEvents();render();notify(`Calendário oficial conferido: ${restored} evento(s) restaurado(s).`);
+    });
   }
   async function initialize(){
+    const schoolLogo=$('#schoolLogo');if(schoolLogo&&window.CORA_SCHOOL_LOGO)schoolLogo.src=window.CORA_SCHOOL_LOGO;
     loadEvents();
     bind();
     try{database=await openDB();await refreshFiles();}catch(error){console.error(error);notify('Os arquivos não podem ser salvos neste navegador.');}
