@@ -15,20 +15,42 @@
     agenda:'Alinhamento do calendário de novembro\nFechamento de conteúdos, livros e registros pedagógicos\nRevisão e avaliações da 4ª etapa\nFeira do Empreendedor e projetos natalinos\nEntrega de resultados, relatórios e comunicação com as famílias',
     actions:'Conferir datas e horários ainda sujeitos à validação.\nDefinir responsáveis por cada projeto, ensaio e comunicado.\nAlinhar prazos de avaliações, relatórios e registros.',
     birthdays:'Nadja – 01/11; Prof. Emanuel e Ana Paula – 10/11; Aparecida e Mikael – 16/11; Mendonça – 21/11; Ruth – 25/11; John – 26/11.\nDezembro: Diego – 09/12; Breno – 11/12; Renan – 24/12.',
-    closing:'Agradecemos a dedicação da equipe. Nosso compromisso coletivo transforma a aprendizagem e fortalece a parceria entre escola e família.',includeCalendar:true
+    closing:'Agradecemos a dedicação da equipe. Nosso compromisso coletivo transforma a aprendizagem e fortalece a parceria entre escola e família.',includeCalendar:true,includeBirthdays:true
   };
-  const emptyPlan={segment:sample.segment,meetingDate:'',meetingTime:'',meetingPlace:'',coordinator:'Equipe de Gestão e Coordenação',projects:'',schedule:'',guidance:'',agenda:'Alinhamento pedagógico\nAvaliações e registros\nOrganização dos próximos eventos',actions:'',birthdays:'',closing:'Contamos com o compromisso e a colaboração de toda a equipe.',includeCalendar:true};
+  const emptyPlan={segment:sample.segment,meetingDate:'',meetingTime:'',meetingPlace:'',coordinator:'Equipe de Gestão e Coordenação',projects:'',schedule:'',guidance:'',agenda:'Alinhamento pedagógico\nAvaliações e registros\nOrganização dos próximos eventos',actions:'',birthdays:'',closing:'Contamos com o compromisso e a colaboração de toda a equipe.',includeCalendar:true,includeBirthdays:true};
   let plans={};let current=10;let saveDelay;
-  const fields=['segment','meetingDate','meetingTime','meetingPlace','coordinator','projects','schedule','guidance','agenda','actions','birthdays','closing','includeCalendar'];
+  const fields=['segment','meetingDate','meetingTime','meetingPlace','coordinator','projects','schedule','guidance','agenda','actions','birthdays','closing','includeCalendar','includeBirthdays'];
+  const SEGMENTS=['Educação Infantil','Fundamental I','Fundamental II','Ensino Médio','Equipe administrativa'];
+  const checkboxes=()=>[...document.querySelectorAll('#planSegments [data-segment]')];
+  function segmentValues(){return checkboxes().filter(e=>e.checked).map(e=>e.dataset.segment)}
+  function setSegments(value){
+    const text=String(value||'').trim();
+    let selected=text==='Todas as etapas'?SEGMENTS.slice(0,4):text.split(/\s*(?:•|,|\se\s)\s*/).filter(Boolean);
+    if(text==='Equipe pedagógica e administrativa')selected=['Equipe administrativa'];
+    checkboxes().forEach(e=>{e.checked=selected.includes(e.dataset.segment)});
+    if(!checkboxes().some(e=>e.checked))checkboxes().filter(e=>['Fundamental II','Ensino Médio'].includes(e.dataset.segment)).forEach(e=>e.checked=true);
+    const input=$('planSegment');if(input)input.value=segmentValues().join(' • ');
+  }
+  function birthdaysByMonth(month){
+    const currentMonth=Number(month)+1;
+    const fromModule=window.CoraBirthdays?.byMonth?.(currentMonth);
+    if(Array.isArray(fromModule))return fromModule;
+    try{
+      const saved=JSON.parse(localStorage.getItem('cora_aniversariantes_v1')||'[]');
+      return (Array.isArray(saved)?saved:[]).filter(p=>Number(p.month)===currentMonth)
+      .sort((a,b)=>Number(a.day)-Number(b.day)||String(a.name).localeCompare(String(b.name),'pt-BR'));
+    }catch{return []}
+  }
+  function prettyBirthday(p){return String(p.day).padStart(2,'0')+'/'+String(p.month).padStart(2,'0')+' - '+String(p.name||'').trim()}
   function lines(str){return String(str||'').split(/\r?\n/).map(s=>s.trim()).filter(Boolean)}
   function eventsFor(month){try{let events=JSON.parse(localStorage.getItem(EVENT_STORAGE)||'[]');return Array.isArray(events)?events.filter(e=>String(e.date||'').startsWith(`${YEAR}-${String(month+1).padStart(2,'0')}-`)).sort((a,b)=>a.date.localeCompare(b.date)):[]}catch{return []}}
   function readStorage(){try{const obj=JSON.parse(localStorage.getItem(STORAGE)||'{}');plans=obj && typeof obj==='object'&&!Array.isArray(obj)?obj:{}}catch{plans={}}}
   function defaults(month){return {...(YEAR===2026&&month===10?sample:emptyPlan)}}
   function initMonth(month){if(!plans[month])plans[month]=defaults(month);return plans[month]}
   function store(){try{localStorage.setItem(STORAGE,JSON.stringify(plans));$('planningSaveStatus').textContent='Alterações salvas automaticamente';}catch{$('planningSaveStatus').textContent='Não foi possível salvar no dispositivo';}}
-  function readForm(){const obj={};for(const field of fields){const el=form.elements.namedItem(field);obj[field]=field==='includeCalendar'?Boolean(el.checked):el.value;}return obj}
-  function fillForm(month){const obj=initMonth(month);for(const field of fields){const el=form.elements.namedItem(field);if(el)field==='includeCalendar'?el.checked=obj[field]!==false:el.value=obj[field]||''}current=month;$('planMonth').value=String(month);renderSummary()}
-  function renderSummary(){const obj=readForm(),e=obj.includeCalendar?eventsFor(current):[];$('planPreviewMonth').textContent=MONTHS[current];$('planPreviewSegment').textContent=obj.segment;$('planProjectCount').textContent=lines(obj.projects).length;$('planScheduleCount').textContent=lines(obj.schedule).length;$('planCalendarCount').textContent=e.length;$('planPreviewAgenda').replaceChildren(...lines(obj.agenda).slice(0,7).map(value=>{const d=document.createElement('div');d.textContent=value;return d}));}
+  function readForm(){const obj={};for(const field of fields){const el=form.elements.namedItem(field);obj[field]=field==='segment'?segmentValues().join(' • '):(field==='includeCalendar'||field==='includeBirthdays')?Boolean(el?.checked):el?.value||'';}return obj}
+  function fillForm(month){const obj=initMonth(month);for(const field of fields){const el=form.elements.namedItem(field);if(field==='segment')setSegments(obj.segment);else if(el)(field==='includeCalendar'||field==='includeBirthdays')?el.checked=obj[field]!==false:el.value=obj[field]||''}current=month;$('planMonth').value=String(month);renderSummary()}
+  function renderSummary(){const obj=readForm(),e=obj.includeCalendar?eventsFor(current):[];const birthdayPeople=birthdaysByMonth(current);$('planBirthdayPreview').textContent=birthdayPeople.length?birthdayPeople.map(prettyBirthday).join(' · '):'Nenhum aniversariante cadastrado neste mês.';$('planPreviewBirthdays').textContent=obj.includeBirthdays?(birthdayPeople.length?'Aniversariantes: '+birthdayPeople.map(prettyBirthday).join(' · '):'Aniversariantes: nenhum cadastrado'):'Aniversariantes: ocultos neste PDF';$('planPreviewMonth').textContent=MONTHS[current];$('planPreviewSegment').textContent=obj.segment;$('planProjectCount').textContent=lines(obj.projects).length;$('planScheduleCount').textContent=lines(obj.schedule).length;$('planCalendarCount').textContent=e.length;$('planPreviewAgenda').replaceChildren(...lines(obj.agenda).slice(0,7).map(value=>{const d=document.createElement('div');d.textContent=value;return d}));}
   function saveCurrent(){plans[current]=readForm();store();renderSummary()}
   function alertUser(msg){const toast=$('toast');if(toast){toast.textContent=msg;toast.classList.add('visible');setTimeout(()=>toast.classList.remove('visible'),4500)}else alert(msg)}
   function download(blob,name){const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),8000)}
@@ -65,17 +87,19 @@
   function fallbackPrint(plan,month){const box=document.createElement('section');box.id='planningPrint';box.innerHTML=`<h1>COLÉGIO CORA CORALINA</h1><h2>Planejamento de ${MONTHS[month]} de ${YEAR}</h2><p>${safe(plan.segment)}</p>`+[['Projetos',plan.projects],['Datas',plan.schedule],['Orientações pedagógicas',plan.guidance],['Pauta',plan.agenda],['Encaminhamentos',plan.actions],['Aniversariantes',plan.birthdays]].map(([label,txt])=>`<h3>${label}</h3><ul>${lines(txt).map(v=>`<li>${safe(v)}</li>`).join('')}</ul>`).join('');document.body.append(box);let style=document.getElementById('planningPrintStyle');if(!style){style=document.createElement('style');style.id='planningPrintStyle';style.textContent='@media screen{#planningPrint{display:none}}@media print{body>*:not(#planningPrint){display:none!important}#planningPrint{display:block!important;padding:18mm;color:#14385e;font:12pt Arial}#planningPrint h3{break-after:avoid}#planningPrint li{margin:8px 0}}';document.head.append(style)}window.addEventListener('afterprint',()=>box.remove(),{once:true});window.print()}
   const safe=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   $('planMonth').innerHTML=MONTHS.map((x,i)=>`<option value="${i}">${x} de ${YEAR}</option>`).join('');
-  readStorage();fillForm(current);
+  $('planMeetingDate').min=YEAR+'-01-01';$('planMeetingDate').max=YEAR+'-12-31';readStorage();fillForm(current);
   $('planMonth').addEventListener('change',()=>{saveCurrent();fillForm(Number($('planMonth').value));});
-  form.addEventListener('input',()=>{clearTimeout(saveDelay);saveDelay=setTimeout(saveCurrent,200)});
+  form.addEventListener('input',()=>{clearTimeout(saveDelay);const el=$('planSegment');if(el)el.value=segmentValues().join(' • ');saveDelay=setTimeout(saveCurrent,200)});
   form.addEventListener('change',()=>{clearTimeout(saveDelay);saveCurrent()});
   $('loadNovemberPlan').addEventListener('click',()=>{if(current!==10){$('planMonth').value='10';saveCurrent();fillForm(10)}if(confirm('Repor o modelo de novembro? Isto substituirá apenas os campos deste mês.')){plans[10]={...sample};fillForm(10);store()}});
-  $('downloadPlanning').addEventListener('click',async()=>{saveCurrent();const btn=$('downloadPlanning');btn.disabled=true;btn.textContent='Gerando planejamento...';try{const blob=await buildDocument(current,readForm());download(blob,`Planejamento_Reuniao_Cora_${MONTHS[current]}_${YEAR}.pdf`);alertUser('Planejamento gerado e baixado em PDF.')}catch(error){console.error(error);alertUser('PDF direto indisponível. Selecione “Salvar como PDF” na janela de impressão.');fallbackPrint(readForm(),current)}finally{btn.disabled=false;btn.textContent='↓ Baixar planejamento em PDF'}});
+  $('downloadPlanning').addEventListener('click',async()=>{if(!segmentValues().length){alertUser('Selecione pelo menos uma etapa atendida.');return;}saveCurrent();const btn=$('downloadPlanning');btn.disabled=true;btn.textContent='Gerando planejamento...';try{const blob=await buildDocument(current,readForm());download(blob,`Planejamento_Reuniao_Cora_${MONTHS[current]}_${YEAR}.pdf`);alertUser('Planejamento gerado e baixado em PDF.')}catch(error){console.error(error);alertUser('PDF direto indisponível. Selecione “Salvar como PDF” na janela de impressão.');fallbackPrint(readForm(),current)}finally{btn.disabled=false;btn.textContent='↓ Baixar planejamento em PDF'}});
   $('jumpPlanning').addEventListener('click',()=>$('planningStudio').scrollIntoView({behavior:'smooth',block:'start'}));
   window.addEventListener('cora-backup-restored',()=>{readStorage();fillForm(current)});
+  window.addEventListener('cora-birthdays-changed',()=>{renderSummary()});
+  window.addEventListener('cora-month-changed',e=>{if(Number(e.detail?.year||YEAR)===YEAR&&Number.isInteger(e.detail?.month))renderSummary();});
   window.addEventListener('cora-year-changed',e=>{
     saveCurrent();YEAR=Number(e.detail.year);STORAGE=`cora_planejamento_${YEAR}_v1`;
-    EVENT_STORAGE=`cora_calendario_eventos_${YEAR}_v1`;current=0;readStorage();
+    EVENT_STORAGE=`cora_calendario_eventos_${YEAR}_v1`;current=0;readStorage();$('planMeetingDate').min=YEAR+'-01-01';$('planMeetingDate').max=YEAR+'-12-31';
     $('planMonth').innerHTML=MONTHS.map((x,i)=>`<option value="${i}">${x} de ${YEAR}</option>`).join('');
     fillForm(current);
   });
