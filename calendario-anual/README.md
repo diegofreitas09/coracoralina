@@ -25,3 +25,15 @@ A geração de arquivo PDF usa `pdf-lib@1.17.1` (distribuído pelo CDN jsDelivr)
 
 ## Desenvolvimento local
 Abrir `index.html` via servidor HTTP local, como `python -m http.server 8080`, e visitar `http://localhost:8080`. Não há dependências de build.
+
+
+## Planejamento pedagógico e criador de cards (2026)
+
+- **Planejamento de reunião:** seção `Planejamento pedagógico` permite escolher mês e segmento, registrar local, horário, coordenação, projetos, datas, pauta, orientações, encaminhamentos e aniversariantes. O PDF A4 é gerado no próprio navegador e não depende de serviços externos.
+- O modelo inicial de **novembro de 2026** foi elaborado com base no documento fornecido pela coordenação; entradas com possíveis conflitos de datas devem ser revisadas antes de sua divulgação. Eventos cadastrados no calendário podem ser incluídos automaticamente, sem alterar o calendário original.
+- **Criador de cards:** cinco modelos institucionais para comunicado, campanha solidária, reunião, cronograma de avaliações e 2ª chamada. Editor com prévia ao vivo e download **PNG 1080×1350** ou **PDF**.
+- Campos e rascunhos dos dois novos módulos permanecem no **localStorage** deste navegador. O backup JSON (versão 2) também inclui essas informações e as restaura. **Não existe sincronização entre dispositivos**.
+- Arquivos do estúdio: `studio.css`, `studio-assets.js`, `studio-pdf.js`, `planning.js`, `cards.js`.
+
+### Publicação
+Se o site Netlify for conectado ao repositório `diegofreitas09/coracoralina`, selecionar a branch `main`, diretório base `calendario-anual` e diretório de publicação `.`, sem comando de build.
