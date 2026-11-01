@@ -216,6 +216,7 @@
     '<label class="year-carry-project"><input id="carryProjects" type="checkbox" checked /> Copiar também os projetos do mês</label>'+
     '<label class="year-carry-project"><input id="carryPlanning" type="checkbox" checked /> Reaproveitar planejamento pedagógico, quando existir (revisar datas)</label>'+ 
     '<label class="year-carry-project"><input id="carryFiles" type="checkbox" checked /> Copiar também os documentos deste mês</label>'+
+     '<div class="year-carry-academic"><strong>Sugestões para todo o ano</strong><label><input id="carryStages" type="checkbox" checked /> Início e fim das quatro etapas</label><label><input id="carryAssessments" type="checkbox" checked /> Prazos e períodos das avaliações</label><small>Importa sugestões anuais mesmo ao selecionar só um mês. Não altera dados existentes e exige conferência.</small></div>'+
     '<p class="year-carry-warning">Os registros importados serão marcados como “Em revisão”. Nada será publicado para professores sem conferência da Gestão.</p></div>'+
     '<div class="year-carry-actions"><button type="button" id="carrySkip" class="btn btn-ghost">Começar mês vazio</button><button type="button" id="carryConfirm" class="btn btn-primary">Importar seleção</button></div>';
    chooser.showModal();
@@ -227,7 +228,7 @@
    refreshPreview();
  }
  function refreshPreview(){
-   preview=readEvents(sourceYear,targetMonth).map(e=>({...e,adjusted:targetDate(e.date,targetYear,e.type,e.title)}));
+   preview=readEvents(sourceYear,targetMonth).filter(e=>!managedAssessmentEvent(e)).map(e=>({...e,adjusted:targetDate(e.date,targetYear,e.type,e.title)}));
    const count=preview.length;
    const projects=getProjects(sourceYear)[targetMonth]||[];
    const srcPlan=stored(PLAN_KEY(sourceYear),{})[targetMonth];
@@ -272,16 +273,17 @@
      }
    }
    localStorage.setItem(FLAG_KEY(targetYear,targetMonth),'imported');
-   const docs=$('carryFiles')?.checked?await window.CoraApp?.copyFilesBetweenYears?.(sourceYear,targetYear,[targetMonth]):null;
+   const academic=copyAcademicSuggestions(sourceYear,targetYear,{stages:!!$('carryStages')?.checked,assessments:!!$('carryAssessments')?.checked});
+    const docs=$('carryFiles')?.checked?await window.CoraApp?.copyFilesBetweenYears?.(sourceYear,targetYear,[targetMonth]):null;
    chooser.close();
    window.dispatchEvent(new CustomEvent('cora-data-changed',{detail:{year:targetYear}}));
    putProjects(targetYear,targetMonth);
-   const message=(docs?.count?docs.count+' arquivo(s) importados. ':'')+(docs?.error?docs.error+' ':'')+created+' evento(s) importados e marcados para revisão. '+(copiedProjects?copiedProjects+' projeto(s). ':'')+(copiedPlan?'Planejamento reaproveitado. ':'')+(duplicates?duplicates+' já existentes ignorados. ':'')+(skipped?skipped+' data(s) não importadas.':'');
+   const message=(docs?.count?docs.count+' arquivo(s) importados. ':'')+(docs?.error?docs.error+' ':'')+created+' evento(s) importados e marcados para revisão. '+(copiedProjects?copiedProjects+' projeto(s). ':'')+(copiedPlan?'Planejamento reaproveitado. ':'')+(duplicates?duplicates+' já existentes ignorados. ':'')+(skipped?skipped+' data(s) não importadas. ':'')+academic.stages+' etapas sugeridas; '+academic.assessments+' cronogramas de avaliações sugeridos. '+academic.warnings.join(' ');
    const alert=$('toast');if(alert){alert.textContent=message;alert.classList.add('visible');setTimeout(()=>alert.classList.remove('visible'),6000);}
  }
 
  function copyYearMonth(from,to,month,includeProjects,includePlan){
-   const events=readEvents(from,month),key=EVENT_KEY(to),existing=stored(key,[]);
+   const events=readEvents(from,month).filter(e=>!managedAssessmentEvent(e)),key=EVENT_KEY(to),existing=stored(key,[]);
    const next=Array.isArray(existing)?[...existing]:[];
    let added=0,duplicates=0;
    for(const event of events){
@@ -330,12 +332,15 @@
    '<label class="year-carry-project"><input type="checkbox" id="fullProjects" checked /> Incluir todos os projetos mensais</label>'+
    '<label class="year-carry-project"><input type="checkbox" id="fullPlanning" checked /> Incluir os planejamentos pedagógicos</label>'+ 
    '<label class="year-carry-project"><input type="checkbox" id="fullFiles" checked /> Incluir documentos anexados dos meses selecionados</label>'+
+    '<div class="year-carry-academic"><strong>Etapas e prazos pedagógicos</strong><label><input type="checkbox" id="fullStages" checked /> Sugerir início e fim das quatro etapas letivas</label><label><input type="checkbox" id="fullAssessments" checked /> Sugerir entregas e avaliações AP2, AD e AR</label><div id="fullAcademicPreview" class="year-carry-academic-preview" aria-live="polite"></div><small>As datas serão rascunhos. Eventos e etapas já preenchidos permanecem intactos.</small></div>'+
    '<p class="year-carry-warning">Atividades já cadastradas não serão apagadas nem duplicadas. Após importar, clique nos eventos para editar a data e salvar.</p></div>'+
    '<div class="year-carry-actions"><button id="fullCancel" type="button" class="btn btn-ghost">Cancelar</button><button id="fullConfirm" type="button" class="btn btn-primary">Importar ano selecionado</button></div>';
    chooser.showModal();
    const refresh=()=>{
      const from=Number($('fullSource').value);
-     const counts=MONTHS.map((name,month)=>({name,month,n:readEvents(from,month).length,p:getProjects(from)[month]?.length||0}));
+     const suggested=academicPreview(from,year),output=$('fullAcademicPreview');
+     if(output)output.textContent=suggested.stages+' etapa(s) e '+suggested.assessments+' cronograma(s) disponíveis.'+(suggested.firstStage?' Primeira etapa sugerida: '+fmtBR(suggested.firstStage)+'.':'')+(suggested.firstDue?' Primeira entrega: '+fmtBR(suggested.firstDue)+'.':'');
+     const counts=MONTHS.map((name,month)=>({name,month,n:readEvents(from,month).filter(e=>!managedAssessmentEvent(e)).length,p:getProjects(from)[month]?.length||0}));
      $('fullSummary').textContent=counts.reduce((a,b)=>a+b.n,0)+' eventos e '+counts.reduce((a,b)=>a+b.p,0)+' projetos disponíveis em '+from+'.';
      $('fullMonths').innerHTML=counts.map(c=>'<label><input type="checkbox" data-full-month="'+c.month+'" checked /><strong>'+c.name+'</strong><small>'+c.n+' eventos · '+c.p+' projetos</small></label>').join('');
    };
@@ -351,17 +356,18 @@
          stats.added+=result.added;stats.duplicates+=result.duplicates;stats.projectCount+=result.projectCount;if(result.planCopied)stats.plans++;
        }
      }catch(e){alert(e.message);return}
-     const docs=$('fullFiles').checked?await window.CoraApp?.copyFilesBetweenYears?.(from,year,months):null;
+     const academic=copyAcademicSuggestions(from,year,{stages:!!$('fullStages')?.checked,assessments:!!$('fullAssessments')?.checked});
+      const docs=$('fullFiles').checked?await window.CoraApp?.copyFilesBetweenYears?.(from,year,months):null;
      chooser.close();
      window.dispatchEvent(new CustomEvent('cora-data-changed',{detail:{year,month:CoraYears.month}}));
      window.dispatchEvent(new CustomEvent('cora-projects-changed',{detail:{year,month:CoraYears.month}}));
      window.dispatchEvent(new CustomEvent('cora-planning-copied',{detail:{year,month:CoraYears.month}}));
      putProjects(year,CoraYears.month);
-     const msg='Importação concluída: '+stats.added+' eventos, '+stats.projectCount+' projetos, '+stats.plans+' planejamentos e '+(docs?.count||0)+' documentos. '+(docs?.error||'')+' '+stats.duplicates+' eventos existentes preservados. Confira as datas em revisão.';
+     const msg='Importação concluída: '+stats.added+' atividades, '+stats.projectCount+' projetos, '+stats.plans+' planejamentos, '+academic.stages+' etapas sugeridas, '+academic.assessments+' cronogramas de avaliação e '+(docs?.count||0)+' documentos. '+(docs?.error||'')+' '+stats.duplicates+' eventos anteriores preservados. '+academic.warnings.join(' ')+' Confira as datas antes de publicar.';
      const toast=$('toast');if(toast){toast.textContent=msg;toast.classList.add('visible');setTimeout(()=>toast.classList.remove('visible'),7000)}
    });
    refresh();
  }
 
- window.CoraYearPlanner={targetDate,readEvents,showWizard,showFullYearWizard,copyYearMonth,importSelection};
+ window.CoraYearPlanner={targetDate,readEvents,showWizard,showFullYearWizard,copyYearMonth,importSelection,academicPreview,copyAcademicSuggestions};
 })();
