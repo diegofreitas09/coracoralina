@@ -134,6 +134,17 @@
       toast(blank?`Ano ${target} criado em branco.`:`${count} eventos e ${projectCount} projetos de ${source} copiados. Revise todas as datas.`);
     }catch(error){$('cloneError').textContent=error.message;}
   }
+  function approveMonth(){
+    const all=getEvents(activeYear);
+    const affected=all.filter(e=>Number(e.date.slice(5,7))===viewMonth+1&&e.status==='Em revisão');
+    if(!affected.length){toast('Não há eventos pendentes de revisão neste mês.');return;}
+    if(!confirm('Você conferiu as datas e os dados de '+MONTHS[viewMonth]+' de '+activeYear+'? Aprovar '+affected.length+' registro(s) neste dispositivo?'))return;
+    const ids=new Set(affected.map(e=>e.id));
+    save(eventKey(activeYear),all.map(e=>ids.has(e.id)?{...e,status:'Publicado',needsReview:false}:e));
+    window.dispatchEvent(new CustomEvent('cora-data-changed',{detail:{year:activeYear}}));
+    renderAudienceSummary();
+    toast(affected.length+' evento(s) aprovados. Para compartilhar com famílias, exporte o calendário ou configure publicação central.');
+  }
   function filterVisible(entries){
     if(audience==='Todos')return entries;
     return entries.filter(e=>(e.status||'Publicado')==='Publicado' && ((e.audience||'Todos')==='Todos'||(e.audience||'Todos')===audience));
@@ -175,6 +186,7 @@
       window.dispatchEvent(new CustomEvent('cora-audience-changed',{detail:{audience}}));
     });
     $('saveProjectsBtn').addEventListener('click',saveCurrentProjects);
+    $('approveMonthBtn').addEventListener('click',approveMonth);
     window.addEventListener('cora-month-changed',e=>{viewMonth=e.detail.month;renderProjects();renderAudienceSummary();});
     window.addEventListener('cora-year-changed',()=>{renderProjects();renderAudienceSummary();});
     renderYears();updateHeadings();renderProjects();renderAudienceSummary();
