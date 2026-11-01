@@ -166,7 +166,7 @@ export default async function handler(request){
  if(action==='delivery-profile'&&request.method==='GET'){
   if(role!=='equipe'||!member)return answer({identified:false,statuses:{}});
   const year=schoolYear(url.searchParams.get('year'))||YEAR;
-  return answer({identified:true,name:member.name,email:member.email,statuses:statuses(member,year)});
+  return answer({identified:true,name:member.name,email:member.email,statuses:await statuses(member,year)});
  }
  if(action==='delivery-mark'&&request.method==='POST'){
   if(role!=='equipe'||!member)return answer({error:'Acesso pessoal necessário.'},403);
