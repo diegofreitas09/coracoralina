@@ -79,7 +79,12 @@ export async function loginEmployee(input,secret){
  }
  const validNow=await account(r.id);
  if(validNow?.status!=='Ativo'||validNow.sessionVersion!==r.sessionVersion)return error('Conta suspensa ou desativada.',401);
- await activity().setJSON(r.id,{...authState,lastLogin:new Date().toISOString(),failedLogins:0,lockedUntil:''});
+ const accessedAt=new Date().toISOString();
+ await activity().setJSON(r.id,{...authState,lastLogin:accessedAt,
+  firstAccessAt:authState.firstAccessAt||accessedAt,
+  accessCount:(Number.isSafeInteger(authState.accessCount)?authState.accessCount:0)+1,
+  trackingStartedAt:authState.trackingStartedAt||accessedAt,
+  failedLogins:0,lockedUntil:''});
  return {ok:true,role:'equipe',member:publicMember(validNow),cookie:signedSession(validNow,secret)};
 }
 export async function activateEmployee(input,secret){
@@ -93,6 +98,10 @@ export async function activateEmployee(input,secret){
  const updated={...r,status:'Ativo',salt,passwordHash:derive(password,salt),inviteHash:'',inviteExpiresAt:'',
   sessionVersion:(r.sessionVersion||0)+1,activatedAt:now,updatedAt:now};
  await db().setJSON(r.id,updated);
+ const previous=await activity().get(r.id,{type:'json',consistency:'strong'})||{};
+ await activity().setJSON(r.id,{...previous,firstAccessAt:previous.firstAccessAt||now,
+   lastLogin:now,accessCount:(Number.isSafeInteger(previous.accessCount)?previous.accessCount:0)+1,
+   trackingStartedAt:previous.trackingStartedAt||now,failedLogins:0,lockedUntil:''});
  return {ok:true,role:'equipe',member:publicMember(updated),cookie:signedSession(updated,secret)};
 }
 export async function accessPolicy(){
@@ -111,7 +120,13 @@ export async function enforceIndividualAccess(){
 export async function listEmployees(){
  const ids=await db().get('member-index',{type:'json',consistency:'strong'})||[];
  const records=await Promise.all((Array.isArray(ids)?ids:[]).slice(0,400).map(account));
- const members=await Promise.all(records.filter(Boolean).map(async r=>({...publicMember(r),lastLogin:(await activity().get(r.id,{type:'json',consistency:'strong'}))?.lastLogin||''})));
+ const members=await Promise.all(records.filter(Boolean).map(async r=>{
+  const audit=await activity().get(r.id,{type:'json',consistency:'strong'})||{};
+  return {...publicMember(r),lastLogin:audit.lastLogin||'',firstAccessAt:audit.firstAccessAt||'',
+    accessCount:Number.isSafeInteger(audit.accessCount)?audit.accessCount:null,
+    trackingStartedAt:audit.trackingStartedAt||'',
+    accessHistoryIncomplete:Boolean(audit.lastLogin&&!Number.isSafeInteger(audit.accessCount))};
+ }));
  return {members:members.sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'))};
 }
 export async function manageEmployee(input,baseUrl){
