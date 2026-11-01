@@ -1,7 +1,7 @@
 {
-  "name": "Agenda Escolar 2026 — Colégio Cora Coralina",
+  "name": "Calendário Escolar — Colégio Cora Coralina",
   "short_name": "Agenda Cora",
-  "description": "Calendário escolar com eventos, lembretes e documentos do Colégio Cora Coralina",
+  "description": "Gestão multianual de eventos, avaliações, reuniões, projetos e documentos da escola",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
