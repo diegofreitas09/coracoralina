@@ -98,3 +98,14 @@ body.portal-locked { background:#eef3f9; }
 .cp-back-alert,.cp-btn.cp-back-alert{min-height:44px;min-width:112px;background:#e8f1fb;color:#0d3d78;border:1px solid #c8d9ec;white-space:nowrap}
 .cp-back-alert:hover,.cp-back-alert:focus-visible{background:#d7e8fa;border-color:#9cbedf}
 @media(max-width:620px){.cp-bell-panel .cp-main-heading{align-items:flex-start;gap:12px;flex-wrap:wrap}.cp-alert-heading-left{width:100%}.cp-alert-heading-left h2{font-size:19px}}
+
+/* Aniversariantes: consulta antecipada em ambiente somente leitura. */
+.cp-birthday-panel,.cp-birthday-teaser{background:#fff;border:1px solid #dce7f3;border-radius:16px;padding:17px;margin-top:18px;box-shadow:0 4px 18px #183d6610}
+.cp-birthday-panel .cp-main-heading,.cp-birthday-teaser .cp-main-heading{display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-bottom:15px}
+.cp-birthday-panel select{background:#f5f9fd;border:1px solid #d0dff0;border-radius:10px;color:#143659;padding:12px;max-width:100%;min-height:44px}
+.cp-birthday-panel .cp-list-entry,.cp-birthday-teaser .cp-list-entry{margin:8px 0}
+.cp-birthday-panel .cp-list-entry time,.cp-birthday-teaser .cp-list-entry time{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:800}
+.cp-birthday-next{background:#edf5ff;border:1px solid #d5e4f4;border-radius:12px;padding:14px;margin-top:15px;color:#143659}
+.cp-birthday-preview{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}
+.cp-birthday-preview span{background:#fff;border:1px solid #d6e5f4;border-radius:8px;padding:7px 10px;font-size:13px;font-weight:650}
+@media(max-width:620px){.cp-birthday-panel,.cp-birthday-teaser{padding:13px}.cp-birthday-panel .cp-main-heading h2,.cp-birthday-teaser .cp-main-heading h2{font-size:20px}}
