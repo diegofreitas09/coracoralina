@@ -218,6 +218,8 @@ body.portal-locked { background:#eef3f9; }
 .cp-teacher-tool-icon{display:grid;place-items:center;flex:0 0 49px;width:49px;height:49px;border-radius:12px}
 .cp-teacher-tool-roteiros{background:#e8f1ff;color:#1a60a4}
 .cp-teacher-tool-gestor{background:#e8f5f0;color:#23775b}
+.cp-teacher-tool-classroom{background:#eef0ff;color:#465da9}
+.cp-teacher-tool-sae{background:#fff1df;color:#a56b22}
 .cp-teacher-tool-icon svg{max-width:27px;max-height:27px}
 .cp-teacher-tool-icon img{object-fit:contain;width:35px;height:35px}
 .cp-teacher-tool-copy{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
