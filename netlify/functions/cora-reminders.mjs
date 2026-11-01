@@ -41,7 +41,22 @@ export default async function handler(){
   if(dailyReminder){
    const lead=Math.max(0,Math.min(14,Number(data.config?.defaultLeadDays??3)));
    for(const e of data.events||[]){
-    if(daysUntil(e.date,day)!==lead)continue;
+    const distance=daysUntil(e.date,day);
+    if(e.assessmentDelivery===true){
+      // Prazo obrigatório: uma única tentativa diária, EXATAMENTE 5 dias antes.
+      if(distance!==5)continue;
+      const stage=Math.max(1,Math.min(4,Number(e.stageNumber)||1));
+      const until=e.date.split('-').reverse().join('/');
+      const body='Lembrete: entregar '+(e.deliveryTypes||'as avaliações')+
+        ' à coordenação até '+until+'. Fundamental: '+
+        (e.fundamentalEmail||'coordenacaofundamentalcora@gmail.com')+
+        '. Ensino Médio: '+(e.medioEmail||'coordenacaomediocora@gmail.com')+'.';
+      pending.push({id:deliveryId('assessment-deadline',year,e.id,e.date+'-5d'),
+        kind:'assessment-deadline',title:'Entrega das avaliações — '+stage+'ª etapa',
+        body,tag:'entrega-avaliacoes-'+year+'-'+stage+'-'+e.date,urgent:true});
+      continue;
+    }
+    if(distance!==lead)continue;
     pending.push({id:deliveryId('event',year,e.id,e.date+'-'+day),kind:'event',
       title:'Próxima atividade: '+e.title,body:e.notes||e.type||'Confira o calendário escolar',
       tag:'event-'+e.id+'-'+e.date});
@@ -50,7 +65,7 @@ export default async function handler(){
   for(const item of pending.slice(0,45)){
    if(await hasDelivered(item.id))continue;
    try{
-    const stats=await dispatchPush({...item,year,urgent:item.kind==='notice'});
+    const stats=await dispatchPush({...item,year,urgent:item.kind==='notice'||item.kind==='assessment-deadline'});
     if(stats.registered)await markDelivered(item.id,{kind:item.kind,year,sent:stats.sent,failed:stats.failed});
    }catch(e){console.error('Erro de envio agendado',e.message)}
   }
