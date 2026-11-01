@@ -1,7 +1,7 @@
 /* Netlify Scheduled Function — avisos futuros e lembretes por antecedência.
  * Executa a cada 30 min (UTC), sem acesso público por URL. */
 import {getStore} from '@netlify/blobs';
-import {dispatchPush,deliveryId,hasDelivered,markDelivered} from './cora-push-core.mjs';
+import {dispatchPush,deliveryId,hasDelivered,markDelivered} from './lib/cora-push-core.mjs';
 const publicationStore=()=>getStore('cora-calendar-publications');
 const toLocalTime=value=>{
  if(!value)return NaN;
