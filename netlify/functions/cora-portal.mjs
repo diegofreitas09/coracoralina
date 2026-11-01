@@ -2,7 +2,7 @@
 // Passwords and session keys are set in Netlify project environment variables, never in Git.
 import { createHmac, createHash, timingSafeEqual, randomBytes } from 'node:crypto';
 import { getStore } from '@netlify/blobs';
-import {vapidKeys,registrations,saveRegistration,deleteRegistration,dispatchPush,deliveryId,hasDelivered,markDelivered} from './lib/cora-push-core.mjs';
+import {vapidKeys,registrations,saveRegistration,deleteRegistration,dispatchPush,deliveryId,hasDelivered,markDelivered,testDevicePush} from './lib/cora-push-core.mjs';
 
 const COOKIE='cora_portal_session';
 const YEAR=2026;
@@ -76,6 +76,13 @@ export default async function handler(request){
   let input;try{input=await request.json()}catch{return answer({error:'Dados inválidos'},400)}
   return answer(await deleteRegistration(input.subscription),200);
  }
+ if(action==='push-test'&&request.method==='POST'){
+  if(role!=='equipe')return answer({error:'Acesso restrito a colaboradores'},403);
+  if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Requisição inválida'},400);
+  let body;try{body=await request.json()}catch{return answer({error:'Inscrição inválida'},400)}
+  try{return answer(await testDevicePush(body.subscription),200)}
+  catch(error){return answer({error:'O serviço push não confirmou o envio: '+error.message},502)}
+ }
  if(action==='push-status'&&request.method==='GET'){
   if(role!=='gestao')return answer({error:'Apenas gestão'},403);
   return answer({devices:(await registrations()).length},200);
@@ -125,7 +132,7 @@ export default async function handler(request){
   const oldNotices=new Map((previous?.notices||[]).map(n=>[String(n.id),n]));
   const now=Date.now();
   for(const notice of notices){
-   if(notice.publishAt&&Date.parse(notice.publishAt)>now)continue;
+   if(notice.publishAt&&Date.parse(notice.publishAt+'-03:00')>now)continue;
    const old=oldNotices.get(String(notice.id));
    if(old&&old.title===notice.title&&old.body===notice.body&&old.publishAt===notice.publishAt)continue;
    const id=deliveryId('notice',year,notice.id,notice.title+'|'+notice.body+'|'+notice.publishAt);
