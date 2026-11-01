@@ -1,4 +1,4 @@
-const CACHE = 'calendario-anual-2026-v5';
+const CACHE = 'calendario-anual-2026-v6';
 const ASSETS = ['./','./index.html','./styles.css','./app.js','./studio.css','./studio-assets.js','./school-brand.js','./official-calendar-data.js','./official-calendar-ui.js','./studio-pdf.js','./planning.js','./cards.js','./icon.svg','./manifest.webmanifest','./calendar-integrations.js','./calendar-integrations.css'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
