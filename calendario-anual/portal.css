@@ -1,0 +1,85 @@
+/* Portal dual: role selection, management publishing and read-only pedagogical team. */
+body.portal-locked #app { display:none!important; }
+body.portal-loading #app { visibility:hidden!important; }
+body.portal-locked { background:#eef3f9; }
+#coraPortal {font-family:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;color:#123155;}
+#coraPortal * {box-sizing:border-box;}
+#coraPortal button,#coraPortal input,#coraPortal select,#coraPortal textarea {font:inherit;}
+#coraPortal button {cursor:pointer;}
+#coraPortal .cp-hidden {display:none!important;}
+.cp-gateway {min-height:100dvh;display:grid;place-items:center;padding:28px 16px;background:radial-gradient(ellipse at top left,#174d86,#0d2545 65%,#071b32);}
+.cp-login-shell {width:min(960px,100%);background:#fff;border-radius:26px;box-shadow:0 22px 60px #00102256;overflow:hidden;}
+.cp-login-head {padding:32px 36px;background:#f9fbff;display:flex;align-items:center;gap:20px;border-bottom:1px solid #dde7f4;}
+.cp-login-head img {width:86px;height:100px;object-fit:contain;}
+.cp-login-head small {font-size:12px;letter-spacing:2px;color:#46709d;font-weight:800;}
+.cp-login-head h1 {margin:3px 0 7px;font-size:clamp(24px,3.8vw,36px);color:#082b59;}
+.cp-login-head p {margin:0;color:#62758c;}
+.cp-role-grid {padding:27px 34px;display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.cp-role {text-align:left;border:2px solid #dce7f5;background:#fff;border-radius:19px;padding:24px;min-height:178px;transition:border-color .2s,background .2s;}
+.cp-role.active {border-color:#1980cb;background:#edf7ff;}
+.cp-role .cp-role-icon {display:flex;width:48px;height:48px;border-radius:13px;align-items:center;justify-content:center;font-size:25px;background:#113b6b;color:#ffce33;margin-bottom:12px;}
+.cp-role strong {display:block;font-size:21px;color:#092c57;margin-bottom:5px;}
+.cp-role span:last-child {color:#566d85;line-height:1.5;font-size:14px;}
+.cp-auth {padding:0 34px 34px;display:grid;grid-template-columns:1fr auto;align-items:end;gap:14px;}
+.cp-auth label {display:block;font-weight:700;font-size:14px;margin-bottom:7px;}
+.cp-auth input {width:100%;padding:15px;border-radius:12px;border:1px solid #cdddec;min-height:50px;background:#fff;color:#082c54;}
+.cp-btn {border:0;border-radius:12px;min-height:48px;padding:12px 21px;font-weight:750;background:#164e8b;color:white;}
+.cp-btn.gold {background:#ffcf32;color:#0c305a;}
+.cp-btn.soft {background:#e8f1fb;color:#0d3d78;}
+.cp-btn:disabled {opacity:.55;cursor:wait;}
+.cp-error {grid-column:1 / -1;color:#9d2332;font-size:13px;min-height:17px;}
+.cp-gateway-foot {background:#f5f8fd;padding:15px 33px;color:#527092;font-size:12px;display:flex;justify-content:space-between;gap:8px;}
+.cp-manager-bar {position:sticky;top:0;z-index:99;display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#071f3a;color:white;padding:12px clamp(14px,3vw,32px);box-shadow:0 4px 20px #122c4b20;}
+.cp-manager-bar strong {font-weight:800;letter-spacing:.3px;}
+.cp-manager-bar small {color:#c7d9ee;}
+.cp-manager-bar .cp-btn {min-height:37px;padding:8px 16px;font-size:13px;}
+.cp-spacer {flex:1;}
+.cp-manager-panel {margin:0 auto 0;max-width:1120px;padding:20px 18px;background:#fff;border:1px solid #dbe8f3;box-shadow:0 9px 28px #091f351a;border-radius:0 0 19px 19px;}
+.cp-manager-panel h2 {font-size:23px;color:#082f5f;margin:0 0 6px;}
+.cp-manager-panel p {font-size:13px;color:#56728c;}
+.cp-form-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+.cp-form-grid .cp-wide {grid-column:span 3;}
+.cp-form-grid label {font-size:12px;font-weight:800;color:#28466a;display:flex;flex-direction:column;gap:5px;}
+.cp-form-grid input,.cp-form-grid textarea,.cp-form-grid select {border:1px solid #d4e1f0;border-radius:10px;padding:11px;min-width:0;background:white;color:#123353;}
+.cp-form-grid textarea {resize:vertical;min-height:64px;}
+.cp-notice-row {display:flex;align-items:center;gap:8px;justify-content:space-between;border:1px solid #e1eaf3;border-radius:10px;padding:10px 12px;margin:7px 0;}
+.cp-notice-row span {font-size:13px;color:#264c70;}
+.cp-status {font-size:13px;color:#527394;}
+.cp-team {min-height:100dvh;background:#eef3fa;}
+.cp-team-head {padding:20px clamp(16px,4vw,55px);background:linear-gradient(105deg,#081f40,#155a9f);color:#fff;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.cp-team-head img {width:66px;height:75px;object-fit:contain;background:white;border-radius:12px;padding:3px;}
+.cp-team-head h1 {margin:3px 0;font-size:clamp(24px,3vw,31px);}
+.cp-team-head small {color:#d5e7fa;font-size:12px;letter-spacing:1px;}
+.cp-team-head .cp-btn {background:#ffffff20;border:1px solid #ffffff66;min-height:40px;}
+.cp-bell {position:relative;background:#ffcc36!important;color:#072e5b!important;border:0!important;font-size:23px!important;min-width:55px;}
+.cp-bell em {position:absolute;right:-5px;top:-5px;background:#db3c45;color:#fff;border-radius:99px;font-size:11px;min-width:22px;padding:3px;font-style:normal;}
+.cp-team-main {max-width:1220px;padding:25px 18px 60px;margin:0 auto;}
+.cp-overview {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;}
+.cp-metric,.cp-paper {background:#fff;border:1px solid #dfe9f2;border-radius:18px;padding:21px;box-shadow:0 4px 14px #0b27420a;}
+.cp-metric small {color:#6b819a;font-size:13px;}
+.cp-metric strong {display:block;font-size:34px;color:#083661;margin-top:7px;}
+.cp-tabs {display:flex;flex-wrap:wrap;gap:10px;margin:24px 0 16px;}
+.cp-tabs button {border:1px solid #d6e4f3;background:#fff;color:#1c4877;border-radius:12px;padding:13px 17px;font-weight:800;}
+.cp-tabs button.active {background:#0d4c87;color:#fff;}
+.cp-main-heading {display:flex;gap:15px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin:7px 0 17px;}
+.cp-main-heading h2 {margin:0;color:#0c3563;font-size:25px;}
+.cp-main-heading select {background:white;padding:11px;border:1px solid #cad9e8;border-radius:10px;color:#123b63;}
+.cp-list {display:grid;gap:9px;}
+.cp-list-entry {display:flex;gap:14px;align-items:start;background:#fff;border:1px solid #e0e9f3;border-radius:13px;padding:14px;}
+.cp-list-entry time {background:#e5f3ff;color:#085791;font-size:15px;font-weight:850;padding:10px;border-radius:9px;min-width:75px;text-align:center;}
+.cp-list-entry strong {font-size:15px;display:block;margin:2px 0 6px;color:#143a61;}
+.cp-list-entry p {color:#5b7085;margin:0;font-size:13px;line-height:1.45;}
+.cp-tag {display:inline-block;border-radius:99px;padding:4px 9px;background:#f1f6ff;color:#1c6198;font-weight:750;font-size:11px;}
+.cp-notice {background:#fff;border-left:5px solid #f8c42b;border-radius:13px;padding:19px;margin:10px 0;}
+.cp-notice.urgent {border-color:#e95c55;}
+.cp-notice h3 {color:#0d3562;margin:4px 0;}
+.cp-notice p {font-size:14px;color:#4a617b;white-space:pre-wrap;}
+.cp-notice small {color:#72839a;}
+.cp-pdf-sample {display:grid;grid-template-columns:1.25fr .8fr;gap:16px;align-items:start;}
+.cp-pdf-image {display:block;max-width:100%;max-height:590px;object-fit:contain;border:1px solid #d6e2ef;border-radius:11px;background:white;}
+.cp-muted {color:#647b92;font-size:14px;line-height:1.5;}
+.cp-bell-panel {border:2px solid #d6e5f1;background:#fff;padding:16px;border-radius:15px;margin:12px 0;}
+.cp-updated {font-size:12px;color:#6282a0;margin-top:10px;}
+.cp-portal-toast {position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0a335d;color:white;max-width:90vw;border-radius:12px;padding:12px 20px;z-index:500;box-shadow:0 9px 25px #0004;}
+@media(max-width:780px){.cp-role-grid {grid-template-columns:1fr;padding:15px 18px;}.cp-role {min-height:120px;padding:16px;}.cp-auth {grid-template-columns:1fr;padding:2px 18px 20px;}.cp-login-head{padding:20px;}.cp-login-head img{width:67px;height:80px;}.cp-team-head{padding:13px;}.cp-team-head img{width:50px;height:58px;}.cp-overview{grid-template-columns:1fr 1fr;}.cp-form-grid{grid-template-columns:1fr 1fr;}.cp-form-grid .cp-wide{grid-column:span 2;}.cp-pdf-sample{grid-template-columns:1fr;}.cp-team-main{padding:13px 12px 45px;}}
+@media(max-width:420px){.cp-overview{grid-template-columns:1fr 1fr;}.cp-metric{padding:12px;}.cp-metric strong{font-size:27px;}.cp-team-head h1{font-size:23px;}.cp-team-head .cp-btn{font-size:12px;}.cp-gateway-foot{flex-direction:column;}}
