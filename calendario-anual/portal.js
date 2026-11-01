@@ -106,7 +106,7 @@
  }
  function renderNoticeRows(){const area=$('#cpNoticeRows');if(!area)return;area.innerHTML=managerNotices.length?managerNotices.map(n=>`<div class="cp-notice-row"><span><span class="cp-notice-saved">✓ Adicionado</span> <strong>${safe(n.title)}</strong> · ${safe(n.type)} · ${safe(n.publishAt).replace('T',' ')}${n.eventDate?' · Evento '+safe(n.eventDate):''}</span><button class="cp-btn soft" data-cp-remove="${safe(n.id)}">Excluir</button></div>`).join(''):'<p class="cp-muted">Nenhum aviso criado. O calendário oficial ainda pode ser publicado.</p>';area.querySelectorAll('[data-cp-remove]').forEach(b=>b.onclick=()=>{managerNotices=managerNotices.filter(n=>n.id!==b.dataset.cpRemove);localStorage.setItem(noticeKey(year),JSON.stringify(managerNotices));renderNoticeRows()});}
  async function publish(){
-  const year=Number(window.CoraYears?.activeYear)||2026;const drafts=loadEventDraft(year);const added=window.CoraAssessments?.publicationEvents?.(year)||[];const events=[...drafts.filter(e=>!/^cora-(entrega-avaliacoes|periodo-avaliacao)-/.test(String(e.id||''))),...added],btn=$('#cpPublishNow');if(!btn)return;btn.disabled=true;
+  const year=Number(window.CoraYears?.activeYear)||2026;const drafts=loadEventDraft(year);const added=(window.CoraAssessments?.publicationEvents?.(year)||[]).filter(e=>year!==2026||e.assessmentDelivery);const events=[...drafts.filter(e=>!/^cora-(entrega-avaliacoes|periodo-avaliacao)-/.test(String(e.id||''))),...added],btn=$('#cpPublishNow');if(!btn)return;btn.disabled=true;
   try{
    // Evita que uma primeira publicação apague o cadastro institucional anterior.
    const previous=await api('state',undefined,'year='+year);
