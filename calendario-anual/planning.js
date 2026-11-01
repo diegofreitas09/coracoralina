@@ -66,7 +66,85 @@
     function wrap(value,width,size,weight='normal') {g.font=`${weight} ${size}px Arial, sans-serif`;const paras=String(value).split('\n');let out=[];for(const par of paras){if(!par.trim()){out.push('');continue;}let line='';for(let word of par.split(/\s+/)){if(!word)continue;while(g.measureText(word).width>width&&word.length>1){let index=1;while(index<word.length&&g.measureText(word.slice(0,index+1)).width<=width)index++;if(line){out.push(line);line=''}out.push(word.slice(0,index));word=word.slice(index)}const candidate=line?line+' '+word:word;if(g.measureText(candidate).width>width&&line){out.push(line);line=word}else line=candidate}if(line)out.push(line)}return out}
     function room(px){if(y+px>BOTTOM)newPage()}
     function paragraph(textvalue,{size=24,color=INK,indent=0,bold=false,gap=12}={}){const l=wrap(textvalue,RIGHT-LEFT-indent,size,bold?'bold':'normal');for(const line of l){room(size+21);t(line,LEFT+indent,y+size,size,color,bold?'bold':'normal');y+=size+11}y+=gap}
-    function section(title,values){const arr=Array.isArray(values)?values:lines(values);if(!arr.length)return;room(110);rrect(LEFT,y,RIGHT-LEFT,48,8,'#eaf2fa');rrect(LEFT,y,11,48,5,GOLD);t(title.toUpperCase(),LEFT+30,y+34,22,BLUE,'bold');y+=68;for(const value of arr){room(42);rrect(LEFT+6,y+14,8,8,4,GOLD);paragraph(value,{indent:27,size:23,gap:9})}y+=16}
+    // Títulos e itens nunca são separados em páginas distintas quando o bloco cabe numa página.
+    function section(title,values){
+      const arr=Array.isArray(values)?values:lines(values);if(!arr.length)return;
+      const estimate=68+arr.reduce((total,item)=>total+Math.max(1,wrap(item,RIGHT-LEFT-27,23).length)*34+9,0)+16;
+      if(estimate<=BOTTOM-243&&y+estimate>BOTTOM)newPage();
+      else if(y+115>BOTTOM)newPage();
+      rrect(LEFT,y,RIGHT-LEFT,48,8,'#eaf2fa');rrect(LEFT,y,11,48,5,GOLD);
+      t(title.toUpperCase(),LEFT+30,y+34,22,BLUE,'bold');y+=68;
+      for(const value of arr){
+        const height=Math.max(1,wrap(value,RIGHT-LEFT-27,23).length)*34+9;
+        room(height+12);
+        rrect(LEFT+6,y+14,8,8,4,GOLD);
+        paragraph(value,{indent:27,size:23,gap:9});
+      }
+      y+=16;
+    }
+    // Programação em bloco indivisível: quando não couber, transfere a programação
+    // INTEIRA para a página seguinte e, se necessário, compõe-a em colunas.
+    function scheduleSection(title,values){
+      const arr=(Array.isArray(values)?values:lines(values)).filter(x=>String(x||'').trim());
+      if(!arr.length)return;
+      const usableWidth=RIGHT-LEFT;
+      const config=(columns,font)=>{
+        const colGap=26,colWidth=(usableWidth-colGap*(columns-1))/columns;
+        const lineHeight=font+8,gap=10;
+        const measurements=arr.map(value=>Math.max(1,wrap(value,colWidth-36,font).length)*lineHeight+gap);
+        const stacks=Array.from({length:columns},()=>[]);
+        // Ordem de leitura por coluna, sempre preservando a ordem cronológica original.
+        let start=0;let remaining=measurements.reduce((a,b)=>a+b,0);
+        for(let c=0;c<columns;c++){
+          const left=columns-c,limit=remaining/left;
+          let height=0;
+          while(start<arr.length&&(c===columns-1||height<limit)){
+            const i=start++;stacks[c].push({value:arr[i],height:measurements[i]});
+            height+=measurements[i];remaining-=measurements[i];
+          }
+        }
+        const height=Math.max(...stacks.map(v=>v.reduce((a,b)=>a+b.height,0)));
+        return {columns,font,colGap,colWidth,lineHeight,stacks,height,total:height+68+18};
+      };
+      const first=config(1,23);
+      let layout=first;
+      // Priorizamos uma única coluna sempre que couber em uma página.
+      if(y+first.total>BOTTOM){
+        if(first.total<=BOTTOM-243)newPage();
+        else{
+          // Duas ou três colunas mantêm a lista inteira na mesma página,
+          // sem quebrar uma atividade ao atravessar a margem.
+          for(const columns of [2,3]){
+            for(const font of [22,21,20,19,18,17,16]){
+              const test=config(columns,font);
+              if(test.total<=BOTTOM-243){layout=test;break}
+            }
+            if(layout!==first)break;
+          }
+          newPage();
+          if(layout===first){
+            // Excesso excepcional: preserva a legibilidade e não oculta textos.
+            // A lista longa é tratada pelo paginador normal, sem corte de informações.
+            section(title,arr);return;
+          }
+        }
+      }
+      rrect(LEFT,y,usableWidth,48,8,'#eaf2fa');
+      rrect(LEFT,y,11,48,5,GOLD);
+      t(title.toUpperCase(),LEFT+30,y+34,22,BLUE,'bold');y+=67;
+      const startY=y;
+      for(let col=0;col<layout.columns;col++){
+        const x=LEFT+col*(layout.colWidth+layout.colGap);
+        let localY=startY;
+        for(const item of layout.stacks[col]){
+          rrect(x+5,localY+9,7,7,3,GOLD);
+          const ls=wrap(item.value,layout.colWidth-36,layout.font);
+          for(const line of ls){t(line,x+25,localY+layout.font,layout.font,INK);localY+=layout.lineHeight}
+          localY+=10;
+        }
+      }
+      y=startY+layout.height+18;
+    }
     function birthdayPanel(people){
       if(!plan.includeBirthdays)return;
       const visible=people.slice(0,16);
@@ -108,16 +186,21 @@
     y+=69;
     paragraph(plan.segment,{size:26,color:MUTED,gap:15});
     const fmt=s=>/^\d{4}-\d\d-\d\d$/.test(s||'')?s.split('-').reverse().join('/'):'Não informada';
-    const projects=lines(plan.projects).length?plan.projects:(window.CoraYears?.getProjects?.(YEAR)?.[month]||[]);
-    section('Datas importantes e projetos do mês',projects);
-    birthdayPanel(birthdaysByMonth(month));
     room(122);rrect(LEFT,y,RIGHT-LEFT,112,15,'#edf4fb');t('REUNIÃO COM A EQUIPE',LEFT+22,y+37,21,BLUE,'bold');t(`Data: ${fmt(plan.meetingDate)}    •    Horário: ${plan.meetingTime||'A definir'}`,LEFT+22,y+73,23,INK);t(`Local: ${plan.meetingPlace||'A definir'}    •    Coordenação: ${plan.coordinator||'Equipe gestora'}`,LEFT+22,y+98,17,MUTED);y+=148;
-    section('Programação mensal e datas importantes',plan.schedule);
-    if(plan.includeCalendar){const ev=eventsFor(month).map(event=>`${event.date.slice(8,10)}/${event.date.slice(5,7)} – ${event.title}${event.notes?' — '+event.notes:''}`);section('Eventos cadastrados no calendário',ev)}
+    const projects=lines(plan.projects).length?plan.projects:(window.CoraYears?.getProjects?.(YEAR)?.[month]||[]);
+    section('Projetos e campanhas do mês',projects);
+    birthdayPanel(birthdaysByMonth(month));
+    const manualNotes=String(plan.birthdays||'').trim();
+    if(manualNotes&&manualNotes!==String(sample.birthdays).trim())section('Comunicados e datas complementares',manualNotes);
+    const scheduleEntries=lines(plan.schedule);
+    const extraEvents=plan.includeCalendar?eventsFor(month).map(event=>`${event.date.slice(8,10)}/${event.date.slice(5,7)} – ${event.title}${event.notes?' — '+event.notes:''}`):[];
+    const normalized=v=>String(v).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^\\w]/g,'').toLowerCase();
+    const scheduleKeys=new Set(scheduleEntries.map(normalized));
+    const uniqueExtra=extraEvents.filter(item=>!scheduleKeys.has(normalized(item)));
+    scheduleSection('Programação mensal e datas importantes',[...scheduleEntries,...uniqueExtra]);
     section('Orientações pedagógicas',plan.guidance);
     section('Pauta da reunião',plan.agenda);
     section('Encaminhamentos e responsabilidades',plan.actions);
-    if(plan.birthdays&&plan.birthdays!==sample.birthdays)section('Comunicados e datas complementares',plan.birthdays);
     section('Mensagem de encerramento',plan.closing);
     room(150);y+=16;g.fillStyle='#dce6ef';g.fillRect(LEFT,y,RIGHT-LEFT,2);y+=42;t('Responsável pela reunião:',LEFT,y,21,INK,'bold');g.strokeStyle='#b8c7d7';g.lineWidth=2;g.beginPath();g.moveTo(LEFT+340,y+6);g.lineTo(RIGHT,y+6);g.stroke();
     for(let i=0;i<pages.length;i++){const p=pages[i],ctx=p.getContext('2d');ctx.fillStyle='#e7edf3';ctx.fillRect(LEFT,1661,RIGHT-LEFT,2);ctx.font='bold 17px Arial';ctx.fillStyle=MUTED;ctx.fillText(`CORA CORALINA · PLANEJAMENTO DE ${MONTHS[month].toUpperCase()} ${YEAR}`,LEFT,1697);ctx.fillText(`${i+1} / ${pages.length}`,1080,1697);ctx.textAlign='right';ctx.font='bold 15px Arial';ctx.fillStyle='#607e9e';ctx.fillText('Tecnologia: PDF Solução Educacional',RIGHT,1730);ctx.textAlign='left'}
