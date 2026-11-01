@@ -65,6 +65,15 @@
     }));
     save(eventKey(target),migrated);
     saveProjects(target,getProjects(source));
+    const copyNamedStore=(prefix)=>{
+      const data=stored(prefix+source+'_v1',null);
+      if(data&&typeof data==='object'){
+        const next=JSON.parse(JSON.stringify(data).replace(new RegExp(String(source),'g'),String(target)));
+        save(prefix+target+'_v1',next);
+      }
+    };
+    copyNamedStore('cora_planejamento_');
+    copyNamedStore('cora_cards_');
     save(REGISTER,[...new Set([...years(),target])]);
     return {count:migrated.length,projects:getProjects(target).reduce((n,m)=>n+m.length,0)};
   }
