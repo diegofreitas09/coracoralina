@@ -83,6 +83,11 @@
        if(!source?.start||!source.end||!current||current.start||current.end)continue;
        const start=suggestedDate(source.start,from,to),end=suggestedDate(source.end,from,to);
        if(!start||!end||start>end){result.warnings.push('Revisar etapa '+(i+1)+'.');continue;}
+       const previousEnd=next[i-1]?.end||'',followingStart=next[i+1]?.start||'';
+       if((previousEnd&&start<=previousEnd)||(followingStart&&end>=followingStart)){
+         result.warnings.push('Sugestão da '+(i+1)+'ª etapa não copiada porque conflita com uma etapa já preenchida. Confira as datas na Gestão.');
+         continue;
+       }
        next[i]={number:i+1,start,end,needsReview:true,originYear:from};result.stages++;
      }
      if(result.stages){
