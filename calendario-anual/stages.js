@@ -14,7 +14,7 @@
  function get(y=year()){
   try{
    const saved=JSON.parse(localStorage.getItem(key(y))||'null');
-   if(Array.isArray(saved)&&saved.length===4)return saved.map((x,i)=>({number:i+1,start:String(x.start||''),end:String(x.end||'')}));
+   if(Array.isArray(saved)&&saved.length===4)return saved.map((x,i)=>({number:i+1,start:String(x.start||''),end:String(x.end||''),needsReview:Boolean(x.needsReview),originYear:Number(x.originYear)||null}));
   }catch{}
   return y===2026?BASE.map(e=>({...e})):names.map((_,i)=>({number:i+1,start:'',end:''}));
  }
@@ -40,12 +40,12 @@
   const fmt=d=>d?d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(0,4):'A definir';
   const choice=container.querySelector('#stageSelector')?.value||'1';
   container.innerHTML='<div class="stage-head"><strong>Etapas letivas · '+y+'</strong><span>'+list.filter(e=>e.start&&e.end).length+'/4 períodos definidos</span></div>'+
-   '<div class="stage-timeline">'+list.map(x=>'<div class="stage-period '+(x.start?'':'missing')+'"><b>'+names[x.number-1]+'</b><small>'+fmt(x.start)+' até '+fmt(x.end)+'</small></div>').join('')+'</div>'+
+   '<div class="stage-timeline">'+list.map(x=>'<div class="stage-period '+(x.start?'':'missing')+(x.needsReview?' pending':'')+'"><b>'+names[x.number-1]+'</b><small>'+fmt(x.start)+' até '+fmt(x.end)+'</small>'+(x.needsReview?'<small class="stage-proposal-note">Sugestão de '+(x.originYear||'ano anterior')+' · validar</small>':'')+'</div>').join('')+'</div>'+
    '<div class="stage-current"><strong>Consulta:</strong> '+(found.length?found.map(x=>names[x.number-1]+' · início '+fmt(x.start)+' · fim '+fmt(x.end)).join(' · '):'Nenhuma mudança de etapa registrada neste mês.')+'</div>'+
    '<div class="stage-edit"><label>Editar etapa <select id="stageSelector">'+list.map(x=>'<option value="'+x.number+'">'+names[x.number-1]+'</option>').join('')+'</select></label>'+
    '<label>Início <input id="stageStart" type="date" min="'+y+'-01-01" max="'+y+'-12-31"></label>'+
    '<label>Fim <input id="stageEnd" type="date" min="'+y+'-01-01" max="'+y+'-12-31"></label>'+
-   '<button type="button" class="btn btn-primary" id="stageSave">Salvar etapa</button></div><p class="stage-message" id="stageMessage">Os períodos deste ano são independentes. Confira as datas antes de publicar para a equipe.</p>';
+   '<button type="button" class="btn btn-primary" id="stageSave">Conferir e validar etapa</button></div><p class="stage-message" id="stageMessage">Etapas importadas são sugestões. Confira as datas, valide cada etapa e só depois publique para a equipe.</p>';
   const fill=()=>{
    const x=list.find(e=>e.number===Number($('stageSelector').value));
    $('stageStart').value=x?.start||'';$('stageEnd').value=x?.end||'';
@@ -55,7 +55,7 @@
   $('stageSave').addEventListener('click',()=>{
    const n=Number($('stageSelector').value);
    const newList=get(y);
-   newList[n-1]={number:n,start:$('stageStart').value,end:$('stageEnd').value};
+   newList[n-1]={number:n,start:$('stageStart').value,end:$('stageEnd').value,needsReview:false,originYear:null};
    const result=save(y,newList);$('stageMessage').textContent=result.ok?'✓ Período salvo. Publique na Gestão para a equipe visualizar.':result.message;
   });
  }
