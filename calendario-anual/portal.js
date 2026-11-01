@@ -11,7 +11,7 @@
  const dateStr=(date)=>{const d=new Date(date);return Number.isNaN(d.getTime())?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
  const isoNow=()=>{const d=new Date();return `${dateStr(d)}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`};
  const app=$('#app'),root=document.createElement('div');root.id='coraPortal';document.body.prepend(root);
- let role='',chosen='gestao',data=null,year=Number(window.CoraYears?.activeYear)||2026,availableYears=[2026],month=new Date().getFullYear()===2026?new Date().getMonth():0,tab='resumo',selectedStage=0,managerNotices=[],leadDays=3,timer=null,showBell=false;
+ let role='',chosen='gestao',data=null,year=Number(window.CoraYears?.activeYear)||2026,availableYears=[2026],month=new Date().getFullYear()===2026?new Date().getMonth():0,tab='resumo',selectedStage=0,managerNotices=[],leadDays=3,timer=null,showBell=false,teacherProfile=null,teacherSaving=false;
  const seenPublicationIds=new Map();
  const endpoint=action=>`${API}?action=${encodeURIComponent(action)}`;
  async function api(action,payload,query=''){
@@ -46,7 +46,7 @@
   root.querySelectorAll('[data-cp-role]').forEach(b=>b.onclick=()=>{chosen=b.dataset.cpRole;root.querySelectorAll('[data-cp-role]').forEach(x=>x.classList.toggle('active',x===b));$('#cpRoleLabel').textContent=chosen==='gestao'?'Gestão':'Equipe Pedagógica';$('#cpPassword').focus()});
   $('#cpLoginForm').onsubmit=async e=>{e.preventDefault();const btn=$('#cpLoginForm button[type=submit]');btn.disabled=true;try{const r=await api('login',{role:chosen,password:$('#cpPassword').value});role=r.role;await enter();}catch(err){gateway('Senha incorreta ou serviço indisponível. '+(err.status===503?'Contate a administração.':''));}finally{btn.disabled=false;}};
  }
- async function logout(){try{await api('logout',{})}catch{}clearInterval(timer);timer=null;gateway();}
+ async function logout(){if(role==='equipe')try{await api('delivery-signout',{})}catch{}teacherProfile=null;try{await api('logout',{})}catch{}clearInterval(timer);timer=null;gateway();}
  async function enter(){if(role==='gestao')manager();else await team();}
  function manager(){
   year=Number(window.CoraYears?.activeYear)||2026;
@@ -123,8 +123,8 @@
   }catch(e){toast('Não foi possível publicar: '+e.message);}finally{btn.disabled=false;}
  }
  function teamNav(){return `<div class="cp-team-head"><img id="cpTeamLogo" alt="Brasão do Colégio Cora Coralina"><div><small>COLÉGIO CORA CORALINA · AMBIENTE DE CONSULTA</small><h1>Equipe Pedagógica</h1></div><label class="cp-year-label">Ano letivo <select id="cpTeamYear" aria-label="Ano letivo">${availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('')}</select></label><span class="cp-spacer"></span><button class="cp-btn soft" type="button" id="cpEnableAlerts" title="Ativar notificações mesmo com o aplicativo fechado">Ativar notificações</button><button class="cp-btn cp-bell" id="cpBell" aria-label="Abrir notificações">🔔<em id="cpBellCount" style="display:none">0</em></button><button class="cp-btn" id="cpRefresh">Atualizar</button><button class="cp-btn" id="cpTeamLogout">Sair</button></div>`}
- async function team(){const deep=new URLSearchParams(location.search);year=Number(deep.get('ano'))||2026;if(deep.get('avisos')==='1')showBell=true;document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpEnableAlerts').onclick=enableLocalNotifications;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};$('#cpTeamYear').onchange=e=>{year=Number(e.target.value)||2026;month=0;showBell=false;tab='resumo';refresh()};await refresh();void confirmDevicePush();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},30000);}
- async function refresh(){try{const result=await api('state',undefined,'year='+year);availableYears=Array.isArray(result.availableYears)?result.availableYears:[2026];data=result.publication;
+ async function team(){teacherProfile=null;const deep=new URLSearchParams(location.search);year=Number(deep.get('ano'))||2026;if(deep.get('avisos')==='1')showBell=true;document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpEnableAlerts').onclick=enableLocalNotifications;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};$('#cpTeamYear').onchange=e=>{year=Number(e.target.value)||2026;month=0;showBell=false;tab='resumo';refresh()};await refresh();void confirmDevicePush();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},30000);}
+ async function refresh(){try{const [result,identity]=await Promise.all([api('state',undefined,'year='+year),api('delivery-profile',undefined,'year='+year).catch(()=>({identified:false,statuses:{}}))]);teacherProfile=identity.identified?identity:null;availableYears=Array.isArray(result.availableYears)?result.availableYears:[2026];data=result.publication;
     const newNoticeIds=new Set(activeNotices().map(n=>String(n.id)));
     const knownIds=seenPublicationIds.get(year);
     if(knownIds){
@@ -294,7 +294,7 @@
    }).map(n=>({id:'reminder-'+n.id+'-'+n.eventDate,kind:'reminder',
      title:'Lembrete: '+n.title,date:n.eventDate,desc:String(n.body||n.type||''),
      type:n.type||'Informativo'}));
-   const assessmentDeadlines=filteredEvents().filter(e=>e.assessmentDelivery).filter(e=>{const delta=dayDifference(e.date);return delta!==null&&delta>=0&&delta<=5;}).map(e=>({id:'deadline-'+e.id+'-'+e.date,kind:'assessment-deadline',title:'Lembrete: entregar avaliações — '+e.stageNumber+'ª etapa',date:e.date,desc:'Encaminhe '+(e.deliveryTypes||'as avaliações')+' à coordenação até '+e.date.split('-').reverse().join('/')+'. Fundamental: '+(e.fundamentalEmail||'coordenacaofundamentalcora@gmail.com')+'. Médio: '+(e.medioEmail||'coordenacaomediocora@gmail.com')+'.',type:'Entrega de avaliações'}));
+   const assessmentDeadlines=filteredEvents().filter(e=>e.assessmentDelivery).filter(e=>{if(teacherProfile?.statuses?.[e.stageNumber]?.status==='entregue')return false;const delta=dayDifference(e.date),current=dateStr(new Date());const stage=(data?.stages||[]).find(s=>Number(s.number)===Number(e.stageNumber));const active=stage?.start&&stage?.end&&current>=stage.start&&current<=stage.end;return (delta!==null&&delta>=0&&delta<=5)||Boolean(active&&delta<0);}).map(e=>({id:'deadline-'+e.id+'-'+e.date,kind:'assessment-deadline',title:'Lembrete: entregar avaliações — '+e.stageNumber+'ª etapa',date:e.date,desc:'Encaminhe '+(e.deliveryTypes||'as avaliações')+' à coordenação até '+e.date.split('-').reverse().join('/')+'. Fundamental: '+(e.fundamentalEmail||'coordenacaofundamentalcora@gmail.com')+'. Médio: '+(e.medioEmail||'coordenacaomediocora@gmail.com')+'.',type:'Entrega de avaliações'}));
     const contents=filteredEvents().filter(e=>e.type==='Entrega de conteúdo').filter(e=>{const delta=dayDifference(e.date);return delta!==null&&delta>=0&&delta<=5;}).map(e=>({id:'content-'+e.id+'-'+e.date,kind:'assessment-deadline',title:'Lembrete: entrega de conteúdo',date:e.date,desc:(e.title||'Entrega de conteúdo')+' · '+(e.notes||'Encaminhar à coordenação pedagógica até a data prevista.'),type:'Entrega de conteúdo'}));
     return [...notices,...reminders,...assessmentDeadlines,...contents,...events].map(n=>({...n,unread:!seen.has(n.id)}));
  }
@@ -381,18 +381,43 @@
    const arr=(tab==='avaliacoes'?assess:events).filter(e=>Number(e.date.slice(5,7))===month+1);
    content=`<div class="cp-main-heading"><h2>${tab==='avaliacoes'?'Avaliações, simulados e sondagens':'Calendário escolar'}</h2><select id="cpMonthPicker" aria-label="Mês do calendário">${MONTHS.map((m,i)=>`<option value="${i}" ${month===i?'selected':''}>${m} de ${year}</option>`).join('')}</select></div><div class="cp-list">${arr.length?arr.map(eventHtml).join(''):'<p class="cp-muted">Nenhuma atividade publicada neste mês.</p>'}</div>`;
   }else if(tab==='entregas'){
-    const rows=events.filter(e=>e.assessmentDelivery).sort((a,b)=>a.date.localeCompare(b.date));
+    const rows=events.filter(e=>e.assessmentDelivery).sort((a,b)=>Number(a.stageNumber)-Number(b.stageNumber));
     const contents=events.filter(e=>e.type==='Entrega de conteúdo').sort((a,b)=>a.date.localeCompare(b.date));
     const fmt=d=>d?d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(0,4):'A definir';
     const fundamental='coordenacaofundamentalcora@gmail.com',medio='coordenacaomediocora@gmail.com';
-     const today=dateStr(new Date());
-     content='<div class="cp-main-heading"><h2>Entregas pedagógicas · '+year+'</h2></div><p class="cp-muted">Histórico completo dos prazos deste ano, inclusive as datas já encerradas. Os prazos confirmados são mantidos para consulta pela equipe.</p>'+
-      (rows.length?'<p class="cp-deadline-total"><strong>'+rows.length+'</strong> entrega(s) de avaliações registrada(s) no ano</p>':'')+
-      (rows.length?rows.map(e=>{
-       const past=e.date<today;
-       return '<article class="cp-deadline-card"><small>'+safe(e.stageNumber)+'ª etapa · '+fmt(e.date)+(past?' · PRAZO ENCERRADO':' · PRAZO PROGRAMADO')+'</small><h3>Entrega das avaliações · '+fmt(e.date)+'</h3><p><strong>Avaliações:</strong> '+safe(e.deliveryTypes||'AP2 / AD / AR')+'</p><p><strong>Ensino Fundamental:</strong> <a href="mailto:'+fundamental+'">'+fundamental+'</a></p><p><strong>Ensino Médio:</strong> <a href="mailto:'+medio+'">'+medio+'</a></p><p class="cp-deadline-count">'+(past?'Registro histórico · prazo transcorrido':'Lembrete automático cinco dias antes da entrega')+'</p></article>';
-      }).join(''):'<p class="cp-muted">Nenhuma entrega de avaliação publicada para '+year+'.</p>')+
-     '<div class="cp-main-heading" style="margin-top:23px"><h2>Entrega de conteúdos à coordenação</h2></div>'+
+    const today=dateStr(new Date()),profile=teacherProfile,stages=data?.stages||[];
+    const isActive=n=>{const st=stages.find(x=>Number(x.number)===n);return Boolean(st?.start&&st?.end&&today>=st.start&&today<=st.end)};
+    const names=['Primeira','Segunda','Terceira','Quarta'];
+    const identified=Boolean(profile?.identified);
+    const identityHtml=identified?
+     '<div class="cp-delivery-identity is-authenticated"><div><small>IDENTIFICAÇÃO PESSOAL</small><strong>'+safe(profile.name)+'</strong><p>Suas marcações ficam vinculadas ao seu perfil e disponíveis em outros aparelhos.</p></div><button type="button" class="cp-btn soft" id="cpTeacherChange">Trocar professor</button></div>':
+     '<form class="cp-delivery-identity" id="cpTeacherForm"><div class="cp-delivery-identity-info"><small>IDENTIFICAÇÃO PESSOAL</small><strong>Registrar minha entrega</strong><p>Informe seu nome completo e crie ou utilize sua senha pessoal (mínimo 8 caracteres). A senha coletiva da equipe não identifica o professor.</p></div>'+
+     '<label>Nome do professor<input id="cpTeacherName" maxlength="100" autocomplete="name" placeholder="Nome completo" required></label>'+
+     '<label>Senha pessoal<input id="cpTeacherPassword" type="password" minlength="8" maxlength="80" autocomplete="off" placeholder="Sua senha pessoal" required></label>'+
+     '<button class="cp-btn" type="submit">Identificar</button></form>';
+    const cards=rows.length?rows.map(e=>{
+      const stage=Number(e.stageNumber),state=profile?.statuses?.[stage],value=state?.status||'pendente';
+      const ended=e.date<today,active=isActive(stage);
+      const highlight=active&&value!=='entregue';
+      const heading=value==='entregue'?'Entregue — registro realizado':value==='nao_entregou'?'Não entregou · atenção necessária':active?'Pendente de confirmação':'Sem confirmação registrada';
+      const detail=state?.updatedAt?' · registrado em '+new Date(state.updatedAt).toLocaleDateString('pt-BR'):'';
+      return '<article class="cp-delivery-stage cp-delivery-stage-'+stage+(highlight?' is-focus needs-action':'')+(value==='entregue'?' is-delivered':'')+'" data-delivery-stage="'+stage+'">'+
+       '<div class="cp-delivery-stage-top"><div class="cp-delivery-stage-step"><span>'+String(stage).padStart(2,'0')+'</span><div><small>'+names[stage-1]+' etapa</small><strong>'+stage+'ª etapa · '+year+'</strong></div></div>'+
+       '<span class="cp-delivery-time '+(active?'is-active':'')+'">'+(active?'Etapa em andamento':ended?'Prazo encerrado':'Prazo programado')+'</span></div>'+
+       '<div class="cp-delivery-body"><div><small>ENTREGA À COORDENAÇÃO</small><h3>'+fmt(e.date)+'</h3><p>'+safe(e.deliveryTypes||'AP2 / AD / AR')+'</p></div>'+
+       '<div class="cp-delivery-personal '+(value==='entregue'?'done':value==='nao_entregou'?'late':'pending')+'">'+
+       '<span class="cp-delivery-alarm" aria-hidden="true">'+(value==='entregue'?'✓':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg>')+'</span>'+
+       '<div><small>MINHA SITUAÇÃO</small><strong>'+heading+'</strong><p>'+(identified?'Informado pelo professor'+detail:'Identifique-se acima para registrar')+'</p></div></div></div>'+
+       '<div class="cp-delivery-action-row"><button type="button" class="cp-delivery-action is-submit" data-cp-delivery-status="entregue" data-cp-delivery-stage="'+stage+'" '+(!identified?'disabled':'')+' aria-pressed="'+(value==='entregue')+'">✓ Entregue</button>'+
+       '<button type="button" class="cp-delivery-action is-missing" data-cp-delivery-status="nao_entregou" data-cp-delivery-stage="'+stage+'" '+(!identified?'disabled':'')+' aria-pressed="'+(value==='nao_entregou')+'">Não entregou</button></div>'+
+       '<details class="cp-delivery-contact"><summary>Ver e-mails da coordenação</summary><div>Ensino Fundamental: <a href="mailto:'+fundamental+'">'+fundamental+'</a><br>Ensino Médio: <a href="mailto:'+medio+'">'+medio+'</a></div></details>'+
+       '</article>';
+    }).join(''):'<p class="cp-muted">Nenhuma entrega de avaliações publicada para '+year+'.</p>';
+    content='<div class="cp-main-heading"><h2>Entregas pedagógicas · '+year+'</h2></div>'+
+     '<p class="cp-muted">Acompanhe os prazos por etapa. A marcação é uma declaração pessoal, não confirma o recebimento do arquivo pela coordenação.</p>'+
+     identityHtml+'<p class="cp-delivery-feedback" id="cpDeliveryFeedback" role="status" aria-live="polite"></p>'+
+     '<div class="cp-delivery-stage-grid">'+cards+'</div>'+
+     '<div class="cp-main-heading" style="margin-top:24px"><h2>Entrega de conteúdos à coordenação</h2></div>'+
      (contents.length?contents.map(e=>'<article class="cp-deadline-card"><small>'+fmt(e.date)+'</small><h3>'+safe(e.title)+'</h3><p>'+safe(e.notes||'Conteúdo pedagógico programado para entrega')+'</p><p class="cp-deadline-count">Lembrete: 5 dias antes</p></article>').join(''):'<p class="cp-muted">Nenhuma entrega de conteúdo publicada para este ano.</p>');
   }else if(tab==='etapas'){
    const stages=Array.isArray(data?.stages)?data.stages:[];
@@ -414,6 +439,36 @@
   else content=`<div class="cp-main-heading"><h2>Calendário anual ${year}</h2></div><div class="cp-paper"><h3>Documento publicado pela Gestão</h3><p>Inclui os 12 meses de ${year}, com atividades, etapas e projetos publicados.</p><button class="cp-btn gold" id="cpDownloadPublished">↓ Baixar PDF anual ${year}</button><p class="cp-status" id="cpPdfProgress"></p></div>`;
 
   here.innerHTML=`${flowHeader}${showBell?'':`<div class="cp-overview"><div class="cp-metric"><small>Atividades publicadas</small><strong>${events.length}</strong></div><div class="cp-metric"><small>Avaliações e simulados</small><strong>${assess.length}</strong></div><div class="cp-metric"><small>Avisos disponíveis</small><strong>${notes.length}</strong></div></div>${tabs}`}${alertPrompt}${content}<p class="cp-updated">Última publicação da Gestão: ${data?new Date(data.updatedAt).toLocaleString('pt-BR'):'ainda não publicada'} · Atualização automática enquanto o aplicativo estiver aberto.</p>`;
+  $('#cpTeacherForm')?.addEventListener('submit',async event=>{
+    event.preventDefault();if(teacherSaving)return;
+    const form=event.currentTarget,button=form.querySelector('button[type=submit]');
+    teacherSaving=true;button.disabled=true;
+    try{
+      const profile=await api('delivery-profile',{name:$('#cpTeacherName').value.trim(),password:$('#cpTeacherPassword').value,year});
+      teacherProfile=profile;drawTeam();toast('Identificação pessoal ativada para '+profile.name+'.');
+    }catch(error){
+      const feedback=$('#cpDeliveryFeedback');if(feedback)feedback.textContent=error.message||'Não foi possível identificar.';
+      button.disabled=false;
+    }finally{teacherSaving=false}
+  });
+  $('#cpTeacherChange')?.addEventListener('click',async()=>{
+    if(teacherSaving)return;
+    try{await api('delivery-signout',{});teacherProfile=null;drawTeam()}catch(error){toast('Não foi possível trocar professor: '+error.message)}
+  });
+  here.querySelectorAll('[data-cp-delivery-status]').forEach(button=>button.addEventListener('click',async()=>{
+    if(teacherSaving||!teacherProfile?.identified)return;
+    const stage=Number(button.dataset.cpDeliveryStage),status=button.dataset.cpDeliveryStatus;
+    if(!confirm('Registrar a '+stage+'ª etapa como "'+(status==='entregue'?'Entregue':'Não entregou')+'" para '+teacherProfile.name+'?'))return;
+    teacherSaving=true;
+    const buttons=here.querySelectorAll('[data-cp-delivery-status]');buttons.forEach(x=>x.disabled=true);
+    try{
+      const result=await api('delivery-mark',{year,stage,status});
+      teacherProfile={...teacherProfile,statuses:result.statuses};
+      drawTeam();toast('Situação da '+stage+'ª etapa registrada: '+(status==='entregue'?'Entregue':'Não entregou')+'.');
+    }catch(error){buttons.forEach(x=>x.disabled=false);toast('Não foi possível registrar: '+error.message)}
+    finally{teacherSaving=false}
+  }));
+
   here.querySelectorAll('[data-cp-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.cpTab;showBell=false;drawTeam()});
   here.querySelectorAll('[data-cp-stage]').forEach(b=>b.onclick=()=>{selectedStage=Number(b.dataset.cpStage)||0;tab='etapas';showBell=false;drawTeam()});
   $('#cpMonthPicker')?.addEventListener('change',e=>{month=Number(e.target.value);drawTeam()});
