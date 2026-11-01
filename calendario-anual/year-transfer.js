@@ -173,8 +173,8 @@
    const key=EVENT_KEY(targetYear),prior=stored(key,[]),existing=Array.isArray(prior)?prior:[];
    const next=[...existing];let created=0,duplicates=0,skipped=0;
    for(let i=0;i<preview.length;i++){
-     if(!$('[data-carry-check="'+i+'"]')?.checked)continue;
-     const e=preview[i],date=$('[data-carry-date="'+i+'"]')?.value;
+     if(!chooser.querySelector('[data-carry-check="'+i+'"]')?.checked)continue;
+     const e=preview[i],date=chooser.querySelector('[data-carry-date="'+i+'"]')?.value;
      if(!date||!date.startsWith(fmt(targetYear,targetMonth+1,1).slice(0,7))) {skipped++;continue;}
      const id='carry-'+targetYear+'-'+sourceYear+'-'+String(e.id||i);
      if(next.some(p=>p.id===id||p.originId===e.id&&Number(p.originYear)===sourceYear||p.date===date&&identify(p)===identify(e))){duplicates++;continue;}
