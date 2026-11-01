@@ -129,6 +129,25 @@
     yearBtn.type='button';yearBtn.className='btn btn-outline';yearBtn.id='exportYearIcsBtn';yearBtn.textContent='Baixar agenda completa 2026 (.ics)';
     el('exportIcsBtn').insertAdjacentElement('afterend',yearBtn);
     yearBtn.addEventListener('click',function(){downloadMonth(true);});
+    const subscribeBtn=document.createElement('button');
+    subscribeBtn.type='button';subscribeBtn.className='btn btn-install-soft';subscribeBtn.id='subscribeOfficialBtn';
+    subscribeBtn.textContent='Vincular calendário oficial ao Google';
+    yearBtn.insertAdjacentElement('afterend',subscribeBtn);
+    subscribeBtn.addEventListener('click',async function(){
+      const feed=new URL('./agenda-oficial-2026.ics',window.location.href).href;
+      const tab=window.open('https://calendar.google.com/calendar/u/0/r/settings/addbyurl','_blank','noopener,noreferrer');
+      try{
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          await navigator.clipboard.writeText(feed);
+          alert('Link do calendário oficial copiado. No Google Agenda, escolha Adicionar pela URL e cole o link. Depois ative os lembretes dessa agenda.');
+        }else{
+          window.prompt('Copie o endereço e cole em Google Agenda > Outras agendas > Adicionar pela URL:',feed);
+        }
+      }catch(_){
+        window.prompt('Copie o endereço e cole em Google Agenda > Outras agendas > Adicionar pela URL:',feed);
+      }
+      if(!tab) console.info('Abra Google Agenda e escolha Adicionar pela URL.');
+    });
     const alertBox=document.createElement('div');alertBox.id='upcomingReminder';alertBox.className='upcoming-reminder';alertBox.hidden=true;
     el('calendar').parentElement.parentElement.insertAdjacentElement('beforebegin',alertBox);
     window.addEventListener('cora-month-changed',function(e){selectedMonth=e.detail.month;el('exportIcsBtn').textContent='Baixar '+MONTHS[selectedMonth]+' (.ics)';upcoming();});
