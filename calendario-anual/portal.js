@@ -106,7 +106,7 @@
  }
  function renderNoticeRows(){const area=$('#cpNoticeRows');if(!area)return;area.innerHTML=managerNotices.length?managerNotices.map(n=>`<div class="cp-notice-row"><span><span class="cp-notice-saved">✓ Adicionado</span> <strong>${safe(n.title)}</strong> · ${safe(n.type)} · ${safe(n.publishAt).replace('T',' ')}${n.eventDate?' · Evento '+safe(n.eventDate):''}</span><button class="cp-btn soft" data-cp-remove="${safe(n.id)}">Excluir</button></div>`).join(''):'<p class="cp-muted">Nenhum aviso criado. O calendário oficial ainda pode ser publicado.</p>';area.querySelectorAll('[data-cp-remove]').forEach(b=>b.onclick=()=>{managerNotices=managerNotices.filter(n=>n.id!==b.dataset.cpRemove);localStorage.setItem(noticeKey(year),JSON.stringify(managerNotices));renderNoticeRows()});}
  async function publish(){
-  const year=Number(window.CoraYears?.activeYear)||2026;const drafts=loadEventDraft(year);const added=(window.CoraAssessments?.publicationEvents?.(year)||[]).filter(e=>year!==2026||e.assessmentDelivery);const events=[...drafts.filter(e=>!/^cora-(entrega-avaliacoes|periodo-avaliacao)-/.test(String(e.id||''))),...added],btn=$('#cpPublishNow');if(!btn)return;btn.disabled=true;
+  const year=Number(window.CoraYears?.activeYear)||2026;const drafts=loadEventDraft(year);const added=(window.CoraAssessments?.publicationEvents?.(year)||[]).filter(e=>year!==2026||e.assessmentDelivery);const events=[...drafts.filter(e=>e.status!=='Em revisão'&&!e.needsReview&&!/^cora-(entrega-avaliacoes|periodo-avaliacao)-/.test(String(e.id||''))),...added],btn=$('#cpPublishNow');if(!btn)return;btn.disabled=true;
   try{
    // Evita que uma primeira publicação apague o cadastro institucional anterior.
    const previous=await api('state',undefined,'year='+year);
@@ -282,7 +282,7 @@
      date:n.eventDate||String(n.publishAt||'').slice(0,10)}));
    const dmax=Math.max(0,Number(data.config?.defaultLeadDays??3));
    const events=filteredEvents().filter(e=>{
-     if(e.assessmentDelivery)return false;
+     if(e.assessmentDelivery||e.type==='Entrega de conteúdo')return false;
      const delta=dayDifference(e.date);return delta!==null&&delta>=0&&delta<=dmax;
    }).map(e=>({id:'event-'+e.id,kind:'event',title:e.title,date:e.date,desc:e.notes||e.type||'',
      type:e.type||'Atividade'}));
@@ -294,7 +294,8 @@
      title:'Lembrete: '+n.title,date:n.eventDate,desc:String(n.body||n.type||''),
      type:n.type||'Informativo'}));
    const assessmentDeadlines=filteredEvents().filter(e=>e.assessmentDelivery).filter(e=>{const delta=dayDifference(e.date);return delta!==null&&delta>=0&&delta<=5;}).map(e=>({id:'deadline-'+e.id+'-'+e.date,kind:'assessment-deadline',title:'Lembrete: entregar avaliações — '+e.stageNumber+'ª etapa',date:e.date,desc:'Encaminhe '+(e.deliveryTypes||'as avaliações')+' à coordenação até '+e.date.split('-').reverse().join('/')+'. Fundamental: '+(e.fundamentalEmail||'coordenacaofundamentalcora@gmail.com')+'. Médio: '+(e.medioEmail||'coordenacaomediocora@gmail.com')+'.',type:'Entrega de avaliações'}));
-    return [...notices,...reminders,...assessmentDeadlines,...events].map(n=>({...n,unread:!seen.has(n.id)}));
+    const contents=filteredEvents().filter(e=>e.type==='Entrega de conteúdo').filter(e=>{const delta=dayDifference(e.date);return delta!==null&&delta>=0&&delta<=5;}).map(e=>({id:'content-'+e.id+'-'+e.date,kind:'assessment-deadline',title:'Lembrete: entrega de conteúdo',date:e.date,desc:(e.title||'Entrega de conteúdo')+' · '+(e.notes||'Encaminhar à coordenação pedagógica até a data prevista.'),type:'Entrega de conteúdo'}));
+    return [...notices,...reminders,...assessmentDeadlines,...contents,...events].map(n=>({...n,unread:!seen.has(n.id)}));
  }
  function eventHtml(e){const stage=(data?.stages||[]).find(st=>st.start&&st.end&&e.date>=st.start&&e.date<=st.end);return `<article class="cp-list-entry"><time>${safe(e.date.slice(8,10))}/${safe(e.date.slice(5,7))}</time><div><strong>${safe(e.title)}</strong><span class="cp-tag">${safe(e.type||'Atividade')}</span>${stage?`<span class="cp-tag cp-tag-stage">${stage.number}ª etapa · até ${safe(stage.end.slice(8,10)+'/'+stage.end.slice(5,7))}</span>`:''}${e.notes?`<p>${safe(e.notes)}</p>`:''}</div></article>`}
  function noticeHtml(n){return `<article class="cp-notice ${n.type==='Urgente'?'urgent':''}"><small>${safe(n.type)} · ${safe((n.publishAt||'').replace('T',' '))}</small><h3>${safe(n.title)}</h3><p>${safe(n.body)}</p>${n.eventDate?`<small>Data relacionada: ${safe(n.eventDate)} · Alerta ${Number(n.leadDays)||0} dia(s) antes</small>`:''}</article>`}
@@ -352,10 +353,13 @@
    content=`<div class="cp-main-heading"><h2>${tab==='avaliacoes'?'Avaliações, simulados e sondagens':'Calendário escolar'}</h2><select id="cpMonthPicker" aria-label="Mês do calendário">${MONTHS.map((m,i)=>`<option value="${i}" ${month===i?'selected':''}>${m} de ${year}</option>`).join('')}</select></div><div class="cp-list">${arr.length?arr.map(eventHtml).join(''):'<p class="cp-muted">Nenhuma atividade publicada neste mês.</p>'}</div>`;
   }else if(tab==='entregas'){
     const rows=events.filter(e=>e.assessmentDelivery).sort((a,b)=>a.date.localeCompare(b.date));
+    const contents=events.filter(e=>e.type==='Entrega de conteúdo').sort((a,b)=>a.date.localeCompare(b.date));
     const fmt=d=>d?d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(0,4):'A definir';
     const fundamental='coordenacaofundamentalcora@gmail.com',medio='coordenacaomediocora@gmail.com';
-    content='<div class="cp-main-heading"><h2>Entregas das avaliações · '+year+'</h2></div><p class="cp-muted">Envie os arquivos para a coordenação do seu segmento. O lembrete aparece na Central de Alertas a partir de cinco dias antes do prazo.</p>'+
-     (rows.length?rows.map(e=>'<article class="cp-deadline-card"><small>'+safe(e.stageNumber)+'ª etapa · '+fmt(e.date)+'</small><h3>Entrega até '+fmt(e.date)+'</h3><p><strong>Avaliações:</strong> '+safe(e.deliveryTypes||'AP2 / AD / AR')+'</p><p><strong>Ensino Fundamental:</strong> <a href="mailto:'+fundamental+'">'+fundamental+'</a></p><p><strong>Ensino Médio:</strong> <a href="mailto:'+medio+'">'+medio+'</a></p><p class="cp-deadline-count">Lembrete: 5 dias antes da entrega</p></article>').join(''):'<p class="cp-muted">A Gestão ainda não publicou os prazos de entrega de '+year+'.</p>');
+    content='<div class="cp-main-heading"><h2>Entregas pedagógicas · '+year+'</h2></div><p class="cp-muted">Envie os arquivos para a coordenação do seu segmento. O lembrete aparece na Central de Alertas a partir de cinco dias antes do prazo.</p>'+
+     (rows.length?rows.map(e=>'<article class="cp-deadline-card"><small>'+safe(e.stageNumber)+'ª etapa · '+fmt(e.date)+'</small><h3>Entrega até '+fmt(e.date)+'</h3><p><strong>Avaliações:</strong> '+safe(e.deliveryTypes||'AP2 / AD / AR')+'</p><p><strong>Ensino Fundamental:</strong> <a href="mailto:'+fundamental+'">'+fundamental+'</a></p><p><strong>Ensino Médio:</strong> <a href="mailto:'+medio+'">'+medio+'</a></p><p class="cp-deadline-count">Lembrete: 5 dias antes da entrega</p></article>').join(''):'<p class="cp-muted">A Gestão ainda não publicou os prazos de entrega de '+year+'.</p>')+
+     '<div class="cp-main-heading" style="margin-top:23px"><h2>Entrega de conteúdos à coordenação</h2></div>'+
+     (contents.length?contents.map(e=>'<article class="cp-deadline-card"><small>'+fmt(e.date)+'</small><h3>'+safe(e.title)+'</h3><p>'+safe(e.notes||'Conteúdo pedagógico programado para entrega')+'</p><p class="cp-deadline-count">Lembrete: 5 dias antes</p></article>').join(''):'<p class="cp-muted">Nenhuma entrega de conteúdo publicada para este ano.</p>');
   }else if(tab==='etapas'){
    const stages=Array.isArray(data?.stages)?data.stages:[];
    const fmt=val=>val?val.slice(8,10)+'/'+val.slice(5,7)+'/'+val.slice(0,4):'A definir';

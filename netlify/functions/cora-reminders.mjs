@@ -56,6 +56,14 @@ export default async function handler(){
         body,tag:'entrega-avaliacoes-'+year+'-'+stage+'-'+e.date,urgent:true});
       continue;
     }
+    if(e.type==='Entrega de conteúdo'){
+      if(distance!==5)continue;
+      pending.push({id:deliveryId('content-deadline',year,e.id,e.date+'-5d'),
+        kind:'assessment-deadline',title:'Prazo de entrega de conteúdo',
+        body:(e.title||'Entrega de conteúdo')+' — entregar à coordenação até '+e.date.split('-').reverse().join('/')+'. '+(e.notes||'Confira o calendário da Gestão.'),
+        tag:'entrega-conteudo-'+year+'-'+e.id+'-'+e.date,urgent:true});
+      continue;
+    }
     if(distance!==lead)continue;
     pending.push({id:deliveryId('event',year,e.id,e.date+'-'+day),kind:'event',
       title:'Próxima atividade: '+e.title,body:e.notes||e.type||'Confira o calendário escolar',

@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="portal.css?v=flowpush41" />
   <link rel="stylesheet" href="birthdays.css?v=aniversarios16" />
   <link rel="stylesheet" href="assessment-deadlines.css?v=prazos01" />
+  <link rel="stylesheet" href="management-redesign.css?v=gestao2" />
 </head>
 <body class="portal-locked portal-loading">
 <div id="app" class="layout">
@@ -52,6 +53,7 @@
       <section id="yearProjects" class="year-projects-section" aria-label="Projetos planejados para o mês"><div class="year-projects-head"><strong id="yearProjectTitle">Projetos do mês</strong><button type="button" id="editMonthProjects">Editar projetos</button></div><div id="yearProjectItems" class="year-project-chips"></div></section>
       <div class="studio-shortcuts" aria-label="Ferramentas do calendário">
         <button type="button" class="shortcut-btn" id="jumpPlanning"><span class="shortcut-icon">▤</span><span><strong>Planejamento pedagógico</strong><small>PDF para reunião da equipe</small></span><span class="shortcut-arrow">→</span></button>
+        <button type="button" class="shortcut-btn" id="jumpAssessment"><span class="shortcut-icon">▦</span><span><strong>Prazos da coordenação</strong><small>Entregas, AP2, AD, AR e conteúdos</small></span><span class="shortcut-arrow">→</span></button>
         <button type="button" class="shortcut-btn" id="jumpCards"><span class="shortcut-icon shortcut-gold">▣</span><span><strong>Criador de cards</strong><small>5 modelos da identidade Cora</small></span><span class="shortcut-arrow">→</span></button>
       </div>
       <section class="files-section"><div class="section-heading"><div><div class="eyebrow">DOCUMENTOS DO MÊS</div><h2>Arquivos de <span id="filesMonthTitle">Janeiro</span></h2><p>Arraste documentos ou selecione arquivos. O app sugere o mês pelo nome do arquivo.</p></div><button class="btn btn-outline" id="secondaryUpload">＋ Importar arquivos</button></div><div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Adicionar documentos"><div class="drop-icon">⇪</div><strong>Arraste seus documentos para cá</strong><span>PDF, Word, Excel e imagens • ou clique para selecionar</span></div><div id="filesList" class="files-list"></div><p class="note">Os arquivos ficam armazenados apenas neste navegador. No PDF completo, PDFs e imagens são incorporados; Word e Excel aparecem no índice e podem ser baixados separadamente.</p></section>
@@ -144,7 +146,20 @@
 </div>
 <input id="filePicker" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.webp" multiple hidden />
 <input id="restorePicker" type="file" accept=".json" hidden />
-<dialog id="eventModal"><form id="eventForm" method="dialog"><div class="modal-head"><h3 id="modalTitle">Novo evento</h3><button type="button" id="closeModal" class="icon-button">✕</button></div><label>Nome do evento<input id="eventTitle" placeholder="Ex.: Reunião de planejamento" required maxlength="170" /></label><div class="form-row"><label>Data<input id="eventDate" type="date" required min="2026-01-01" max="2026-12-31" /></label><label>Categoria<select id="eventType"><option value="Pedagógico">Pedagógico</option><option value="Avaliação">Avaliação</option><option value="Simulado">Simulado</option><option value="Sondagem">Sondagem</option><option value="2ª Chamada">2ª Chamada</option><option value="Reunião">Reunião</option><option value="Evento">Evento</option><option value="Feriado">Feriado</option><option value="Outros">Outros</option></select></label></div><label>Observações (opcional)<textarea id="eventNotes" rows="3" placeholder="Informações e orientações..."></textarea></label><div class="modal-actions"><button type="button" class="btn btn-ghost" id="cancelEvent">Cancelar</button><button type="submit" class="btn btn-primary">Salvar evento</button></div></form></dialog>
+<dialog id="eventModal" class="cora-event-dialog" aria-labelledby="modalTitle">
+  <form id="eventForm" method="dialog">
+    <div class="modal-head"><div><span class="modal-eyebrow">GESTÃO PEDAGÓGICA · REGISTRO</span><h3 id="modalTitle">Novo evento</h3><p>Cadastre ou edite um compromisso do calendário escolar.</p></div><button type="button" id="closeModal" class="icon-button" aria-label="Fechar janela">✕</button></div>
+    <label>Nome do evento<input id="eventTitle" name="title" placeholder="Ex.: Reunião de planejamento" required maxlength="170" /></label>
+    <div class="form-row"><label>Data<input id="eventDate" name="date" type="date" required min="2026-01-01" max="2026-12-31" /></label><label>Categoria<select id="eventType" name="type"><option value="Pedagógico">Pedagógico</option><option value="Avaliação">Avaliação</option><option value="Entrega de conteúdo">Entrega de conteúdo</option><option value="Simulado">Simulado</option><option value="Sondagem">Sondagem</option><option value="2ª Chamada">2ª Chamada</option><option value="Reunião">Reunião</option><option value="Evento">Evento</option><option value="Feriado">Feriado</option><option value="Outros">Outros</option></select></label></div>
+    <div class="form-row"><label>Horário (opcional)<input id="eventTime" name="time" type="time" /></label><label>Duração (minutos)<input id="eventDuration" name="duration" type="number" value="60" min="15" max="480" step="15" /></label></div>
+    <div class="form-row"><label>Modalidade<select id="eventMode" name="mode"><option value="presencial">Presencial</option><option value="online">On-line / Google Meet</option></select></label><label>Local / sala<input id="eventPlace" name="place" placeholder="Ex.: Auditório da escola" maxlength="180" /></label></div>
+    <label id="eventMeetWrap" hidden>Link da reunião on-line<input id="eventMeet" name="meet" type="url" placeholder="https://meet.google.com/..." maxlength="500" /></label>
+    <div class="form-row"><label>Destinatários<select id="eventAudience" name="audience"><option value="Todos">Todos</option><option value="Professores">Professores</option><option value="Colaboradores">Colaboradores</option><option value="Famílias">Famílias</option></select></label><label>Situação<select id="eventStatus" name="status"><option value="Publicado">Pronto para publicar</option><option value="Em revisão">Em revisão (não publicar)</option></select></label></div>
+    <label>Observações (opcional)<textarea id="eventNotes" name="notes" rows="3" placeholder="Orientações aos professores, conteúdos e demais informações..."></textarea></label>
+    <p class="modal-help">A inclusão no calendário da equipe acontece após você clicar em <strong>Publicar para equipe</strong> na Gestão.</p>
+    <div class="modal-actions"><button type="button" class="btn btn-ghost" id="cancelEvent">Cancelar</button><button type="submit" class="btn btn-primary" id="saveEventBtn">Salvar evento</button></div>
+  </form>
+</dialog>
 <dialog id="calendarInstallDialog" class="calendar-install-dialog" aria-labelledby="calendarInstallTitle">
   <div class="calendar-install-heading">
     <img src="app-icon-192.png?v=20261101-3" width="80" height="80" alt="Novo ícone 3D do Calendário Cora Coralina" />
@@ -177,11 +192,11 @@
 <script src="year-transfer.js?v=auditoria31" defer></script>
 <script src="stages.js?v=auditoria33" defer></script>
 <script src="assessment-deadlines.js?v=prazos01" defer></script>
-<script src="app.js?v=colunas34" defer></script>
+<script src="app.js?v=gestao2" defer></script>
 <script src="official-calendar-ui.js" defer></script>
-<script src="planning.js?v=auditoria32" defer></script>
+<script src="planning.js?v=gestao2" defer></script>
 <script src="birthdays.js?v=aniversarios18" defer></script>
 <script src="cards.js?v=importacao25" defer></script>
-<script src="portal.js?v=prazos01" defer></script>
+<script src="portal.js?v=gestao2" defer></script>
 </body>
 </html>

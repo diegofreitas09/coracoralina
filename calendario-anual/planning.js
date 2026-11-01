@@ -44,6 +44,67 @@
   function prettyBirthday(p){return String(p.day).padStart(2,'0')+'/'+String(p.month).padStart(2,'0')+' - '+String(p.name||'').trim()}
   function lines(str){return String(str||'').split(/\r?\n/).map(s=>s.trim()).filter(Boolean)}
   function eventsFor(month){try{let events=JSON.parse(localStorage.getItem(EVENT_STORAGE)||'[]');return Array.isArray(events)?events.filter(e=>String(e.date||'').startsWith(`${YEAR}-${String(month+1).padStart(2,'0')}-`)).sort((a,b)=>a.date.localeCompare(b.date)):[]}catch{return []}}
+  function assessmentMonthRecords(month){
+    const schedule=window.CoraAssessments?.get?.(YEAR);
+    if(!schedule||!Array.isArray(schedule.items))return {approved:false,records:[]};
+    const first=YEAR+'-'+String(month+1).padStart(2,'0')+'-01';
+    const last=YEAR+'-'+String(month+1).padStart(2,'0')+'-'+String(new Date(YEAR,month+1,0).getDate()).padStart(2,'0');
+    const records=[];
+    for(const row of schedule.items){
+      if(row.due&&row.due>=first&&row.due<=last){
+        records.push({date:row.due,kind:'delivery',stage:row.stage,
+          title:'Entrega de avaliações à coordenação — '+row.stage+'ª etapa',
+          detail:row.deliveryTypes||'AP2 / AD / AR'});
+      }
+      for(const item of row.items||[]){
+        if(item.start&&item.end&&item.start<=last&&item.end>=first){
+          records.push({date:item.start<first?first:item.start,kind:'window',stage:row.stage,
+            title:item.title+' — '+row.stage+'ª etapa',
+            detail:item.start.slice(8,10)+'/'+item.start.slice(5,7)+' a '+item.end.slice(8,10)+'/'+item.end.slice(5,7)});
+        }
+      }
+    }
+    // Entregas de conteúdo são cadastradas como eventos normais da Gestão.
+    for(const event of eventsFor(month)){
+      if(event.type==='Entrega de conteúdo'&&event.status!=='Em revisão'){
+        records.push({date:event.date,kind:'content',stage:0,
+          title:event.title||'Entrega de conteúdo à coordenação',
+          detail:event.notes||'Entrega de conteúdo pedagógico'});
+      }
+    }
+    records.sort((a,b)=>a.date.localeCompare(b.date)||a.kind.localeCompare(b.kind));
+    return {approved:schedule.approved,records};
+  }
+  function assessmentLines(month){
+    const {approved,records}=assessmentMonthRecords(month);
+    if(!approved)return [];
+    const emails=window.CoraAssessments;
+    return records.map(x=>{
+      const when=x.date.slice(8,10)+'/'+x.date.slice(5,7);
+      return when+' — '+x.title+' ('+x.detail+')'+
+        (x.kind==='delivery'?' · Fundamental: '+(emails?.FUND||'coordenacaofundamentalcora@gmail.com')+
+        ' · Médio: '+(emails?.MED||'coordenacaomediocora@gmail.com'):'');
+    });
+  }
+  function renderAssessmentMonth(){
+    let panel=$('planAssessmentDeadlines');
+    if(!panel){
+      panel=document.createElement('section');
+      panel.id='planAssessmentDeadlines';
+      panel.className='planning-deadline-box';
+      const anchor=$('planSyncedEvents')?.closest('.plan-synced-events');
+      if(anchor)anchor.insertAdjacentElement('afterend',panel);
+      else form.appendChild(panel);
+    }
+    const obj=assessmentMonthRecords(current);
+    const safeText=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const fmt=d=>d.slice(8,10)+'/'+d.slice(5,7);
+    panel.innerHTML='<div class="eyebrow">PRAZOS OFICIAIS · '+YEAR+'</div><h3>Entregas e avaliações do mês</h3>'+
+       '<p>Sincronizado com a seção “Entregas e avaliações integradas” da Gestão. A Equipe Pedagógica recebe os dados somente após publicação.</p>'+
+       (obj.records.filter(v=>obj.approved||v.kind==='content').length?obj.records.filter(v=>obj.approved||v.kind==='content').map(v=>'<div class="deadline-item"><time>'+fmt(v.date)+'</time><span><strong>'+safeText(v.title)+'</strong> · '+safeText(v.detail)+'</span></div>').join(''):
+        '<div class="deadline-empty">'+(obj.approved?'Nenhum prazo pedagógico previsto para este mês.':'Ano em revisão: confira e aprove as datas na Gestão antes de divulgar.')+'</div>')+
+       '<div class="deadline-source">Envio das avaliações: <a href="mailto:coordenacaofundamentalcora@gmail.com">Coordenação Fundamental</a> · <a href="mailto:coordenacaomediocora@gmail.com">Coordenação Médio</a>. Lembrete cinco dias antes da entrega.</div>';
+  }
   function readStorage(){
     try{const obj=JSON.parse(localStorage.getItem(STORAGE)||'{}');plans=obj&&typeof obj==='object'&&!Array.isArray(obj)?obj:{}}catch{plans={}}
     if(YEAR>2026){
@@ -83,6 +144,7 @@
       const stages=ranges.filter(p=>p.start&&p.end&&p.start<=last&&p.end>=first);
       panel.textContent=stages.length?'Etapas do mês: '+stages.map(st=>st.number+'ª etapa · '+st.start.slice(8,10)+'/'+st.start.slice(5,7)+' até '+st.end.slice(8,10)+'/'+st.end.slice(5,7)).join(' · '):'Etapas deste mês: confirme os limites letivos no painel da Gestão.';
     }
+    renderAssessmentMonth();
     const obj=readForm(),e=obj.includeCalendar?eventsFor(current):[];const eventsPreview=$('planSyncedEvents');if(eventsPreview)eventsPreview.innerHTML=e.length?e.map(v=>'<div><strong>'+String(v.date).slice(8,10)+'/'+String(v.date).slice(5,7)+'</strong> · '+safe(v.title)+(v.status==='Em revisão'?' <em>(revisar)</em>':'')+'</div>').join(''):'<span>Nenhum evento deste mês. Importe ou cadastre pelo calendário.</span>';const birthdayPeople=birthdaysByMonth(current);$('planBirthdayPreview').textContent=birthdayPeople.length?birthdayPeople.map(prettyBirthday).join(' · '):'Nenhum aniversariante cadastrado neste mês.';$('planPreviewBirthdays').textContent=obj.includeBirthdays?(birthdayPeople.length?'Aniversariantes: '+birthdayPeople.map(prettyBirthday).join(' · '):'Aniversariantes: nenhum cadastrado'):'Aniversariantes: ocultos neste PDF';$('planPreviewMonth').textContent=MONTHS[current];$('planPreviewSegment').textContent=obj.segment;$('planProjectCount').textContent=lines(obj.projects).length;$('planScheduleCount').textContent=lines(obj.schedule).length;$('planCalendarCount').textContent=e.length;$('planPreviewAgenda').replaceChildren(...lines(obj.agenda).slice(0,7).map(value=>{const d=document.createElement('div');d.textContent=value;return d}));}
   function saveCurrent(){
     plans[current]=readForm();
@@ -238,6 +300,7 @@
     const stagesThisMonth=stages.filter(st=>st.start&&st.end&&st.start<=lastDate&&st.end>=firstDate);
     const stageDescription=stagesThisMonth.map(st=>st.number+'ª etapa: início '+st.start.split('-').reverse().join('/')+' · fim '+st.end.split('-').reverse().join('/'));
     section('Etapas letivas · início e encerramento',stageDescription.length?stageDescription:['Datas das etapas pendentes de definição para '+YEAR]);
+    section('Prazos de entrega e avaliações · coordenação pedagógica',assessmentLines(month));
     birthdayPanel(birthdaysByMonth(month));
     const manualNotes=String(plan.birthdays||'').trim();
     if(manualNotes&&manualNotes!==String(sample.birthdays).trim())section('Comunicados e datas complementares',manualNotes);
@@ -269,6 +332,7 @@
       asList('Projetos e campanhas do mês',projects)+
       (plan.includeBirthdays?asList('Aniversariantes do mês',birthdayLines.length?birthdayLines:['Nenhum aniversariante cadastrado']):'')+
       asList('Comunicados e datas complementares',comm)+
+      asList('Prazos de entrega e avaliações · coordenação pedagógica',assessmentLines(month))+
       asList('Programação mensal e datas importantes',[...lines(plan.schedule),...extras],'printing-dates')+
       asList('Orientações pedagógicas',plan.guidance)+asList('Pauta da reunião',plan.agenda)+
       asList('Encaminhamentos e responsabilidades',plan.actions);
@@ -296,6 +360,7 @@
   });
   window.addEventListener('cora-data-changed',e=>{if(Number(e.detail?.year)===YEAR){readStorage();fillForm(current)}});
   window.addEventListener('cora-events-updated',e=>{if(Number(e.detail?.year)===YEAR)renderSummary();});
+  window.addEventListener('cora-assessments-changed',e=>{if(Number(e.detail?.year)===YEAR)renderSummary();});
   window.addEventListener('cora-stages-updated',e=>{if(Number(e.detail?.year)===YEAR)renderSummary()});
   window.addEventListener('cora-projects-changed',e=>{
     if(Number(e.detail?.year)!==YEAR)return;
