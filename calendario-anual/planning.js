@@ -197,7 +197,10 @@
     const normalized=v=>String(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w]/g,'').toLowerCase();
     const scheduleKeys=new Set(scheduleEntries.map(normalized));
     const uniqueExtra=extraEvents.filter(item=>!scheduleKeys.has(normalized(item)));
-    scheduleSection('Programação mensal e datas importantes',[...scheduleEntries,...uniqueExtra]);
+    const dayKey=value=>{const match=/^\s*(\d{1,2})(?:\s*a\s*\d{1,2})?\s*\/\s*(\d{1,2})/.exec(String(value));return match?Number(match[2])*100+Number(match[1]):9999;};
+    const orderedDates=[...scheduleEntries,...uniqueExtra].map((value,index)=>({value,index}))
+      .sort((a,b)=>dayKey(a.value)-dayKey(b.value)||a.index-b.index).map(x=>x.value);
+    scheduleSection('Programação mensal e datas importantes',orderedDates);
     section('Orientações pedagógicas',plan.guidance);
     section('Pauta da reunião',plan.agenda);
     section('Encaminhamentos e responsabilidades',plan.actions);
