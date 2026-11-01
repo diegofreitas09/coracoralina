@@ -14,7 +14,7 @@
 <body>
 <div id="app" class="layout">
   <aside class="sidebar">
-    <div class="brand"><div class="brand-mark">C</div><div><strong>Cora Coralina</strong><small>GESTÃO DO CALENDÁRIO</small></div></div>
+    <div class="brand"><img class="brand-mark school-logo" id="schoolLogo" alt="Brasão do Colégio Cora Coralina" /><div><strong>Cora Coralina</strong><small>GESTÃO DO CALENDÁRIO</small></div></div>
     <div class="year-label">ANO LETIVO</div>
     <div class="year-block"><span>2026</span><span class="year-badge">12 meses</span></div>
     <nav id="monthNav" aria-label="Selecionar mês"></nav>
@@ -32,6 +32,11 @@
     <main class="content">
       <div class="welcome"><div><div class="eyebrow">PLANEJAMENTO · 2026</div><h1>Calendário Anual <span>2026</span></h1><p>Organize eventos, documentos e atividades mês a mês. Tudo em um só lugar.</p></div><div class="welcome-actions"><button id="addEventBtn" class="btn btn-outline">＋ Novo evento</button><button id="uploadBtn" class="btn btn-dark">＋ Adicionar arquivos</button></div></div>
       <section class="stats" aria-label="Indicadores"><div class="stat"><div class="stat-icon">▦</div><div><strong id="statMonths">12</strong><span>Meses do ano</span></div></div><div class="stat"><div class="stat-icon">◉</div><div><strong id="statEvents">0</strong><span>Eventos cadastrados</span></div></div><div class="stat"><div class="stat-icon">▤</div><div><strong id="statFiles">0</strong><span>Arquivos organizados</span></div></div><div class="stat"><div class="stat-icon">◎</div><div><strong id="statCurrent">0</strong><span>Atividades no mês</span></div></div></section>
+      <section class="official-banner" aria-label="Calendário institucional de 2026">
+        <div class="official-banner-icon">2026</div>
+        <div class="official-banner-copy"><strong>Calendário escolar oficial integrado</strong><span>Consulte as páginas originais, veja as datas principais e baixe o documento completo com capa e anotações.</span></div>
+        <div class="official-banner-actions"><button type="button" class="btn btn-outline" id="showOfficialButton">Ver calendário oficial</button><button type="button" class="btn btn-primary" id="downloadOfficialBtn">↓ PDF oficial 2026</button></div>
+      </section>
       <section class="month-area"><div class="section-heading"><div><div class="eyebrow">VISÃO MENSAL</div><h2 id="currentMonthTitle">Janeiro <small>2026</small></h2></div><div class="month-switch"><button id="prevMonth" aria-label="Mês anterior">‹</button><button id="todayMonth">Outubro de 2026</button><button id="nextMonth" aria-label="Próximo mês">›</button></div></div>
         <div class="panels"><div class="panel calendar-panel"><div class="panel-title"><strong>Calendário de atividades</strong><span class="muted">Clique em um dia para cadastrar</span></div><div class="calendar" id="calendar"></div></div><div class="panel events-panel"><div class="panel-title"><strong>Eventos do mês</strong><button class="text-btn" id="quickEvent">＋ Adicionar</button></div><div id="eventList" class="events-list"></div></div></div>
       </section>
@@ -40,6 +45,11 @@
         <button type="button" class="shortcut-btn" id="jumpCards"><span class="shortcut-icon shortcut-gold">▣</span><span><strong>Criador de cards</strong><small>5 modelos da identidade Cora</small></span><span class="shortcut-arrow">→</span></button>
       </div>
       <section class="files-section"><div class="section-heading"><div><div class="eyebrow">DOCUMENTOS DO MÊS</div><h2>Arquivos de <span id="filesMonthTitle">Janeiro</span></h2><p>Arraste documentos ou selecione arquivos. O app sugere o mês pelo nome do arquivo.</p></div><button class="btn btn-outline" id="secondaryUpload">＋ Importar arquivos</button></div><div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Adicionar documentos"><div class="drop-icon">⇪</div><strong>Arraste seus documentos para cá</strong><span>PDF, Word, Excel e imagens • ou clique para selecionar</span></div><div id="filesList" class="files-list"></div><p class="note">Os arquivos ficam armazenados apenas neste navegador. No PDF completo, PDFs e imagens são incorporados; Word e Excel aparecem no índice e podem ser baixados separadamente.</p></section>
+      <section id="officialCalendarSection" class="official-calendar-section" aria-labelledby="officialCalendarHeading" hidden>
+        <div class="official-calendar-head"><div><div class="eyebrow">ACERVO INSTITUCIONAL · CALENDÁRIO 2026</div><h2 id="officialCalendarHeading">Calendário oficial de <span id="officialMonthLabel">Janeiro</span></h2><p>Reprodução visual da página enviada pela escola. O calendário acima contém as datas editáveis.</p></div><button type="button" class="btn btn-outline" id="resetOfficialDates">↺ Repor eventos oficiais excluídos</button></div>
+        <div class="official-reference-grid"><div class="official-image-area"><div id="officialLoading" class="official-loading">Carregando página do calendário...</div><a id="officialImageLink" title="Abrir a imagem ampliada em nova aba" target="_blank" rel="noopener"><img id="officialMonthImage" alt="Página do calendário escolar do mês selecionado" decoding="async" /></a><p class="official-image-help">Toque ou clique na página para ampliar. Para baixar todas as páginas, use <strong>PDF oficial 2026</strong>.</p></div>
+        <div class="official-month-summary"><strong>Projetos previstos no mês</strong><ul id="officialProjectList"></ul><div class="official-month-count"><span id="officialEventCount">0</span><small>Atividades de referência cadastradas</small></div><p>As datas foram transcritas do documento escolar. Há registros que podem divergir de planejamentos mais recentes; revise antes de comunicar às famílias.</p><button type="button" class="btn btn-ghost" id="closeOfficialButton">Fechar visualização</button></div></div>
+      </section>
       <section id="planningStudio" class="studio-section" aria-labelledby="planningHeading">
         <div class="studio-section-head"><div><div class="eyebrow">GESTÃO PEDAGÓGICA · DOCUMENTOS</div><h2 id="planningHeading">Planejamento para reunião de equipe</h2><p>Prepare a pauta, organize as datas e baixe o planejamento diagramado em PDF, com capa e programação mensal.</p></div><span class="studio-pill">PDF de reunião</span></div>
         <div class="studio-layout">
@@ -89,9 +99,12 @@
 <input id="restorePicker" type="file" accept=".json" hidden />
 <dialog id="eventModal"><form id="eventForm" method="dialog"><div class="modal-head"><h3 id="modalTitle">Novo evento</h3><button type="button" id="closeModal" class="icon-button">✕</button></div><label>Nome do evento<input id="eventTitle" placeholder="Ex.: Reunião de planejamento" required maxlength="170" /></label><div class="form-row"><label>Data<input id="eventDate" type="date" required min="2026-01-01" max="2026-12-31" /></label><label>Categoria<select id="eventType"><option value="Pedagógico">Pedagógico</option><option value="Avaliação">Avaliação</option><option value="Reunião">Reunião</option><option value="Evento">Evento</option><option value="Feriado">Feriado</option><option value="Outros">Outros</option></select></label></div><label>Observações (opcional)<textarea id="eventNotes" rows="3" placeholder="Informações e orientações..."></textarea></label><div class="modal-actions"><button type="button" class="btn btn-ghost" id="cancelEvent">Cancelar</button><button type="submit" class="btn btn-primary">Salvar evento</button></div></form></dialog>
 <div id="toast" role="status" aria-live="polite"></div>
-<script src="app.js" defer></script>
 <script src="studio-assets.js" defer></script>
+<script src="school-brand.js" defer></script>
+<script src="official-calendar-data.js" defer></script>
 <script src="studio-pdf.js" defer></script>
+<script src="app.js" defer></script>
+<script src="official-calendar-ui.js" defer></script>
 <script src="planning.js" defer></script>
 <script src="cards.js" defer></script>
 </body>
