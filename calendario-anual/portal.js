@@ -115,7 +115,10 @@
    const stages=window.CoraStages?.get?.(year)||[];const projects=window.CoraYears?.getProjects?.(year)||[];
    const res=await api('publish',{year,events,notices:managerNotices,birthdays,stages,projects,config:{defaultLeadDays:leadDays}});
    $('#cpPubStatus').textContent='Publicado: '+new Date(res.updatedAt).toLocaleString('pt-BR');
-   toast(`Publicado ${year} para a equipe: ${res.counts.events} eventos, ${res.counts.notices} avisos e ${res.counts.birthdays??birthdays.length} aniversariantes.`);
+   const status=res.push?.registered
+     ?' · Web Push: '+res.push.sent+' envio(s) aceitos entre '+res.push.registered+' aparelho(s) cadastrado(s)'
+     :' · Web Push: nenhum aparelho inscrito';
+   toast('Publicado '+year+': '+res.counts.events+' eventos e '+res.counts.notices+' comunicados'+status+'.');
   }catch(e){toast('Não foi possível publicar: '+e.message);}finally{btn.disabled=false;}
  }
  function teamNav(){return `<div class="cp-team-head"><img id="cpTeamLogo" alt="Brasão do Colégio Cora Coralina"><div><small>COLÉGIO CORA CORALINA · AMBIENTE DE CONSULTA</small><h1>Equipe Pedagógica</h1></div><label class="cp-year-label">Ano letivo <select id="cpTeamYear" aria-label="Ano letivo">${availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('')}</select></label><span class="cp-spacer"></span><button class="cp-btn soft" type="button" id="cpEnableAlerts" title="Ativar notificações mesmo com o aplicativo fechado">Ativar notificações</button><button class="cp-btn cp-bell" id="cpBell" aria-label="Abrir notificações">🔔<em id="cpBellCount" style="display:none">0</em></button><button class="cp-btn" id="cpRefresh">Atualizar</button><button class="cp-btn" id="cpTeamLogout">Sair</button></div>`}
