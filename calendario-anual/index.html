@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#102a4c" />
+  <meta name="description" content="Calendário Anual do Colégio Cora Coralina: planejamento, eventos e arquivos por mês." />
+  <title>Calendário Anual 2026 | Cora Coralina</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="app" class="layout">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-mark">C</div><div><strong>Cora Coralina</strong><small>GESTÃO DO CALENDÁRIO</small></div></div>
+    <div class="year-label">ANO LETIVO</div>
+    <div class="year-block"><span>2026</span><span class="year-badge">12 meses</span></div>
+    <nav id="monthNav" aria-label="Selecionar mês"></nav>
+    <div class="sidebar-foot">Planejamento anual • Salvo neste dispositivo</div>
+  </aside>
+  <div class="main-shell">
+    <header class="topbar">
+      <div class="breadcrumbs">GESTÃO ESCOLAR <span>/</span> CALENDÁRIO ANUAL</div>
+      <div class="top-actions">
+        <button id="backupBtn" class="btn btn-ghost" title="Exportar eventos e arquivos como backup JSON">↧ Backup</button>
+        <button id="restoreBtn" class="btn btn-ghost">↥ Restaurar</button>
+        <button id="exportBtn" class="btn btn-primary">↓ Baixar PDF completo</button>
+      </div>
+    </header>
+    <main class="content">
+      <div class="welcome"><div><div class="eyebrow">PLANEJAMENTO · 2026</div><h1>Calendário Anual <span>2026</span></h1><p>Organize eventos, documentos e atividades mês a mês. Tudo em um só lugar.</p></div><div class="welcome-actions"><button id="addEventBtn" class="btn btn-outline">＋ Novo evento</button><button id="uploadBtn" class="btn btn-dark">＋ Adicionar arquivos</button></div></div>
+      <section class="stats" aria-label="Indicadores"><div class="stat"><div class="stat-icon">▦</div><div><strong id="statMonths">12</strong><span>Meses do ano</span></div></div><div class="stat"><div class="stat-icon">◉</div><div><strong id="statEvents">0</strong><span>Eventos cadastrados</span></div></div><div class="stat"><div class="stat-icon">▤</div><div><strong id="statFiles">0</strong><span>Arquivos organizados</span></div></div><div class="stat"><div class="stat-icon">◎</div><div><strong id="statCurrent">0</strong><span>Atividades no mês</span></div></div></section>
+      <section class="month-area"><div class="section-heading"><div><div class="eyebrow">VISÃO MENSAL</div><h2 id="currentMonthTitle">Janeiro <small>2026</small></h2></div><div class="month-switch"><button id="prevMonth" aria-label="Mês anterior">‹</button><button id="todayMonth">Outubro de 2026</button><button id="nextMonth" aria-label="Próximo mês">›</button></div></div>
+        <div class="panels"><div class="panel calendar-panel"><div class="panel-title"><strong>Calendário de atividades</strong><span class="muted">Clique em um dia para cadastrar</span></div><div class="calendar" id="calendar"></div></div><div class="panel events-panel"><div class="panel-title"><strong>Eventos do mês</strong><button class="text-btn" id="quickEvent">＋ Adicionar</button></div><div id="eventList" class="events-list"></div></div></div>
+      </section>
+      <section class="files-section"><div class="section-heading"><div><div class="eyebrow">DOCUMENTOS DO MÊS</div><h2>Arquivos de <span id="filesMonthTitle">Janeiro</span></h2><p>Arraste documentos ou selecione arquivos. O app sugere o mês pelo nome do arquivo.</p></div><button class="btn btn-outline" id="secondaryUpload">＋ Importar arquivos</button></div><div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Adicionar documentos"><div class="drop-icon">⇪</div><strong>Arraste seus documentos para cá</strong><span>PDF, Word, Excel e imagens • ou clique para selecionar</span></div><div id="filesList" class="files-list"></div><p class="note">Os arquivos ficam armazenados apenas neste navegador. No PDF completo, PDFs e imagens são incorporados; Word e Excel aparecem no índice e podem ser baixados separadamente.</p></section>
+      <footer>CALENDÁRIO ANUAL 2026 <span>•</span> COLÉGIO CORA CORALINA <span class="footer-right">Organização, planejamento e gestão</span></footer>
+    </main>
+  </div>
+</div>
+<input id="filePicker" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.webp" multiple hidden />
+<input id="restorePicker" type="file" accept=".json" hidden />
+<dialog id="eventModal"><form id="eventForm" method="dialog"><div class="modal-head"><h3 id="modalTitle">Novo evento</h3><button type="button" id="closeModal" class="icon-button">✕</button></div><label>Nome do evento<input id="eventTitle" placeholder="Ex.: Reunião de planejamento" required maxlength="170" /></label><div class="form-row"><label>Data<input id="eventDate" type="date" required min="2026-01-01" max="2026-12-31" /></label><label>Categoria<select id="eventType"><option value="Pedagógico">Pedagógico</option><option value="Avaliação">Avaliação</option><option value="Reunião">Reunião</option><option value="Evento">Evento</option><option value="Feriado">Feriado</option><option value="Outros">Outros</option></select></label></div><label>Observações (opcional)<textarea id="eventNotes" rows="3" placeholder="Informações e orientações..."></textarea></label><div class="modal-actions"><button type="button" class="btn btn-ghost" id="cancelEvent">Cancelar</button><button type="submit" class="btn btn-primary">Salvar evento</button></div></form></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="app.js" defer></script>
+</body>
+</html>
