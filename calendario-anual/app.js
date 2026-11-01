@@ -38,8 +38,8 @@
     if(imported)saveEvents();
   }
   function saveEvents() {
-    try { localStorage.setItem(STORE, JSON.stringify(events)); }
-    catch { notify('Armazenamento de eventos indisponível neste navegador.'); }
+    try { localStorage.setItem(STORE, JSON.stringify(events)); return true; }
+    catch { notify('Armazenamento de eventos indisponível neste navegador.'); return false; }
   }
   function openDB() {
     return new Promise((resolve, reject) => {
@@ -309,18 +309,44 @@
     window.addEventListener('afterprint',()=>root.remove(),{once:true});window.print();
   }
 
+  function markEventAdded(state=''){
+    ['addEventBtn','quickEvent'].forEach(id=>{
+      const button=$('#'+id);
+      if(!button)return;
+      if(!button.dataset.initialLabel)button.dataset.initialLabel=button.textContent.trim();
+      button.classList.toggle('event-added',Boolean(state));
+      button.textContent=state==='duplicate'?'✓ Evento já cadastrado':state?'✓ Evento adicionado':button.dataset.initialLabel;
+      button.setAttribute('aria-label',state?'Evento registrado. Clique para adicionar outro evento.':button.dataset.initialLabel);
+    });
+  }
   function bind(){
     $('#prevMonth').addEventListener('click',()=>{selectedMonth=(selectedMonth+11)%12;render();});
     $('#nextMonth').addEventListener('click',()=>{selectedMonth=(selectedMonth+1)%12;render();});
     $('#todayMonth').addEventListener('click',()=>{selectedMonth=isCurrentYear()?new Date().getMonth():0;render();});
-    ['addEventBtn','quickEvent'].forEach(id=>$('#'+id).addEventListener('click',()=>openEventModal()));
+    ['addEventBtn','quickEvent'].forEach(id=>$('#'+id).addEventListener('click',()=>{markEventAdded('');openEventModal();}));
     $('#closeModal').addEventListener('click',()=>$('#eventModal').close());
     $('#cancelEvent').addEventListener('click',()=>$('#eventModal').close());
     $('#eventForm').addEventListener('submit',event=>{
-      event.preventDefault();const date=$('#eventDate').value,title=$('#eventTitle').value.trim();
+      event.preventDefault();
+      const date=$('#eventDate').value,title=$('#eventTitle').value.trim();
       if(!/^\d{4}-\d\d-\d\d$/.test(date)||!date.startsWith(YEAR+'-')||!title){notify(`Informe um título e uma data de ${YEAR}.`);return;}
       const item={id:editing||uid(),title,date,type:$('#eventType').value,notes:$('#eventNotes').value.trim(),time:$('#eventTime').value,duration:Math.min(480,Math.max(15,Number($('#eventDuration').value)||60)),mode:$('#eventMode').value,place:$('#eventPlace').value.trim(),meet:$('#eventMode').value==='online'?$('#eventMeet').value.trim():'',audience:$('#eventAudience').value,status:$('#eventStatus').value,needsReview:$('#eventStatus').value==='Em revisão'};
-      if(editing)events=events.filter(e=>e.id!==editing);events.push(item);saveEvents();selectedMonth=Number(date.slice(5,7))-1;$('#eventModal').close();render();notify('Evento salvo.');
+      const normalize=s=>String(s||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('pt-BR');
+      const duplicated=!editing&&events.some(e=>e.date===date&&normalize(e.title)===normalize(title)&&String(e.type||'')===item.type);
+      if(duplicated){
+        $('#eventModal').close();
+        markEventAdded('duplicate');
+        notify('✓ Este evento já está cadastrado para esta data. Nenhuma cópia foi criada.');
+        return;
+      }
+      const previous=events;
+      events=editing?events.filter(e=>e.id!==editing).concat(item):events.concat(item);
+      if(!saveEvents()){events=previous;return;}
+      selectedMonth=Number(date.slice(5,7))-1;
+      $('#eventModal').close();
+      render();
+      markEventAdded('saved');
+      notify(editing?'✓ Evento atualizado com sucesso.':'✓ Evento adicionado ao calendário. Para enviar à equipe, clique em Publicar.');
     });
     ['uploadBtn','secondaryUpload'].forEach(id=>$('#'+id).addEventListener('click',()=>$('#filePicker').click()));
     $('#dropzone').addEventListener('click',()=>$('#filePicker').click());
