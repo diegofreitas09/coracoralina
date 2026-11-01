@@ -2,6 +2,7 @@
 // Passwords and session keys are set in Netlify project environment variables, never in Git.
 import { createHmac, createHash, timingSafeEqual, randomBytes } from 'node:crypto';
 import { getStore } from '@netlify/blobs';
+import {vapidKeys,registrations,saveRegistration,deleteRegistration,dispatchPush,deliveryId,hasDelivered,markDelivered} from './cora-push-core.mjs';
 
 const COOKIE='cora_portal_session';
 const YEAR=2026;
@@ -59,6 +60,26 @@ export default async function handler(request){
  }
  if(action==='logout'&&request.method==='POST')return answer({ok:true},200,{'set-cookie':`${COOKIE}=; Max-Age=0; ${baseCookie}`});
  if(!role)return answer({error:'Sessão expirada. Faça login.'},401);
+
+ if(action==='push-key'&&request.method==='GET'){
+  return answer({publicKey:vapidKeys().publicKey,enabled:true});
+ }
+ if(action==='push-register'&&request.method==='POST'){
+  if(role!=='equipe')return answer({error:'Somente colaboradores podem registrar aparelhos'},403);
+  if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Requisição inválida'},400);
+  let input;try{input=await request.json()}catch{return answer({error:'Dados inválidos'},400)}
+  try{return answer(await saveRegistration(input.subscription),200)}catch(e){return answer({error:e.message},400)}
+ }
+ if(action==='push-remove'&&request.method==='POST'){
+  if(role!=='equipe')return answer({error:'Somente colaboradores podem cancelar inscrições'},403);
+  if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Requisição inválida'},400);
+  let input;try{input=await request.json()}catch{return answer({error:'Dados inválidos'},400)}
+  return answer(await deleteRegistration(input.subscription),200);
+ }
+ if(action==='push-status'&&request.method==='GET'){
+  if(role!=='gestao')return answer({error:'Apenas gestão'},403);
+  return answer({devices:(await registrations()).length},200);
+ }
  const store=getStore('cora-calendar-publications');
 
  if(action==='state'&&request.method==='GET'){
@@ -100,7 +121,24 @@ export default async function handler(request){
   const previousYears=await store.get('published-years',{type:'json',consistency:'strong'});
   const years=Array.from(new Set([2026,year,...(Array.isArray(previousYears)?previousYears:[]).filter(schoolYear)])).sort((a,b)=>a-b);
   await store.setJSON('published-years',years);
-  return answer({ok:true,year,availableYears:years,updatedAt:state.updatedAt,counts:{events:events.length,notices:notices.length,birthdays:birthdays.length,stages:stages.filter(x=>x.start&&x.end).length}});
+  const sentStats={registered:0,sent:0,failed:0,expired:0,notices:0};
+  const oldNotices=new Map((previous?.notices||[]).map(n=>[String(n.id),n]));
+  const now=Date.now();
+  for(const notice of notices){
+   if(notice.publishAt&&Date.parse(notice.publishAt)>now)continue;
+   const old=oldNotices.get(String(notice.id));
+   if(old&&old.title===notice.title&&old.body===notice.body&&old.publishAt===notice.publishAt)continue;
+   const id=deliveryId('notice',year,notice.id,notice.title+'|'+notice.body+'|'+notice.publishAt);
+   if(await hasDelivered(id))continue;
+   try{
+    const stats=await dispatchPush({title:notice.title,body:notice.body,year,tag:'notice-'+notice.id,
+      urgent:notice.type==='Urgente',kind:'notice'});
+    sentStats.registered=stats.registered;
+    sentStats.sent+=stats.sent;sentStats.failed+=stats.failed;sentStats.expired+=stats.expired;
+    if(stats.registered){await markDelivered(id,{...stats,year,kind:'notice'});sentStats.notices++}
+   }catch(error){console.error('Falha ao enviar push da Gestão',error.message)}
+  }
+  return answer({ok:true,year,availableYears:years,updatedAt:state.updatedAt,push:sentStats,counts:{events:events.length,notices:notices.length,birthdays:birthdays.length,stages:stages.filter(x=>x.start&&x.end).length}});
  }
  return answer({error:'Recurso inexistente'},404);
 }
