@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="classroom-title">
+<title id="classroom-title">Google Classroom</title>
+<rect x="20" y="21" width="472" height="470" rx="35" fill="#fbbc04"/>
+<path d="M62 62h388v349H62z" fill="#13a267"/>
+<path d="M62 62h388v4H62z" fill="#1a875c" opacity=".56"/>
+<circle cx="174" cy="229" r="24" fill="#65bd95"/>
+<path d="M119 314c0-36 22-54 55-54s56 18 56 54v12H119z" fill="#65bd95"/>
+<circle cx="338" cy="229" r="24" fill="#65bd95"/>
+<path d="M282 314c0-36 23-54 56-54s56 18 56 54v12H282z" fill="#65bd95"/>
+<circle cx="256" cy="200" r="33" fill="#fff"/>
+<path d="M179 313c0-42 33-65 77-65s77 23 77 65v13H179z" fill="#fff"/>
+<path d="M304 389h96v23h-96z" fill="#fff"/>
+<path d="M304 412h96l24 25h-96z" fill="#df9a07" opacity=".4"/>
+</svg>
