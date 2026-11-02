@@ -219,7 +219,8 @@ body.portal-locked { background:#eef3f9; }
 .cp-teacher-tool-roteiros{background:#e8f1ff;color:#1a60a4}
 .cp-teacher-tool-gestor{background:#fff;color:#1a527d;border:1px solid #e1e8ef}
 .cp-teacher-tool-gestor img{width:41px;height:41px;border-radius:9px}
-.cp-teacher-tool-classroom{background:#eef0ff;color:#465da9}
+.cp-teacher-tool-classroom{background:#fff;color:#1d8060;border:1px solid #e1e8ef}
+.cp-teacher-tool-classroom img{width:41px;height:41px;border-radius:9px}
 .cp-teacher-tool-sae{background:#fff;color:#206d9b;border:1px solid #e1e8ef}
 .cp-teacher-tool-sae img{width:41px;height:41px}
 .cp-teacher-tool-icon svg{max-width:27px;max-height:27px}
