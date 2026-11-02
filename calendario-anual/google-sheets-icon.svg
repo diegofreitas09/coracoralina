@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+<title id="title">Google Planilhas</title>
+<path d="M87 15h226l117 116v342c0 14-12 25-26 25H87c-15 0-27-12-27-27V42c0-15 12-27 27-27Z" fill="#0f9d58"/>
+<path d="M313 15v89c0 16 13 29 29 29h88Z" fill="#8dd0ad"/>
+<path d="M313 104c0 16 13 29 29 29h88v25H331c-13 0-18-10-18-24Z" fill="#0b8043" opacity=".72"/>
+<path d="M143 255h204v178H143Z" fill="#fff"/>
+<path d="M168 280h62v37h-62Zm88 0h64v37h-64Zm-88 58h62v37h-62Zm88 0h64v37h-64Zm-88 58h62v16h-62Zm88 0h64v16h-64Z" fill="#0f9d58"/>
+</svg>
