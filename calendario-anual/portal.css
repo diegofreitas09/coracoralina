@@ -220,7 +220,8 @@ body.portal-locked { background:#eef3f9; }
 .cp-teacher-tool-gestor{background:#fff;color:#1a527d;border:1px solid #e1e8ef}
 .cp-teacher-tool-gestor img{width:41px;height:41px;border-radius:9px}
 .cp-teacher-tool-classroom{background:#eef0ff;color:#465da9}
-.cp-teacher-tool-sae{background:#fff1df;color:#a56b22}
+.cp-teacher-tool-sae{background:#fff;color:#206d9b;border:1px solid #e1e8ef}
+.cp-teacher-tool-sae img{width:41px;height:41px}
 .cp-teacher-tool-icon svg{max-width:27px;max-height:27px}
 .cp-teacher-tool-icon img{object-fit:contain;width:35px;height:35px}
 .cp-teacher-tool-copy{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
