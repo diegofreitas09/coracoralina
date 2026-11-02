@@ -4,6 +4,7 @@ import { createHmac, createHash, timingSafeEqual, randomBytes, scryptSync } from
 import { getStore } from '@netlify/blobs';
 import {currentMember,loginEmployee,activateEmployee,listEmployees,manageEmployee,statuses,markDelivery,accessPolicy,enforceIndividualAccess} from './lib/cora-team-auth.mjs';
 import {vapidKeys,registrations,saveRegistration,deleteRegistration,dispatchPush,deliveryId,hasDelivered,markDelivered,testDevicePush} from './lib/cora-push-core.mjs';
+import {mirrorStatus,syncEmployeesToSheets} from './lib/cora-google-sheets-mirror.mjs';
 
 const COOKIE='cora_portal_session';
 const YEAR=2026;
@@ -91,7 +92,14 @@ function migrateBirthdays(state){
 }
 
 const validISO=(s,y)=>validYearDate(s,y);
-export default async function handler(request){
+async function queueMirror(context){
+ // Login, ativação e bloqueio pertencem à Gestão; falha do Google nunca altera a autorização.
+ if(!process.env.CORA_GOOGLE_SERVICE_ACCOUNT_JSON?.trim())return;
+ const job=listEmployees().then(report=>syncEmployeesToSheets(report.members)).catch(()=>{});
+ if(typeof context?.waitUntil==='function')context.waitUntil(job);
+ else await job;
+}
+export default async function handler(request,context){
  const url=new URL(request.url),action=url.searchParams.get('action')||'me';
  if(request.method==='OPTIONS')return new Response('',{status:405,headers:HEADERS});
  if(!configured())return answer({error:'Configuracao segura pendente: definir as tres variaveis CORA_* nas configuracoes protegidas do Netlify.',configured:false},503);
@@ -112,13 +120,16 @@ export default async function handler(request){
   }
   const result=await loginEmployee(p,vars().secret);
   if(result.error)return answer({error:result.error},result.status||401);
+  await queueMirror(context);
   return answer({role:'equipe',configured:true,member:result.member},200,{'set-cookie':result.cookie});
  }
  if(action==='activate'&&request.method==='POST'){
   if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Solicitação não autorizada.'},400);
   let input;try{input=await request.json()}catch{return answer({error:'Dados inválidos.'},400)}
   const result=await activateEmployee(input,vars().secret);
-  return result.error?answer({error:result.error},result.status||400):answer({role:'equipe',member:result.member,ok:true},200,{'set-cookie':result.cookie});
+  if(result.error)return answer({error:result.error},result.status||400);
+  await queueMirror(context);
+  return answer({role:'equipe',member:result.member,ok:true},200,{'set-cookie':result.cookie});
  }
  if(action==='logout'&&request.method==='POST')return answer({ok:true},200,{'set-cookie':`${COOKIE}=; Max-Age=0; ${baseCookie}`});
  if(!role)return answer({error:'Sessão expirada. Faça login.'},401);
@@ -156,12 +167,20 @@ export default async function handler(request){
   const outcome=await enforceIndividualAccess();
   return outcome.error?answer({error:outcome.error},outcome.status||400):answer(outcome);
  }
+ if(action==='accounts-sheet'&&role==='gestao'){
+  if(request.method==='GET')return answer(await mirrorStatus());
+  if(request.method!=='POST'||request.headers.get('x-cora-request')!=='portal')return answer({error:'Acesso negado.'},403);
+  const status=await syncEmployeesToSheets((await listEmployees()).members);
+  return answer(status,status.configured&&!status.synced?502:200);
+ }
  if(action==='accounts'&&role==='gestao'){
   if(request.method==='GET')return answer(await listEmployees());
   if(request.method!=='POST'||request.headers.get('x-cora-request')!=='portal')return answer({error:'Solicitação inválida.'},400);
   let input;try{input=await request.json()}catch{return answer({error:'Dados inválidos.'},400)}
   const result=await manageEmployee(input,request.url);
-  return result.error?answer({error:result.error},result.status||400):answer(result);
+  if(result.error)return answer({error:result.error},result.status||400);
+  await queueMirror(context);
+  return answer(result);
  }
  if(action==='delivery-profile'&&request.method==='GET'){
   if(role!=='equipe'||!member)return answer({identified:false,statuses:{}});
