@@ -525,7 +525,7 @@
   const roteiroIcon='<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="3" width="14.5" height="18" rx="2"></rect><path d="M8 3v18M11 8h5M11 12h5M11 16h3"></path><path d="m15.9 17.2 3.6-3.6 1.4 1.4-3.6 3.6-2.2.8z"></path></svg>';
   const gestorIcon='<img src="gestor-escolar-icon.svg?v=20261102" width="41" height="41" alt="" loading="lazy" />';
   // Abrimos o endereço oficial do Classroom: o atalho "Agenda" depende da conta e da interface Google.
-  const classroomIcon='<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"></rect><path d="M7 3v4M17 3v4M3.5 10h17M8 14h3M8 17h7"></path></svg>';
+  const classroomIcon='<img src="google-classroom-icon.svg?v=20261102" width="41" height="41" alt="" loading="lazy" />';
   const saeIcon='<img src="sae-digital-icon.svg?v=20261102" width="41" height="41" alt="" loading="lazy" />';
   const openIcon='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5h6v6M19 5l-9 9"></path><path d="M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"></path></svg>';
   const teacherTools='<section class="cp-teacher-tools" aria-labelledby="cpTeacherToolsTitle">'+
