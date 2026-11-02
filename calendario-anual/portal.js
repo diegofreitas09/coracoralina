@@ -522,7 +522,7 @@
     '<button type="button" class="cp-flow-link" data-cp-tab="'+item[0]+'"><span class="cp-flow-icon">'+item[1]+'</span>'+
     '<span><strong>'+item[2]+'</strong><small>'+item[3]+'</small></span><b>›</b></button>').join('');
   // Área de ferramentas externas da Equipe; usa a marca original do Gestor Escolar.
-  const roteiroIcon='<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="3" width="14.5" height="18" rx="2"></rect><path d="M8 3v18M11 8h5M11 12h5M11 16h3"></path><path d="m15.9 17.2 3.6-3.6 1.4 1.4-3.6 3.6-2.2.8z"></path></svg>';
+  const roteiroIcon='<img src="google-sheets-icon.svg?v=20261102" width="41" height="41" alt="" loading="lazy" />';
   const gestorIcon='<img src="gestor-escolar-icon.svg?v=20261102" width="41" height="41" alt="" loading="lazy" />';
   // Abrimos o endereço oficial do Classroom: o atalho "Agenda" depende da conta e da interface Google.
   const classroomIcon='<img src="google-classroom-icon.svg?v=20261102" width="41" height="41" alt="" loading="lazy" />';
@@ -531,9 +531,9 @@
   const teacherTools='<section class="cp-teacher-tools" aria-labelledby="cpTeacherToolsTitle">'+
    '<div class="cp-teacher-tools-head"><div><small>ACESSOS PEDAGÓGICOS</small><h3 id="cpTeacherToolsTitle">Ferramentas do professor</h3></div><span>Roteiros, notas, agenda e materiais digitais</span></div>'+
    '<div class="cp-teacher-tools-grid">'+
-    '<a class="cp-teacher-tool" href="'+TEACHER_LINKS.roteiros+'" target="_blank" rel="noopener noreferrer" aria-label="Abrir Digitação de roteiros em nova aba">'+
+    '<a class="cp-teacher-tool" href="'+TEACHER_LINKS.roteiros+'" target="_blank" rel="noopener noreferrer" aria-label="Abrir planilha de roteiros para professores do Fundamental II e Ensino Médio em nova aba">'+
      '<span class="cp-teacher-tool-icon cp-teacher-tool-roteiros" aria-hidden="true">'+roteiroIcon+'</span>'+
-     '<span class="cp-teacher-tool-copy"><strong>Digitação de roteiros</strong><small>Planilha de roteiros pedagógicos</small></span>'+
+     '<span class="cp-teacher-tool-copy"><strong>Digitação de roteiros</strong><small>Professores do Fundamental II e Ensino Médio</small></span>'+
      '<span class="cp-teacher-tool-open" aria-hidden="true">'+openIcon+'</span></a>'+
     '<a class="cp-teacher-tool" href="'+TEACHER_LINKS.gestor+'" target="_blank" rel="noopener noreferrer" aria-label="Abrir Gestor Escolar para digitação de notas em nova aba">'+
      '<span class="cp-teacher-tool-icon cp-teacher-tool-gestor" data-tool-icon="gestor" aria-hidden="true">'+gestorIcon+'</span>'+
