@@ -62,9 +62,9 @@
   root.innerHTML=`<div class="cp-manager-bar"><strong>⚙ Gestão</strong><small>Publicações para a Equipe Pedagógica</small><span class="cp-spacer"></span><span id="cpPubStatus" class="cp-status">Ainda não publicado neste acesso</span><button id="cpTogglePanel" class="cp-btn gold">🔔 Publicações e alertas</button><button id="cpPublishNow" class="cp-btn">Publicar para equipe</button><button id="cpLogout" class="cp-btn soft">Sair</button></div><section id="cpManagerPanel" class="cp-manager-panel cp-hidden"><h2>Comunicação com a equipe</h2><p>Os avisos ficam como rascunho neste dispositivo até você clicar em “Publicar para equipe”. Os eventos locais serão enviados junto com os avisos.</p><div class="cp-form-grid"><label>Título do aviso<input id="cpNoticeTitle" maxlength="130" placeholder="Ex.: Reunião de planejamento"></label><label>Tipo<select id="cpNoticeType"><option>Informativo</option><option>Urgente</option><option>Reunião</option><option>Avaliação</option></select></label><label>Data de início da publicação<input id="cpNoticePublish" type="datetime-local" value="${isoNow()}"></label><label class="cp-wide">Mensagem<textarea id="cpNoticeBody" placeholder="Escreva o recado, orientações ou uma alteração do calendário"></textarea></label><label>Data do evento (opcional)<input type="date" id="cpNoticeEventDate" min="2026-01-01" max="2026-12-31"></label><label>Alertar com antecedência<select id="cpNoticeLead"><option value="0">No dia</option><option value="1">1 dia antes</option><option value="2">2 dias antes</option><option value="3" selected>3 dias antes</option><option value="5">5 dias antes</option><option value="7">7 dias antes</option><option value="14">14 dias antes</option><option value="30">30 dias antes</option></select></label><label>Antecedência padrão de eventos<select id="cpDefaultLead"><option value="0">No dia</option><option value="1">1 dia</option><option value="2">2 dias</option><option value="3">3 dias</option><option value="5">5 dias</option><option value="7">7 dias</option><option value="14">14 dias</option></select></label><div class="cp-wide"><button type="button" class="cp-btn soft" id="cpAddNotice" aria-live="polite">Adicionar aviso</button><span id="cpNoticeSaveFeedback" class="cp-save-feedback" role="status" aria-live="polite"></span></div></div><h3>Avisos preparados</h3><div id="cpNoticeRows"></div><div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:13px"><button class="cp-btn gold" id="cpPublishPanel">Publicar calendário + avisos</button><span class="cp-status">Atualizações não são enviadas automaticamente ao salvar o rascunho.</span></div></section>`;
   // Gestão: o cadastro da planilha é espelho administrativo; a autorização efetiva ocorre neste painel.
   root.insertAdjacentHTML('beforeend','<section id="cpAccountsPanel" class="cp-accounts-panel cp-hidden">'+
-   '<div class="cp-accounts-head"><div><small>SEGURANÇA E COLABORADORES</small><h2>Acessos individuais</h2><p>Convites exclusivos, suspensão imediata e bloqueio de ex-funcionários.</p></div><button class="cp-btn soft" id="cpAccountsClose" type="button">Fechar</button></div>'+
+   '<div class="cp-accounts-head"><div><small>SEGURANÇA E COLABORADORES</small><h2>Gestão de colaboradores e acessos</h2><p>O cadastro, a autenticação e o histórico de logins são gerenciados aqui. A planilha é apenas uma cópia administrativa.</p></div><button class="cp-btn soft" id="cpAccountsClose" type="button">Fechar</button></div>'+
    '<p><a href="https://docs.google.com/spreadsheets/d/1tnOgWrN04AMiK88lkCCePeP3iOJ0AHnbN_91SpK5kyA/edit" target="_blank" rel="noopener noreferrer">Abrir planilha Cora Família · Acessos Calendário</a></p>'+
-   '<div class="cp-audit-export"><div><strong>Histórico de autenticações</strong><p>Os acessos ficam no servidor. Para atualizar a planilha, copie o relatório e cole na aba <b>Auditoria de Logins</b>, a partir da célula A1. As colunas de datas e quantidade no cadastro principal serão preenchidas por e-mail. A sincronização ainda não é automática.</p></div><button type="button" id="cpCopyAudit" class="cp-btn soft">Copiar relatório para planilha</button></div>'+
+   '<div class="cp-audit-export"><div><strong>Histórico de acessos — fonte: Gestão</strong><p>Veja abaixo a ativação, o primeiro e último acesso e a contagem de logins. A planilha não controla permissões: recebe uma cópia destes dados quando a integração Google está autorizada.</p><p class="cp-mirror-status" id="cpMirrorStatus" role="status">Verificando conexão da planilha...</p></div><div class="cp-mirror-actions"><button type="button" id="cpSyncMirror" class="cp-btn" disabled>Sincronizar cópia no Google Sheets</button><button type="button" id="cpCopyAudit" class="cp-btn soft">Copiar relatório (alternativa manual)</button></div></div>'+
     '<div class="cp-invite-howto"><strong>Como o professor recebe a senha?</strong><p><b>1.</b> A Gestão cadastra o e-mail aqui (a planilha sozinha não cria a conta). <b>2.</b> Gere o convite e envie o link ao professor. <b>3.</b> O professor abre o link e cria uma senha pessoal. <b>4.</b> A conta muda de Pendente para Ativo. <b>Não existe envio automático de e-mail.</b></p></div>'+
    '<form id="cpAccountCreate" class="cp-account-form"><label>Nome completo<input name="name" required minlength="5" maxlength="100"></label><label>E-mail individual<input name="email" type="email" required></label>'+
    '<label>Função<select name="profile"><option>Professor</option><option>Coordenação</option><option>Funcionário</option></select></label>'+
@@ -75,6 +75,16 @@
    '<div class="cp-account-cutover"><strong id="cpCutoverTitle">Acesso coletivo em migração</strong><p id="cpCutoverDescription">Cadastre e ative as contas antes de exigir login individual para toda a escola.</p><button id="cpEnforceIndividual" type="button" class="cp-btn gold">Exigir login individual para todos</button></div>'+
    '<p role="status" id="cpAccountsStatus" aria-live="polite"></p><div id="cpAccountsList"></div></section>');
   $('#cpPublishNow').insertAdjacentHTML('beforebegin','<button id="cpAccountsOpen" class="cp-btn soft" type="button">Acessos da equipe</button>');
+  $('#cpSyncMirror').onclick=async()=>{
+   const button=$('#cpSyncMirror');button.disabled=true;
+   try{
+    const result=await api('accounts-sheet',{confirm:true});
+    if(!result.synced)throw new Error(result.error||result.reason||'Google Sheets não configurado.');
+    toast('Cópia administrativa atualizada: '+result.rows+' colaboradores.');
+    await loadAccounts();
+   }catch(error){$('#cpMirrorStatus').textContent='Falha de sincronização: '+(error.message||error)}
+   finally{button.disabled=false}
+  };
   $('#cpCopyAudit').onclick=async()=>{
    const button=$('#cpCopyAudit');button.disabled=true;
    try{
@@ -205,7 +215,13 @@
   const list=$('#cpAccountsList');if(!list)return;
   list.textContent='Consultando colaboradores...';
   try{
-    const [data,policy]=await Promise.all([api('accounts'),api('accounts-policy')]);
+    const [data,policy,mirror]=await Promise.all([api('accounts'),api('accounts-policy'),api('accounts-sheet').catch(()=>({configured:false}))]);
+    const syncButton=$('#cpSyncMirror'),syncStatus=$('#cpMirrorStatus');
+    syncButton.disabled=!mirror.configured;
+    const lastSync=mirror.lastSuccessAt?new Date(mirror.lastSuccessAt).toLocaleString('pt-BR',{timeZone:'America/Fortaleza'}):'nenhuma sincronização';
+    syncStatus.textContent=mirror.configured?
+      'Espelho Google conectado · última cópia: '+lastSync+(mirror.lastError?' · última falha: '+mirror.lastError:''):
+      'Espelho Google não conectado. Os registros da Gestão estão disponíveis; a planilha depende de autorização Google. O relatório manual continua disponível.';
     const enforcing=policy.enforced===true;
     $('#cpEnforceIndividual').hidden=enforcing;
     $('#cpCutoverTitle').textContent=enforcing?'Login individual obrigatório':'Acesso coletivo ainda permitido';
