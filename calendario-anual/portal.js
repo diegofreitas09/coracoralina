@@ -521,9 +521,9 @@
     ['entregas','⌛','Entregas','Prazos e e-mails'],['avisos','✉','Comunicados','Orientações da Gestão'],['pdf','↓','PDF anual','Documento completo']].map(item=>
     '<button type="button" class="cp-flow-link" data-cp-tab="'+item[0]+'"><span class="cp-flow-icon">'+item[1]+'</span>'+
     '<span><strong>'+item[2]+'</strong><small>'+item[3]+'</small></span><b>›</b></button>').join('');
-  // Área de ferramentas externas da Equipe; SVG provisório do Gestor será trocado pela marca original.
+  // Área de ferramentas externas da Equipe; usa a marca original do Gestor Escolar.
   const roteiroIcon='<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="3" width="14.5" height="18" rx="2"></rect><path d="M8 3v18M11 8h5M11 12h5M11 16h3"></path><path d="m15.9 17.2 3.6-3.6 1.4 1.4-3.6 3.6-2.2.8z"></path></svg>';
-  const gestorIcon='<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2 12 4l9 6.2"></path><path d="M5.5 9.8V20h13V9.8"></path><path d="M10 20v-6.5h4V20"></path><path d="M8 10h.01M16 10h.01"></path><path d="M9 6.1V3h6v3.1"></path></svg>';
+  const gestorIcon='<img src="gestor-escolar-icon.svg?v=20261102" width="41" height="41" alt="" loading="lazy" />';
   // Abrimos o endereço oficial do Classroom: o atalho "Agenda" depende da conta e da interface Google.
   const classroomIcon='<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"></rect><path d="M7 3v4M17 3v4M3.5 10h17M8 14h3M8 17h7"></path></svg>';
   const saeIcon='<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5 12 3l8.5 2.5v13L12 21l-8.5-2.5z"></path><path d="M12 3v18M7 8l2.8 1M7 12l2.8 1M15 9l2.4-1M15 13l2.4-1"></path></svg>';
