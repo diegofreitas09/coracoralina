@@ -67,3 +67,26 @@ Para atualizar:
 5. Repita a operação quando desejar um novo retrato da auditoria.
 
 Não compartilhe o relatório ou convites em grupos. Não armazene senhas no Sheets. A situação F é cadastral: para suspender ou desligar uma conta de verdade use a Gestão. Uma sincronização automática futura dependerá de credenciais e autorização Google configuradas para o servidor; nunca publique um token secreto no site.
+
+
+## Arquitetura definitiva: Gestão principal → Planilha secundária
+
+A Gestão é a fonte de verdade. Cadastra colaboradores, gera convites, autoriza a ativação, acompanha o histórico de acessos e bloqueia contas. Nenhuma edição na planilha pode criar usuário, autenticar senha ou revogar uma conta.
+
+A planilha Google Cora Família é apenas uma cópia administrativa sem senhas ou convites. A aba **Auditoria de Logins** contém e-mail, nome, situação, ativação, primeiro acesso monitorado, último acesso e quantidade de logins. Na aba **Acessos Calendário**, as fórmulas G, I, K e L buscam os registros de auditoria pelo e-mail cadastrado.
+
+### Sincronização automática: implementação preparada, conexão Google pendente
+
+O servidor foi preparado para espelhar a Gestão automaticamente após uma ativação, login válido ou alteração administrativa; há também reconciliação a cada seis horas. A Gestão pode consultar o status e iniciar uma sincronização pelo botão **Sincronizar cópia no Google Sheets**. Se a conexão Google falhar, o login continua funcionando. A coleta e autenticação não dependem da planilha.
+
+Para ativar a integração:
+
+1. Um administrador cria uma conta de serviço no Google Cloud e habilita a Google Sheets API.
+2. Compartilha **somente a planilha Cora Família** com o endereço de e-mail da conta de serviço na permissão Editor.
+3. Configura no Netlify a variável secreta CORA_GOOGLE_SERVICE_ACCOUNT_JSON com o JSON da conta de serviço, incluindo client_email e private_key. Não insira a chave no GitHub, planilha, e-mail ou conversa.
+4. Opcionalmente, define CORA_GOOGLE_SHEET_ID para apontar para outra planilha; sem essa variável, usa-se a planilha institucional.
+5. Publica o deploy e, na Gestão, seleciona **Sincronizar cópia no Google Sheets** para validar o primeiro espelho.
+
+**Sem autorização Google no Netlify, o espelho não é automático.** Enquanto isso, o relatório pode ser copiado pelo botão já existente. Alterar o campo Situação ou E-mail no Sheets não autoriza ninguém no Calendário.
+
+A quantidade de logins só é monitorada desde a implantação da auditoria; logins passados não podem ser inventados. Atualizações automáticas da página não contam como logins. O bloco de dados da aba Auditoria de Logins é gerenciado pelo servidor quando autorizado e substitui uma cópia antiga, sem buscar informações de volta da planilha.
