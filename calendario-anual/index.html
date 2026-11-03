@@ -68,7 +68,7 @@
         <div class="official-month-summary"><strong>Projetos previstos no mês</strong><ul id="officialProjectList"></ul><div class="official-month-count"><span id="officialEventCount">0</span><small>Atividades de referência cadastradas</small></div><p>As datas foram transcritas do documento escolar. Há registros que podem divergir de planejamentos mais recentes; revise antes de comunicar às famílias.</p><button type="button" class="btn btn-ghost" id="closeOfficialButton">Fechar visualização</button></div></div>
       </section>
       <section id="planningStudio" class="studio-section" aria-labelledby="planningHeading">
-        <div class="studio-section-head"><div><div class="eyebrow">GESTÃO PEDAGÓGICA · DOCUMENTOS</div><h2 id="planningHeading">Planejamento para reunião de equipe</h2><p>Prepare a pauta, organize as datas e baixe o planejamento diagramado em PDF, com capa e programação mensal.</p></div><span class="studio-pill">PDF de reunião</span></div>
+        <div class="studio-section-head"><div><div class="eyebrow">GESTÃO PEDAGÓGICA · DOCUMENTOS</div><h2 id="planningHeading">Planejamento para reunião de equipe</h2><p>Prepare a pauta, organize as datas e baixe o planejamento em PDF para apresentação ou Word editável para ajustes posteriores.</p></div><span class="studio-pill">PDF e Word</span></div>
         <div class="studio-layout">
           <form id="planningForm" class="studio-form">
             <div class="studio-form-heading"><strong>Personalizar o planejamento</strong><span id="planningSaveStatus">Salvo neste dispositivo</span></div>
@@ -83,7 +83,7 @@
             <div class="planning-birthday-auto"><label class="studio-check"><input type="checkbox" id="planIncludeBirthdays" name="includeBirthdays" checked /><span>Incluir automaticamente os aniversariantes cadastrados do mês, antes da programação</span></label><div id="planBirthdayPreview" class="planning-birthday-preview" aria-live="polite">Consulte os aniversariantes cadastrados na Gestão.</div></div><label>Comunicados ou aniversários adicionais (opcional)<textarea name="birthdays" rows="3" placeholder="Inclua apenas comunicados complementares ou aniversários ainda não cadastrados."></textarea></label>
             <label>Mensagem final (opcional)<textarea name="closing" rows="3"></textarea></label>
             <label class="studio-check"><input type="checkbox" id="planIncludeCalendar" name="includeCalendar" checked /><span>Incluir automaticamente os eventos cadastrados no calendário deste mês</span></label>
-            <div class="studio-actions"><button type="button" class="btn btn-ghost" id="loadNovemberPlan">Repor modelo de novembro</button><button type="button" class="btn btn-primary" id="downloadPlanning">↓ Baixar planejamento em PDF</button></div>
+            <div class="studio-actions"><button type="button" class="btn btn-ghost" id="loadNovemberPlan">Repor modelo de novembro</button><button type="button" class="btn btn-primary" id="downloadPlanning">↓ Baixar planejamento em PDF</button><button type="button" class="btn btn-outline" id="downloadPlanningWord" title="Baixar planejamento editável no Microsoft Word">↓ Baixar em Word (.docx)</button></div>
           </form>
           <aside class="studio-preview" aria-label="Prévia do planejamento"><div class="planning-paper"><div class="paper-toptag">COLÉGIO CORA CORALINA · 2026</div><div class="paper-gold"></div><h3>Planejamento <span id="planPreviewMonth">Novembro</span></h3><p id="planPreviewSegment">Fundamental II e Ensino Médio</p><div class="paper-overline">REUNIÃO DE EQUIPE</div><p id="planPreviewBirthdays" class="paper-birthday-line">Aniversariantes do mês: carregando...</p><div class="paper-highlights"><div><small>PROJETOS</small><strong id="planProjectCount">0</strong></div><div><small>ATIVIDADES</small><strong id="planScheduleCount">0</strong></div><div><small>EVENTOS DO CALENDÁRIO</small><strong id="planCalendarCount">0</strong></div></div><div class="paper-overline">RESUMO DA PAUTA</div><div id="planPreviewAgenda" class="paper-points"></div><div class="paper-rule"></div><p class="paper-signature">Organização • Alinhamento • Resultados</p></div><p class="studio-advice">Use o planejamento de novembro enviado como ponto de partida. Confira datas e responsáveis antes de compartilhar o PDF com a equipe.</p></aside>
         </div>
@@ -199,7 +199,8 @@
 <script src="assessment-deadlines.js?v=seletor03" defer></script>
 <script src="app.js?v=monthview-1" defer></script>
 <script src="official-calendar-ui.js" defer></script>
-<script src="planning.js?v=gestao2" defer></script>
+<script src="planning-word.js?v=20261102-1" defer></script>
+<script src="planning.js?v=word01" defer></script>
 <script src="birthdays.js?v=aniversarios18" defer></script>
 <script src="cards.js?v=importacao25" defer></script>
 <script src="helpdesk.js?v=leitura01" defer></script>
