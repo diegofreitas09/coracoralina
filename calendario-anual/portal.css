@@ -438,3 +438,8 @@ body.portal-locked { background:#eef3f9; }
 #cpRecoveryForm button[type="submit"]{width:100%;min-height:45px}
 #cpRecoveryForm #cpRecoveryError{grid-column:1/-1}
 @media(max-width:540px){.cp-forgot-wrap{padding:1px 0}#cpRecoveryForm{padding:12px 18px 20px}}
+
+/* Acesso à instalação no painel de atalhos da equipe. */
+.cp-team .cp-install-shortcut{background:#fdf9ed;border-color:#e5d4a8}
+.cp-team .cp-install-shortcut .cp-flow-icon{background:#f3e4ba;color:#75541a}
+.cp-team .cp-install-shortcut:hover,.cp-team .cp-install-shortcut:focus-visible{border-color:#cfad55;background:#fff7df}

@@ -633,7 +633,8 @@
    check:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18m-12 6 2 2 4-4"/>',
    clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/>',
    message:'<path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 21l1.9-5.5a9 9 0 0 1-.9-4A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8v.5Z"/><path d="M8.5 11.5h8"/>',
-   pdf:'<path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10Z"/><path d="M13 3v7h7M8 14h8M8 18h6"/>'
+   pdf:'<path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10Z"/><path d="M13 3v7h7M8 14h8M8 18h6"/>',
+   install:'<path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/>'
   };
   return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(shapes[name]||shapes.calendar)+'</svg>';
  }
@@ -661,7 +662,9 @@
   const quickLinks=[['calendario','calendar','Calendário','Atividades e projetos'],['avaliacoes','check','Avaliações','Provas e simulados'],
     ['entregas','clock','Entregas','Prazos e e-mails'],['avisos','message','Comunicados','Orientações da Gestão'],['pdf','pdf','PDF anual','Documento completo']].map(item=>
     '<button type="button" class="cp-flow-link" data-cp-tab="'+item[0]+'"><span class="cp-flow-icon">'+cpTeamTileIcon(item[1])+'</span>'+
-    '<span><strong>'+item[2]+'</strong><small>'+item[3]+'</small></span></button>').join('');
+    '<span><strong>'+item[2]+'</strong><small>'+item[3]+'</small></span></button>').join('')+
+    '<button type="button" class="cp-flow-link cp-install-shortcut" id="cpQuickInstall" aria-label="'+(isHomeScreenApp()?'Atualizar':'Instalar')+' aplicativo Agenda Cora">'+
+    '<span class="cp-flow-icon">'+cpTeamTileIcon('install')+'</span><span><strong>'+(isHomeScreenApp()?'Atualizar aplicativo':'Instalar aplicativo')+'</strong><small>'+(isHomeScreenApp()?'Orientações e ícone do app':'Android e iPhone')+'</small></span></button>';
   // Área de ferramentas externas da Equipe; usa a marca original do Gestor Escolar.
   const roteiroIcon='<img src="google-sheets-icon.svg?v=20261102" width="41" height="41" alt="" loading="lazy" />';
   const gestorIcon='<img src="gestor-escolar-icon.svg?v=20261102" width="41" height="41" alt="" loading="lazy" />';
@@ -793,6 +796,7 @@
   }));
 
   here.querySelectorAll('[data-cp-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.cpTab;showBell=false;drawTeam()});
+  here.querySelector('#cpQuickInstall')?.addEventListener('click',showAppInstallGuide);
   here.querySelectorAll('[data-cp-stage]').forEach(b=>b.onclick=()=>{selectedStage=Number(b.dataset.cpStage)||0;tab='etapas';showBell=false;drawTeam()});
   $('#cpMonthPicker')?.addEventListener('change',e=>{month=Number(e.target.value);drawTeam()});
   $('#cpStagePicker')?.addEventListener('change',e=>{selectedStage=Number(e.target.value)||0;drawTeam()});
