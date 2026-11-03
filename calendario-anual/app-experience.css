@@ -1,0 +1,204 @@
+/* Cora Coralina · experiência mobile premium
+   Adaptação de linguagem visual para Gestão e Equipe, mantendo acesso aos recursos existentes. */
+:root{--cora-app-navy:#0c223c;--cora-app-blue:#173d62;--cora-app-gold:#dabb76;--cora-app-cream:#fffdf8;--cora-app-line:#e3e9ef}
+.cora-hero-intro{display:flex;flex-direction:column;gap:1px;margin-bottom:11px;position:relative;z-index:1}
+.cora-hero-intro strong{font-size:clamp(23px,3.4vw,31px);letter-spacing:-.6px;line-height:1.13;color:#fff}
+.cora-hero-intro span{font-size:13px;font-weight:500;color:#cadae9}
+#app .welcome{
+ position:relative;isolation:isolate;overflow:hidden;
+ background:linear-gradient(130deg,#0b1f36,#153d60 80%,#1a5273);
+ border:1px solid #284f72;box-shadow:0 12px 29px #10294318;
+}
+#app .welcome:before{
+ content:"";position:absolute;z-index:-1;right:-90px;top:-140px;
+ width:320px;height:320px;border-radius:50%;border:1px solid #ffffff28;
+ box-shadow:0 0 0 42px #ffffff07,0 0 0 90px #ffffff06;
+}
+#app .welcome h1{font-weight:800;letter-spacing:-.7px}
+#app .welcome h1 span{color:#f4d999}
+#app .welcome-actions{position:relative;z-index:1}
+#app .welcome-actions .btn{border-radius:11px}
+.cora-app-shortcuts{margin:20px 0 2px}
+.cora-app-section-title{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:12px}
+.cora-app-section-title small{font-size:10px;letter-spacing:1.6px;color:#8193a7;font-weight:850}
+.cora-app-section-title h2{font-size:20px;margin:2px 0 0;color:#193d60;letter-spacing:-.4px}
+.cora-app-section-title>span{font-size:12px;color:#8392a3}
+.cora-app-shortcut-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.cora-app-shortcut{
+ display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;
+ min-width:0;min-height:129px;gap:5px;padding:18px;
+ border:1px solid #dee7ee;background:#fff;color:#123753;
+ border-radius:18px;text-align:left;box-shadow:0 6px 18px #0c2a4810;
+ transition:border-color .2s,transform .2s,box-shadow .2s;cursor:pointer
+}
+.cora-app-shortcut:hover{transform:translateY(-2px);border-color:#a7c1d8;box-shadow:0 13px 23px #153c5820}
+.cora-app-shortcut:focus-visible{outline:3px solid #d5af60;outline-offset:2px}
+.cora-app-shortcut-icon{
+ width:38px;height:38px;display:grid;place-items:center;
+ background:#edf4fa;color:#1c577c;border-radius:12px;margin-bottom:5px
+}
+.cora-app-shortcut-icon svg{width:22px;height:22px}
+.cora-app-shortcut strong{font-size:13px;letter-spacing:-.12px;line-height:1.2;color:#163a5a}
+.cora-app-shortcut small{font-size:11px;line-height:1.35;color:#7890a2}
+/* Área da Equipe: cabeçalho institucional e banner de informações semelhante a app nativo */
+.cp-team{background:linear-gradient(180deg,#eaf0f7 0%,#f6f8fc 35%,#f8fafc 100%)}
+.cp-team .cp-team-head{
+ background:linear-gradient(115deg,#0a1d32 0%,#102c4b 67%,#164569 100%);
+ border-bottom:2px solid #d4b674;box-shadow:0 8px 23px #0c29421e;
+}
+.cp-team .cp-welcome{
+ border-radius:19px;border:1px solid #1a4564;
+ background:linear-gradient(115deg,#0c263f,#133c5d);
+ box-shadow:0 12px 24px #0c253d14;padding:18px 20px
+}
+.cp-team .cp-welcome-person small{color:#a9c4d9;letter-spacing:1px}
+.cp-team .cp-welcome-person h2{color:#fff;line-height:1.16;letter-spacing:-.6px}
+.cp-team .cp-welcome-avatar{background:#f3f6f8;color:#173851}
+.cp-team .cp-welcome-push{
+ background:#ffffff10;border:1px solid #ffffff2a;color:#f8ffff;
+ border-radius:12px
+}
+.cp-team .cp-welcome-push strong{color:#f8ffff}
+.cp-team .cp-welcome-push small{color:#cadee8}
+.cp-team .cp-welcome-push.is-enabled{background:#164d46;border-color:#3c7c68;color:#e5fff3}
+.cp-team .cp-welcome-push.is-enabled small{color:#c4eed9}
+.cp-team .cp-welcome-push.needs-setup{background:#44371d;border-color:#886938;color:#ffebc5}
+.cp-team .cp-welcome-push.needs-setup small{color:#e8d3ac}
+.cp-team .cp-flow-hero{
+ background:linear-gradient(126deg,#fffdf9,#edf3f8);
+ border:1px solid #e2e9ef;color:#163754;border-radius:20px;
+ box-shadow:0 14px 28px #112d4711;padding:25px;
+}
+.cp-team .cp-flow-hero:before{border-color:#bfd2dc69;box-shadow:0 0 0 55px #dbe8ee47,0 0 0 108px #dbe8ee28}
+.cp-team .cp-flow-hero-text>small{color:#9b7542;letter-spacing:1.25px;font-weight:850}
+.cp-team .cp-flow-hero h2{color:#153753;font-weight:850;max-width:500px;letter-spacing:-.8px}
+.cp-team .cp-flow-hero p{color:#60798c}
+.cp-team .cp-flow-tags span{background:#e4edf5;border:1px solid #d2e2ee;color:#214d6d;font-weight:750}
+.cp-team .cp-flow-feature{
+ background:linear-gradient(135deg,#0e3150,#1b5478);
+ color:#fff;border:1px solid #386b8a;border-radius:16px;
+ box-shadow:0 8px 23px #1738521a
+}
+.cp-team .cp-flow-feature small{color:#c0d7e7}
+.cp-team .cp-flow-feature button{background:#e6c880;color:#153b59}
+.cp-team .cp-quick-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 0 10px}
+.cp-team .cp-quick-header h3{font-size:18px;letter-spacing:-.45px;color:#153753;margin:0}
+.cp-team .cp-quick-header small{font-size:11px;color:#7a8fa2;font-weight:600}
+.cp-team .cp-flow-links{grid-template-columns:repeat(5,minmax(0,1fr));gap:11px;margin-bottom:18px}
+.cp-team .cp-flow-link{
+ display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+ min-height:123px;gap:8px;padding:16px;
+ border:1px solid #dfe8f0;background:#fff;color:#173956;border-radius:17px;
+ box-shadow:0 6px 17px #163c590e;min-width:0;overflow:hidden
+}
+.cp-team .cp-flow-link .cp-flow-icon{
+ width:39px;height:39px;min-width:39px;display:grid;place-items:center;
+ border-radius:11px;background:#edf5fa;color:#22597b;font-size:inherit
+}
+.cp-team .cp-flow-icon svg{width:22px;height:22px}
+.cp-team .cp-flow-link>span:nth-child(2){display:flex;flex-direction:column;min-width:0}
+.cp-team .cp-flow-link strong{font-size:13px;line-height:1.25;color:#153953;white-space:normal}
+.cp-team .cp-flow-link small{font-size:11px;color:#7b8e9e;line-height:1.25}
+.cp-team .cp-flow-link>b{display:none}
+.cp-team .cp-flow-link:hover{border-color:#a3c1d5}
+.cp-team .cp-next-preview{margin-bottom:20px}
+.cp-team .cp-next-preview-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 9px}
+.cp-team .cp-next-preview h3{margin:0;font-size:18px;color:#183b58;letter-spacing:-.4px}
+.cp-team .cp-next-preview-head button{color:#286187;background:none;border:0;font-weight:800;font-size:12px}
+.cp-team .cp-next-preview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.cp-team .cp-next-preview-item{
+ display:flex;align-items:center;gap:12px;min-width:0;min-height:77px;
+ padding:12px;border-radius:15px;background:white;border:1px solid #e0e8ef;
+ box-shadow:0 4px 14px #1439530b;text-align:left;color:#1e435e
+}
+.cp-team .cp-next-preview-date{
+ width:52px;flex:0 0 52px;border-radius:11px;display:flex;flex-direction:column;
+ align-items:center;justify-content:center;padding:7px 3px;background:#eaf2f8;color:#194d70
+}
+.cp-team .cp-next-preview-date strong{font-size:18px;line-height:1.12}
+.cp-team .cp-next-preview-date small{font-size:9px;text-transform:uppercase}
+.cp-team .cp-next-preview-info{display:block;min-width:0}
+.cp-team .cp-next-preview-info strong{
+ display:block;line-height:1.3;font-size:12px;
+ overflow:hidden;white-space:nowrap;text-overflow:ellipsis
+}
+.cp-team .cp-next-preview-info small{display:block;font-size:10px;color:#7890a0;margin-top:5px}
+.cp-team .cp-next-preview-empty{font-size:12px;color:#60798c;background:#fff;border:1px solid #e0e8ef;border-radius:12px;padding:14px}
+.cp-team .cp-list-entry{background:#fff;border:1px solid #e3eaf1;border-radius:13px;margin-bottom:8px;padding:11px 13px}
+.cp-team .cp-tabs{scrollbar-width:thin}
+.cp-team .cp-team-main{padding-bottom:100px}
+/* Navegação fixa com quatro ou cinco áreas efetivamente funcionais. */
+.cora-app-dock{
+ display:none;position:fixed;bottom:0;left:0;right:0;z-index:94;
+ min-height:69px;padding:7px 11px calc(7px + env(safe-area-inset-bottom,0px));
+ background:#fff;border-top:1px solid #dde7ef;
+ box-shadow:0 -8px 32px #102d4816;
+ align-items:center;justify-content:space-around;gap:4px
+}
+.cora-dock-button{
+ min-width:0;flex:1;display:flex;flex-direction:column;gap:3px;
+ justify-content:center;align-items:center;min-height:47px;padding:5px 1px;
+ border:none;border-radius:11px;background:transparent;
+ color:#78899b;font:750 10px/1.2 system-ui,-apple-system,Segoe UI,sans-serif;white-space:nowrap
+}
+.cora-dock-button svg{width:22px;height:22px}
+.cora-dock-button.is-active{color:#124977;background:#edf5fa}
+.cora-dock-button.is-active:before{
+ content:"";position:absolute;transform:translateY(-28px);
+ width:23px;height:3px;border-radius:10px;background:#cbac67
+}
+.cora-dock-button:focus-visible{outline:2px solid #cda85e;outline-offset:0}
+body.cora-experience-manager #app .sidebar{scroll-margin-top:22px}
+@media(max-width:1000px){
+ .cora-app-shortcut-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .cp-team .cp-flow-links{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .cora-app-dock{display:flex}
+ body.cora-experience-manager #app .content{padding-bottom:100px!important}
+ body.cora-experience-manager #app .main-shell{padding-bottom:80px}
+ .cp-team .cp-team-main{padding-bottom:105px}
+ body.cora-experience-manager .cp-manager-bar{scroll-margin-top:20px}
+}
+@media(max-width:640px){
+ #app .welcome{padding:20px 17px}
+ .cora-hero-intro{margin-bottom:12px}
+ .cora-hero-intro strong{font-size:23px}
+ .cora-hero-intro span{font-size:12px}
+ .cora-app-shortcuts{margin:18px 0 2px}
+ .cora-app-section-title{align-items:flex-start}
+ .cora-app-section-title h2{font-size:18px}
+ .cora-app-section-title>span{display:none}
+ .cora-app-shortcut-grid{gap:9px}
+ .cora-app-shortcut{min-height:105px;padding:13px 12px;border-radius:14px;gap:4px}
+ .cora-app-shortcut-icon{height:35px;width:35px;margin-bottom:3px}
+ .cora-app-shortcut strong{font-size:12px}
+ .cora-app-shortcut small{font-size:10px}
+ .cp-team .cp-team-main{padding:13px 12px 110px}
+ .cp-team .cp-welcome{padding:14px;border-radius:16px;margin-bottom:12px}
+ .cp-team .cp-welcome-person h2{font-size:clamp(21px,5vw,25px)}
+ .cp-team .cp-flow-hero{padding:18px 17px;border-radius:17px;gap:14px}
+ .cp-team .cp-flow-hero h2{font-size:27px}
+ .cp-team .cp-flow-feature{padding:13px}
+ .cp-team .cp-flow-links{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .cp-team .cp-flow-link{min-height:112px;padding:12px 12px;gap:7px;border-radius:14px;display:flex;align-items:flex-start}
+ .cp-team .cp-flow-link .cp-flow-icon{width:36px;height:36px;min-width:36px;border-radius:10px}
+ .cp-team .cp-flow-link strong{font-size:12px}
+ .cp-team .cp-flow-link small{font-size:10px}
+ .cp-team .cp-flow-link:nth-child(5){grid-column:1/-1;min-height:61px;flex-direction:row;align-items:center}
+ .cp-team .cp-next-preview-grid{grid-template-columns:1fr;gap:8px}
+ .cp-team .cp-next-preview-item{min-height:68px}
+ .cp-team .cp-quick-header{margin-top:15px}
+ .cp-team .cp-quick-header h3,.cp-team .cp-next-preview h3{font-size:17px}
+ .cp-team .cp-team-head{padding-bottom:12px}
+ .cp-team .cp-flow-hero .cp-flow-tags{margin-top:12px}
+ .cp-team .cp-tabs{margin-top:8px}
+}
+@media(max-width:360px){
+ .cora-dock-button{font-size:9px}
+ .cora-dock-button svg{width:20px;height:20px}
+ .cp-team .cp-flow-link{padding:11px 9px}
+}
+@media(min-width:1001px){.cora-app-dock{display:none!important}}
+@media(prefers-reduced-motion:reduce){
+ .cora-app-shortcut{transition:none}
+ .cora-app-shortcut:hover{transform:none}
+}
