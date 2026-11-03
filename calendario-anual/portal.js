@@ -65,7 +65,8 @@
       cog:'<path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.04.04-1.9 1.9-.04-.04a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.56V20h-2.7v-.07a1.7 1.7 0 0 0-1.04-1.56 1.7 1.7 0 0 0-1.87.34l-.04.04-1.9-1.9.04-.04A1.7 1.7 0 0 0 6.6 15a1.7 1.7 0 0 0-1.56-1H5v-2.7h.04A1.7 1.7 0 0 0 6.6 10a1.7 1.7 0 0 0-.34-1.87l-.04-.04 1.9-1.9.04.04A1.7 1.7 0 0 0 10 6.6 1.7 1.7 0 0 0 11 5.04V5h2.7v.04A1.7 1.7 0 0 0 14.7 6.6a1.7 1.7 0 0 0 1.87-.34l.04-.04 1.9 1.9-.04.04A1.7 1.7 0 0 0 18.1 10a1.7 1.7 0 0 0 1.56 1H20v2.7h-.04A1.7 1.7 0 0 0 18.4 15Z"/>',
       bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
       send:'<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
-      log:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>'
+      log:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
+      users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>'
     };
     return '<svg class="cp-admin-icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(paths[name]||'')+'</svg>';
   };
@@ -98,7 +99,7 @@
    '<textarea id="cpAccountInviteUrl" readonly rows="3" aria-label="Link de ativação individual"></textarea><div class="cp-invite-buttons"><button type="button" id="cpCopyInvite" class="cp-btn soft">Copiar link de ativação</button><a id="cpEmailInvite" href="#" class="cp-btn" target="_self">Preparar e-mail de convite</a></div><p class="cp-invite-email-notice" id="cpInviteEmailNotice">Preparar e-mail abre o aplicativo de e-mail; você ainda precisa tocar em Enviar.</p></div>'+
    '<div class="cp-account-cutover"><strong id="cpCutoverTitle">Acesso coletivo em migração</strong><p id="cpCutoverDescription">Cadastre e ative as contas antes de exigir login individual para toda a escola.</p><button id="cpEnforceIndividual" type="button" class="cp-btn gold">Exigir login individual para todos</button></div>'+
    '<p role="status" id="cpAccountsStatus" aria-live="polite"></p><div id="cpAccountsList"></div></section>');
-  $('#cpPublishNow').insertAdjacentHTML('beforebegin','<button id="cpAccountsOpen" class="cp-btn soft" type="button">Acessos da equipe</button>');
+  $('#cpPublishNow').insertAdjacentHTML('beforebegin','<button id="cpAccountsOpen" class="cp-btn soft" type="button">'+adminIcon('users')+'<span>Acessos da equipe</span></button>');
   $('#cpSyncMirror').onclick=async()=>{
    const button=$('#cpSyncMirror');button.disabled=true;
    try{
