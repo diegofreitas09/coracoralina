@@ -10,6 +10,8 @@ const ticketId=id=>/^\d{13}-[0-9a-f]{16}$/.test(String(id||''));
 const clean=(text,max)=>String(text??'').trim().slice(0,max+1);
 const TICKET=(owner,id)=>'ticket/'+owner+'/'+id;
 const REPLY=(owner,id)=>'reply/'+owner+'/'+id+'/';
+// Marcadores de leitura individuais: cada professor mantém seu próprio registro.
+const READ=(owner,id)=>'read/'+owner+'/'+id;
 const CATEGORIES=['Planejamento','Avaliações e provas','Calendário e eventos','Acesso ao aplicativo','Outros'];
 const error=(message,status=400)=>({error:message,status});
 const authorized=(role,member)=>role==='gestao'||Boolean(member?.id&&memberId(member.id));
@@ -53,7 +55,17 @@ export async function listHelpdesk(role,member){
    createdAt:record.createdAt,lastAt:last.at,status:last.by==='e'?'Aguardando Gestão':'Respondida',replies:counts.get(index)||0};
  }));
  const result=read.filter(Boolean).sort((a,b)=>b.lastAt.localeCompare(a.lastAt)).slice(0,150);
- return {ok:true,threads:result,pending:result.filter(x=>x.status==='Aguardando Gestão').length,total:result.length,
+ // Resposta recebida não é sinônimo de resposta ainda não lida.
+ // A marca de leitura é compartilhada entre os dispositivos da mesma conta.
+ if(role==='equipe'){
+  await Promise.all(result.map(async thread=>{
+   if(thread.status!=='Respondida'){thread.unread=false;return;}
+   const receipt=await store().get(READ(thread.ownerId,thread.id),{type:'json',consistency:'strong'});
+   thread.unread=!(receipt?.lastAt&&receipt.lastAt>=thread.lastAt);
+  }));
+ }
+ return {ok:true,threads:result,pending:result.filter(x=>x.status==='Aguardando Gestão').length,
+  unread:role==='equipe'?result.filter(x=>x.unread).length:undefined,total:result.length,
   truncated:ordered.length>300};
 }
 export async function readHelpdesk(role,member,input){
@@ -105,4 +117,24 @@ export async function replyQuestion(role,member,input){
  const saved=await store().setJSON(key,data,{onlyIfNew:true});
  if(!saved.modified)return error('Falha ao registrar resposta. Tente novamente.',409);
  return {ok:true,at,recipientId:role==='gestao'?ticket.ownerId:null};
+}
+
+/**
+ * Marca como lida somente uma resposta da Gestão que o professor realmente
+ * conseguiu abrir. A identidade vem da sessão, jamais do ownerId informado.
+ */
+export async function markHelpdeskRead(role,member,input){
+ if(role!=='equipe'||!member?.id||!memberId(member.id))
+  return error('Entre com sua conta individual para registrar leitura.',403);
+ const id=String(input?.id||''),messageId=String(input?.messageId||'');
+ if(!ticketId(id)||!/^\d{13}-g-[0-9a-f]{16}$/.test(messageId))return error('Mensagem inválida.');
+ const ticket=await ticketFor(member.id,id);
+ if(!ticket)return error('Conversa não encontrada.',404);
+ const reply=await store().get(REPLY(member.id,id)+messageId,{type:'json',consistency:'strong'});
+ if(!reply||reply.from!=='gestao')return error('Resposta não encontrada.',404);
+ const lastAt=new Date(Number(messageId.slice(0,13))).toISOString();
+ const key=READ(member.id,id),current=await store().get(key,{type:'json',consistency:'strong'});
+ if(current?.lastAt&&current.lastAt>=lastAt)return {ok:true,lastAt:current.lastAt};
+ await store().setJSON(key,{lastAt});
+ return {ok:true,lastAt};
 }
