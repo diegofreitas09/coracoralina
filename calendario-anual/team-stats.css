@@ -1,0 +1,38 @@
+/* Indicadores agregados da Equipe, sem excesso de informações */
+.cp-team-metrics{margin-bottom:20px;background:#fff;color:#173d61;border:1px solid #dbe7f1;border-radius:18px;padding:20px;box-shadow:0 8px 24px #11395a13}
+.cp-team-metrics-title{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
+.cp-team-metrics-title small{font-size:10px;font-weight:850;letter-spacing:1px;color:#6486a2}
+.cp-team-metrics-title h2{font-size:clamp(20px,3vw,26px);margin:5px 0;color:#153f61}
+.cp-team-metrics-title p{font-size:12px;color:#71869b;margin:0}
+.cp-team-metrics-update{display:inline-flex;align-items:center;gap:7px;min-height:39px;border:1px solid #c9ddec;background:#edf5fc;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:800;color:#22577d}
+.cp-team-metrics-update svg{width:17px;height:17px}
+.cp-team-metrics-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.cp-team-metric{display:flex;min-width:0;flex-direction:column;align-items:flex-start;gap:5px;border:1px solid #dce7f2;background:#f5f9fc;border-radius:13px;padding:12px}
+.cp-team-metric-icon{display:grid;place-items:center;width:35px;height:35px;background:#e4f0fa;color:#2a658e;border-radius:10px}
+.cp-team-metric strong{font-size:27px;color:#15446a;font-weight:900;line-height:1.15;font-variant-numeric:tabular-nums}
+.cp-team-metric>span:not(.cp-team-metric-icon){font-size:12px;font-weight:850;color:#2e5271}
+.cp-team-metric small{font-size:10px;color:#698098;line-height:1.45}
+.cp-team-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:15px}
+.cp-team-chart{min-width:0;border:1px solid #dfe9f1;padding:15px;border-radius:12px}
+.cp-team-chart h3{font-size:14px;color:#244968;margin:0 0 13px}
+.cp-team-chart-label{display:flex;justify-content:space-between;align-items:center;gap:8px;color:#54738d;font-size:12px;margin:10px 0 5px}
+.cp-team-chart-label b{color:#315677;font-variant-numeric:tabular-nums}
+.cp-team-chart-track{height:7px;background:#e7eff6;border-radius:99px;overflow:hidden}
+.cp-team-chart-fill{height:100%;display:block;background:#7796b5;border-radius:99px}
+.cp-team-chart-fill.is-active,.cp-team-chart-fill.is-teacher{background:#269478}
+.cp-team-chart-fill.is-pending{background:#d4a148}
+.cp-team-chart-fill.is-suspended{background:#b26b4f}
+.cp-team-chart-fill.is-disabled{background:#8794a4}
+.cp-team-chart-fill.is-coord{background:#3b87bd}
+.cp-team-chart-fill.is-staff{background:#8b7bb6}
+.cp-team-metrics-foot{font-size:11px;color:#6e8397;line-height:1.5;border-top:1px solid #dfe9f1;padding-top:12px;margin:15px 0 0}
+@media(max-width:1040px){.cp-team-metrics-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:620px){.cp-team-metrics{padding:14px}.cp-team-metrics-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.cp-team-metric strong{font-size:25px}.cp-team-metrics-grid .cp-team-metric:last-child{grid-column:1/-1}.cp-team-charts{grid-template-columns:1fr}.cp-team-metrics-update{padding:8px}.cp-team-metrics-update span{display:none}}
+html[data-cora-theme="dark"] .cp-team .cp-team-metrics,html[data-cora-theme="dark"] .cp-team .cp-team-metric,html[data-cora-theme="dark"] .cp-team .cp-team-chart{background:#142b41;color:#eaf3fd;border-color:#3b5770}
+html[data-cora-theme="dark"] .cp-team .cp-team-metric{background:#19354d}
+html[data-cora-theme="dark"] .cp-team .cp-team-metrics :is(h2,h3,strong,b){color:#edf6ff}
+html[data-cora-theme="dark"] .cp-team .cp-team-metrics :is(p,small,.cp-team-chart-label,.cp-team-metric>span:not(.cp-team-metric-icon)){color:#bcd1e2}
+html[data-cora-theme="dark"] .cp-team .cp-team-metric-icon{background:#254761;color:#c5eaff}
+html[data-cora-theme="dark"] .cp-team .cp-team-metrics-update{background:#23435d;color:#eaf5ff;border-color:#567792}
+html[data-cora-theme="dark"] .cp-team .cp-team-chart-track{background:#294259}
+html[data-cora-theme="dark"] .cp-team .cp-team-metrics-foot{border-color:#395973}

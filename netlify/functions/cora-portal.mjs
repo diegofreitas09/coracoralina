@@ -226,6 +226,23 @@ export default async function handler(request,context){
   await queueMirror(context);
   return answer(result);
  }
+ if(action==='team-stats'&&request.method==='GET'){
+  // Somente agregados para docentes autenticados; nenhum nome, e-mail ou histórico individual.
+  if(role!=='equipe'||!member)return answer({error:'Acesso individual necessário para consultar este painel.'},403);
+  const result=await listEmployees(),members=Array.isArray(result.members)?result.members:[];
+  const norm=v=>String(v||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const group=m=>{const p=norm(m.profile);return p.startsWith('professor')?'Professores':p.includes('coorden')?'Coordenação':p.includes('funcion')?'Funcionários':'Outros'};
+  const statuses=['Ativo','Pendente','Suspenso','Desativado'];
+  const byStatus=statuses.map(label=>({label,count:members.filter(m=>m.status===label).length}));
+  const other=members.filter(m=>!statuses.includes(m.status)).length;
+  if(other)byStatus.push({label:'Outros',count:other});
+  const profiles=['Professores','Coordenação','Funcionários','Outros'].map(label=>({label,count:members.filter(m=>group(m)===label).length})).filter(x=>x.count>0);
+  const tracked=members.filter(m=>Number.isSafeInteger(m.accessCount)&&m.accessCount>=0);
+  return answer({total:members.length,teachers:members.filter(m=>group(m)==='Professores').length,
+    active:byStatus.find(x=>x.label==='Ativo').count,pending:byStatus.find(x=>x.label==='Pendente').count,
+    monitoredLogins:tracked.length?tracked.reduce((sum,m)=>sum+m.accessCount,0):null,
+    trackedAccounts:tracked.length,statuses:byStatus,profiles,updatedAt:new Date().toISOString()});
+ }
  if(action==='delivery-profile'&&request.method==='GET'){
   if(role!=='equipe'||!member)return answer({identified:false,statuses:{}});
   const year=schoolYear(url.searchParams.get('year'))||YEAR;

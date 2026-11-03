@@ -18,6 +18,15 @@
  const app=$('#app'),root=document.createElement('div');root.id='coraPortal';document.body.prepend(root);
  let role='',chosen='gestao',data=null,year=Number(window.CoraYears?.activeYear)||2026,availableYears=[2026],month=new Date().getFullYear()===2026?new Date().getMonth():0,tab='resumo',selectedStage=0,managerNotices=[],leadDays=3,timer=null,showBell=false,teacherProfile=null,teacherSaving=false,individualRequired=false,pushChecked=false,pushConfirmed=false;
  const seenPublicationIds=new Map();
+ let teamStats=null,teamStatsAt=0,teamStatsLoading=false,teamStatsError='';
+ async function loadTeamStats(force=false){
+  if(role!=='equipe'||teamStatsLoading||(!force&&teamStats&&Date.now()-teamStatsAt<120000))return;
+  teamStatsLoading=true;teamStatsError='';
+  try{teamStats=await api('team-stats');teamStatsAt=Date.now()}
+  catch(error){teamStatsError=error.message||'Indicadores indisponíveis.'}
+  finally{teamStatsLoading=false;if(role==='equipe'&&tab==='equipe')drawTeam()}
+ }
+
  const endpoint=action=>`${API}?action=${encodeURIComponent(action)}`;
  async function api(action,payload,query=''){
   const opts={credentials:'same-origin',cache:'no-store',headers:{'accept':'application/json'}};
@@ -449,7 +458,7 @@
   $('#cpWelcomeEnablePush')?.addEventListener('click',enableLocalNotifications);
   $('#cpWelcomeInstallIOS')?.addEventListener('click',showAppInstallGuide);
  }
- async function team(){teacherProfile=null;pushChecked=false;pushConfirmed=false;const deep=new URLSearchParams(location.search);year=Number(deep.get('ano'))||2026;if(deep.get('avisos')==='1')showBell=true;document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><section id="cpWelcome" class="cp-welcome" aria-label="Boas-vindas e notificações"></section><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpEnableAlerts').onclick=enableLocalNotifications;$('#cpInstallApp').onclick=showAppInstallGuide;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};$('#cpTeamYear').onchange=e=>{year=Number(e.target.value)||2026;month=0;showBell=false;tab='resumo';refresh()};window.CoraHelpdesk?.mount('equipe',root);await refresh();void confirmDevicePush();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},30000);}
+ async function team(){teamStats=null;teamStatsAt=0;teamStatsLoading=false;teamStatsError='';teacherProfile=null;pushChecked=false;pushConfirmed=false;const deep=new URLSearchParams(location.search);year=Number(deep.get('ano'))||2026;if(deep.get('avisos')==='1')showBell=true;document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><section id="cpWelcome" class="cp-welcome" aria-label="Boas-vindas e notificações"></section><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpEnableAlerts').onclick=enableLocalNotifications;$('#cpInstallApp').onclick=showAppInstallGuide;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};$('#cpTeamYear').onchange=e=>{year=Number(e.target.value)||2026;month=0;showBell=false;tab='resumo';refresh()};window.CoraHelpdesk?.mount('equipe',root);await refresh();void confirmDevicePush();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},30000);}
  async function refresh(){try{const [result,identity]=await Promise.all([api('state',undefined,'year='+year),api('delivery-profile',undefined,'year='+year).catch(()=>({identified:false,statuses:{}}))]);teacherProfile=identity.identified?identity:null;availableYears=Array.isArray(result.availableYears)?result.availableYears:[2026];data=result.publication;
     const newNoticeIds=new Set(activeNotices().map(n=>String(n.id)));
     const knownIds=seenPublicationIds.get(year);
@@ -461,7 +470,7 @@
       }
     }
     seenPublicationIds.set(year,newNoticeIds);
-    const picker=$('#cpTeamYear');if(picker){picker.innerHTML=availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('');picker.value=String(year)}renderTeamWelcome();drawTeam();checkLocalNotifications()}catch(e){if(e.status===401){clearInterval(timer);gateway('Sessão expirada. Entre novamente.');return;}toast('Falha ao atualizar: '+e.message);}}
+    const picker=$('#cpTeamYear');if(picker){picker.innerHTML=availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('');picker.value=String(year)}renderTeamWelcome();drawTeam();if(tab==='equipe')void loadTeamStats();checkLocalNotifications()}catch(e){if(e.status===401){clearInterval(timer);gateway('Sessão expirada. Entre novamente.');return;}toast('Falha ao atualizar: '+e.message);}}
 
 
  // Marcadores de leitura são separados das notificações entregues ao aparelho.
@@ -638,6 +647,7 @@
    calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/>',
    check:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18m-12 6 2 2 4-4"/>',
    clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/>',
+   people:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 1-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
    message:'<path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 21l1.9-5.5a9 9 0 0 1-.9-4A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8v.5Z"/><path d="M8.5 11.5h8"/>',
    pdf:'<path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10Z"/><path d="M13 3v7h7M8 14h8M8 18h6"/>',
    install:'<path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/>'
@@ -647,7 +657,7 @@
  function drawTeam(){const here=$('#cpView');if(!here)return;
   const events=filteredEvents(),notes=activeNotices(),assess=events.filter(e=>isAssessment(e)&&!isSecond(e)),alertList=upcoming(),unread=alertList.filter(a=>a.unread).length;
   const badge=$('#cpBellCount');if(badge){badge.style.display=unread?'block':'none';badge.textContent=unread>99?'99+':String(unread);badge.setAttribute('aria-label',unread+' alertas não lidos')}const bell=$('#cpBell');if(bell){bell.classList.toggle('has-unread',unread>0);bell.setAttribute('aria-label',unread?unread+' alertas novos. Abrir notificações':'Abrir notificações')}
-  const sections=[['resumo','Visão Geral'],['calendario','Calendário '+year],['etapas','Etapas letivas'],['avaliacoes','Avaliações e Simulados'],['entregas','Prazos de entrega'],['aniversarios','🎂 Aniversariantes'],['avisos','Avisos'],['pdf','PDF Anual']];
+  const sections=[['resumo','Visão Geral'],['calendario','Calendário '+year],['etapas','Etapas letivas'],['avaliacoes','Avaliações e Simulados'],['entregas','Prazos de entrega'],['aniversarios','🎂 Aniversariantes'],['avisos','Avisos'],['equipe','Equipe em números'],['pdf','PDF Anual']];
   const tabs=`<div class="cp-tabs">${sections.map(([id,label])=>`<button class="${tab===id?'active':''}" data-cp-tab="${id}">${label}</button>`).join('')}</div>`;
   const alertPrompt=!showBell&&unread?'<button type="button" id="cpUnreadPrompt" class="cp-unread-banner">🔔 '+unread+' alerta(s) não lido(s) · Toque para ver os recados da Gestão</button>':'';
 
@@ -666,7 +676,7 @@
     (active?'<em>Em andamento</em>':'')+'</button>';
   }).join('');
   const quickLinks=[['calendario','calendar','Calendário','Atividades e projetos'],['avaliacoes','check','Avaliações','Provas e simulados'],
-    ['entregas','clock','Entregas','Prazos e e-mails'],['avisos','message','Comunicados','Orientações da Gestão'],['pdf','pdf','PDF anual','Documento completo']].map(item=>
+    ['entregas','clock','Entregas','Prazos e e-mails'],['avisos','message','Comunicados','Orientações da Gestão'],['equipe','people','Equipe em números','Professores e acessos'],['pdf','pdf','PDF anual','Documento completo']].map(item=>
     '<button type="button" class="cp-flow-link" data-cp-tab="'+item[0]+'"><span class="cp-flow-icon">'+cpTeamTileIcon(item[1])+'</span>'+
     '<span><strong>'+item[2]+'</strong><small>'+item[3]+'</small></span></button>').join('')+
     '<button type="button" class="cp-flow-link cp-install-shortcut" id="cpQuickInstall" aria-label="'+(isHomeScreenApp()?'Atualizar':'Instalar')+' aplicativo Agenda Cora">'+
@@ -718,7 +728,10 @@
    '<h3>Início e fim das etapas</h3></div><span>Consulte antes de planejar avaliações</span></div>'+
    '<div class="cp-flow-stage-grid">'+flowStages+'</div></section>';
   let content='';
-  if(!data){content='<div class="cp-paper"><h2>Nenhuma publicação disponível</h2><p class="cp-muted">A Gestão ainda não publicou o calendário e os comunicados para a equipe. O conteúdo ficará disponível aqui após a primeira publicação.</p></div>'}
+  if(tab==='equipe'&&!showBell){
+   content=teamStats?window.CoraTeamStats?.render(teamStats)||'<p class="cp-muted">Painel indisponível.</p>':
+    '<section class="cp-team-metrics"><div class="cp-main-heading"><h2>Equipe em números</h2></div><p class="cp-muted">'+(teamStatsError?'Não foi possível carregar: '+safe(teamStatsError):'Consultando indicadores da equipe...')+'</p><button type="button" class="cp-btn soft" id="cpRetryTeamStats">Atualizar indicadores</button></section>';
+  }else if(!data){content='<div class="cp-paper"><h2>Nenhuma publicação disponível</h2><p class="cp-muted">A Gestão ainda não publicou o calendário e os comunicados para a equipe. O conteúdo ficará disponível aqui após a primeira publicação.</p></div>'}
   else if(showBell){content=`<div class="cp-bell-panel"><div class="cp-main-heading"><div class="cp-alert-heading-left"><button type="button" class="cp-btn soft cp-back-alert" id="cpBackFromBell" aria-label="Voltar à Equipe Pedagógica">← Voltar</button><h2>🔔 Central de alertas</h2></div><button class="cp-btn soft" id="cpMarkRead">Marcar como lidos</button></div>${alertList.length?alertList.map(a=>`<article class="cp-alert-entry ${a.unread?'unread':''}"><time>${safe(String(a.date||'').slice(0,10))}</time><div><small>${a.kind==='notice'?'Comunicado da Gestão':a.kind==='reminder'?'Lembrete programado':'Evento próximo'}</small><strong>${safe(a.title)}</strong><p>${safe(a.desc||'')}</p>${a.unread?'<span class="cp-tag cp-tag-new">Novo · não lido</span>':''}</div><button class="cp-btn soft" type="button" data-cp-read="${safe(a.id)}">✓ Lido</button></article>`).join(''):'<p class="cp-muted">Nenhuma atividade ou aviso exige atenção no período configurado.</p>'}</div>`;}
   else if(tab==='resumo'){
    const today=dateStr(new Date());const future=events.filter(e=>e.date>=today).slice(0,9);
@@ -801,7 +814,9 @@
     finally{teacherSaving=false}
   }));
 
-  here.querySelectorAll('[data-cp-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.cpTab;showBell=false;drawTeam()});
+  here.querySelectorAll('[data-cp-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.cpTab;showBell=false;drawTeam();if(tab==='equipe')void loadTeamStats()});
+  $('#cpRetryTeamStats')?.addEventListener('click',()=>{void loadTeamStats(true)});
+  $('#cpUpdateTeamStats')?.addEventListener('click',()=>{void loadTeamStats(true)});
   here.querySelector('#cpQuickInstall')?.addEventListener('click',showAppInstallGuide);
   here.querySelectorAll('[data-cp-stage]').forEach(b=>b.onclick=()=>{selectedStage=Number(b.dataset.cpStage)||0;tab='etapas';showBell=false;drawTeam()});
   $('#cpMonthPicker')?.addEventListener('change',e=>{month=Number(e.target.value);drawTeam()});
