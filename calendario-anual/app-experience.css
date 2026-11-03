@@ -1,11 +1,11 @@
 /* Cora Coralina · experiência mobile premium
    Adaptação de linguagem visual para Gestão e Equipe, mantendo acesso aos recursos existentes. */
 :root{--cora-app-navy:#0c223c;--cora-app-blue:#173d62;--cora-app-gold:#dabb76;--cora-app-cream:#fffdf8;--cora-app-line:#e3e9ef}
-.cora-hero-intro{display:flex;flex-direction:column;gap:1px;margin-bottom:11px;position:relative;z-index:1}
+.cora-hero-intro{display:flex;flex:1 1 100%;width:100%;flex-direction:column;gap:1px;margin-bottom:4px;position:relative;z-index:1}
 .cora-hero-intro strong{font-size:clamp(23px,3.4vw,31px);letter-spacing:-.6px;line-height:1.13;color:#fff}
 .cora-hero-intro span{font-size:13px;font-weight:500;color:#cadae9}
 #app .welcome{
- position:relative;isolation:isolate;overflow:hidden;
+ position:relative;isolation:isolate;overflow:hidden;flex-wrap:wrap;
  background:linear-gradient(130deg,#0b1f36,#153d60 80%,#1a5273);
  border:1px solid #284f72;box-shadow:0 12px 29px #10294318;
 }
