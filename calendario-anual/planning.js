@@ -322,6 +322,47 @@
     for(let i=0;i<pages.length;i++){const p=pages[i],ctx=p.getContext('2d');ctx.fillStyle='#e7edf3';ctx.fillRect(LEFT,1661,RIGHT-LEFT,2);ctx.font='bold 17px Arial';ctx.fillStyle=MUTED;ctx.fillText(`CORA CORALINA · PLANEJAMENTO DE ${MONTHS[month].toUpperCase()} ${YEAR}`,LEFT,1697);ctx.fillText(`${i+1} / ${pages.length}`,1080,1697);ctx.textAlign='right';ctx.font='bold 15px Arial';ctx.fillStyle='#607e9e';ctx.fillText('Tecnologia: PDF Solução Educacional',RIGHT,1730);ctx.textAlign='left'}
     return window.CoraPDF.fromCanvases(pages,{pageWidth:595.28,pageHeight:841.89,title:`Planejamento ${MONTHS[month]} ${YEAR}`});
   }
+
+  function buildWordPayload(month,plan){
+    const formatDate=date=>/^\d{4}-\d\d-\d\d$/.test(String(date||''))?String(date).split('-').reverse().join('/'):'Não informada';
+    const first=YEAR+'-'+String(month+1).padStart(2,'0')+'-01';
+    const last=YEAR+'-'+String(month+1).padStart(2,'0')+'-'+String(new Date(YEAR,month+1,0).getDate()).padStart(2,'0');
+    const projectLines=lines(plan.projects).length?lines(plan.projects):(window.CoraYears?.getProjects?.(YEAR)?.[month]||[]);
+    const stageLines=(window.CoraStages?.get?.(YEAR)||[]).filter(st=>st.start&&st.end&&st.start<=last&&st.end>=first)
+      .map(st=>st.number+'ª etapa: início '+formatDate(st.start)+' · fim '+formatDate(st.end));
+    const schedule=lines(plan.schedule);
+    const extra=plan.includeCalendar?eventsFor(month).map(event=>
+      event.date.slice(8,10)+'/'+event.date.slice(5,7)+' – '+event.title+(event.notes?' — '+event.notes:'')):[];
+    const normalized=value=>String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w]/g,'').toLowerCase();
+    const present=new Set(schedule.map(normalized));
+    const unique=extra.filter(item=>!present.has(normalized(item)));
+    const dayKey=value=>{const m=/^\s*(\d{1,2})(?:\s*a\s*\d{1,2})?\s*\/\s*(\d{1,2})/.exec(String(value));return m?Number(m[2])*100+Number(m[1]):9999};
+    const dates=[...schedule,...unique].map((value,index)=>({value,index}))
+     .sort((a,b)=>dayKey(a.value)-dayKey(b.value)||a.index-b.index).map(x=>x.value);
+    const sections=[
+     {title:'Projetos e campanhas do mês',items:projectLines},
+     {title:'Etapas letivas · início e encerramento',items:stageLines.length?stageLines:['Datas das etapas pendentes de definição para '+YEAR]},
+     {title:'Prazos de entrega e avaliações · coordenação pedagógica',items:assessmentLines(month)}
+    ];
+    if(plan.includeBirthdays){
+      const birthdays=birthdaysByMonth(month).map(prettyBirthday);
+      sections.push({title:'Aniversariantes do mês',items:birthdays.length?birthdays:['Nenhum aniversariante cadastrado neste mês']});
+    }
+    const notes=String(plan.birthdays||'').trim();
+    if(notes&&notes!==String(sample.birthdays).trim())sections.push({title:'Comunicados e datas complementares',items:lines(notes)});
+    sections.push(
+     {title:'Programação mensal e datas importantes',items:dates},
+     {title:'Orientações pedagógicas',items:lines(plan.guidance)},
+     {title:'Pauta da reunião',items:lines(plan.agenda)},
+     {title:'Encaminhamentos e responsabilidades',items:lines(plan.actions)},
+     {title:'Mensagem de encerramento',items:lines(plan.closing)}
+    );
+    return {
+      month:MONTHS[month],year:YEAR,segment:plan.segment,
+      meeting:{date:formatDate(plan.meetingDate),time:plan.meetingTime,place:plan.meetingPlace,coordinator:plan.coordinator},
+      sections
+    };
+  }
   function fallbackPrint(plan,month){
     const box=document.createElement('section');box.id='planningPrint';
     const asList=(title,items,className='')=>{const values=Array.isArray(items)?items:lines(items);return values.length?`<section class="${className}"><h3>${safe(title)}</h3><ul>${values.map(v=>`<li>${safe(v)}</li>`).join('')}</ul></section>`:''};
@@ -350,6 +391,19 @@
   form.addEventListener('change',()=>{clearTimeout(saveDelay);saveCurrent()});
   $('loadNovemberPlan').addEventListener('click',()=>{if(current!==10){$('planMonth').value='10';saveCurrent();fillForm(10)}if(confirm('Repor o modelo de novembro? Isto substituirá apenas os campos deste mês.')){plans[10]={...sample};fillForm(10);store()}});
   $('downloadPlanning').addEventListener('click',async()=>{if(!segmentValues().length){alertUser('Selecione pelo menos uma etapa atendida.');return;}saveCurrent();const btn=$('downloadPlanning');btn.disabled=true;btn.textContent='Gerando planejamento...';try{const blob=await buildDocument(current,readForm());download(blob,`Planejamento_Reuniao_Cora_${MONTHS[current]}_${YEAR}.pdf`);alertUser('Planejamento gerado e baixado em PDF.')}catch(error){console.error(error);alertUser('PDF direto indisponível. Selecione “Salvar como PDF” na janela de impressão.');fallbackPrint(readForm(),current)}finally{btn.disabled=false;btn.textContent='↓ Baixar planejamento em PDF'}});
+  $('downloadPlanningWord')?.addEventListener('click',()=>{
+    if(!segmentValues().length){alertUser('Selecione pelo menos uma etapa atendida.');return;}
+    const button=$('downloadPlanningWord');saveCurrent();
+    button.disabled=true;
+    const original=button.innerHTML;button.textContent='Preparando Word...';
+    try{
+      if(!window.CoraPlanningWord?.fromPlanning)throw Error('Gerador Word indisponível. Reabra o aplicativo atualizado.');
+      const blob=window.CoraPlanningWord.fromPlanning(buildWordPayload(current,readForm()));
+      download(blob,`Planejamento_Reuniao_Cora_${MONTHS[current]}_${YEAR}.docx`);
+      alertUser('Planejamento em Word baixado. Arquivo editável (.docx).');
+    }catch(error){console.error(error);alertUser('Não foi possível gerar o Word: '+error.message)}
+    finally{button.disabled=false;button.innerHTML=original}
+  });
   $('jumpPlanning').addEventListener('click',()=>$('planningStudio').scrollIntoView({behavior:'smooth',block:'start'}));
   window.addEventListener('cora-backup-restored',()=>{readStorage();fillForm(current)});
   window.addEventListener('cora-birthdays-changed',()=>{renderSummary()});
