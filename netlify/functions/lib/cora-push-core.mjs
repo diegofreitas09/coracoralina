@@ -56,9 +56,10 @@ export const deliveryId=(kind,year,id,version='')=>
  createHash('sha256').update([kind,year,id,version].join('|')).digest('hex').slice(0,32);
 export async function hasDelivered(id){return Boolean(await store().get('sent-'+id,{type:'json',consistency:'strong'}))}
 export async function markDelivered(id,value){await store().setJSON('sent-'+id,{at:new Date().toISOString(),...value})}
-export async function dispatchPush(message,{timeout=4500}={}){
+export async function dispatchPush(message,{timeout=4500,targetUserId=null}={}){
  const legacy=await registrations(),accounts=getStore('cora-calendar-team-accounts-v1'),cache=new Map(),all=[];
  for(const record of legacy){
+  if(targetUserId&&record.userId!==targetUserId)continue;
   if(!/^member-[a-f0-9]{64}$/.test(String(record.userId||'')))continue;
   if(!cache.has(record.userId))cache.set(record.userId,await accounts.get(record.userId,{type:'json',consistency:'strong'}));
   const member=cache.get(record.userId);
@@ -69,7 +70,7 @@ export async function dispatchPush(message,{timeout=4500}={}){
  const payload=JSON.stringify({title:String(message.title||'Colégio Cora Coralina').slice(0,130),
   body:String(message.body||'Novo aviso da Gestão').slice(0,320),
   year:Number(message.year)||2026,tag:String(message.tag||'cora-avisos').slice(0,90),
-  kind:message.kind||'notice',url:'./?avisos=1&ano='+(Number(message.year)||2026)});
+  kind:message.kind||'notice',url:message.kind==='helpdesk'?'./?duvidas=1':'./?avisos=1&ano='+(Number(message.year)||2026)});
  let sent=0,failed=0,expired=0;
  const stale=new Set();
  for(let i=0;i<all.length;i+=25){
