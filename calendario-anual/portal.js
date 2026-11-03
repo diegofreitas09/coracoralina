@@ -47,11 +47,16 @@
  function gateway(error=''){
   window.CoraHelpdesk?.teardown();
   document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');role='';
-  root.innerHTML=`<div class="cp-gateway"><div class="cp-login-shell"><div class="cp-login-head"><img id="cpGatewayLogo" alt="Brasão Cora Coralina"><div><small>COLÉGIO CORA CORALINA · PDF SOLUÇÃO EDUCACIONAL</small><h1>Portal do Calendário Escolar</h1><p>Selecione seu ambiente de trabalho</p></div></div><div class="cp-role-grid"><button type="button" class="cp-role ${chosen==='gestao'?'active':''}" data-cp-role="gestao"><span class="cp-role-icon">⚙</span><strong>Gestão</strong><span>Organizar o ano, editar eventos e publicar avisos para toda a equipe</span></button><button type="button" class="cp-role ${chosen==='equipe'?'active':''}" data-cp-role="equipe"><span class="cp-role-icon">▦</span><strong>Equipe Pedagógica</strong><span>Consultar o calendário, receber alertas e baixar os materiais publicados</span></button></div><form id="cpLoginForm" class="cp-auth"><div id="cpEmailWrap" ${chosen==='gestao'?'hidden':''}><label for="cpEmail">E-mail individual do colaborador</label><input type="email" id="cpEmail" autocomplete="username" placeholder="professor@exemplo.com" ${chosen==='equipe'?'required':''}></div><label id="cpLegacyWrap" class="cp-legacy-option" ${chosen==='gestao'||individualRequired?'hidden':''}><input type="checkbox" id="cpUseLegacy"> Usar senha coletiva temporária (migração)</label><div><label for="cpPassword">Senha pessoal · <span id="cpRoleLabel">${chosen==='gestao'?'Gestão':'Equipe Pedagógica'}</span></label><input type="password" id="cpPassword" autocomplete="current-password" required placeholder="Digite sua senha"></div><button type="submit" class="cp-btn">Entrar no painel</button><div id="cpFirstAccessWrap" class="cp-first-access" ${chosen==='gestao'?'hidden':''}><button type="button" id="cpFirstAccess">Primeiro acesso? Ativar convite</button><small>Seu acesso precisa ser criado pela Gestão. O cadastro na planilha, sozinho, não gera senha.</small></div><p class="cp-error" role="alert">${safe(error)}</p></form><div class="cp-gateway-foot"><span>A Gestão publica · a Equipe acompanha</span><span>Calendário 2026 · Acesso restrito</span></div></div></div>`;
+  root.innerHTML=`<div class="cp-gateway"><div class="cp-login-shell"><div class="cp-login-head"><img id="cpGatewayLogo" alt="Brasão Cora Coralina"><div><small>COLÉGIO CORA CORALINA · PDF SOLUÇÃO EDUCACIONAL</small><h1>Portal do Calendário Escolar</h1><p>Selecione seu ambiente de trabalho</p></div></div><div class="cp-role-grid"><button type="button" class="cp-role ${chosen==='gestao'?'active':''}" data-cp-role="gestao"><span class="cp-role-icon">⚙</span><strong>Gestão</strong><span>Organizar o ano, editar eventos e publicar avisos para toda a equipe</span></button><button type="button" class="cp-role ${chosen==='equipe'?'active':''}" data-cp-role="equipe"><span class="cp-role-icon">▦</span><strong>Equipe Pedagógica</strong><span>Consultar o calendário, receber alertas e baixar os materiais publicados</span></button></div><form id="cpLoginForm" class="cp-auth"><div id="cpEmailWrap" ${chosen==='gestao'?'hidden':''}><label for="cpEmail">E-mail individual do colaborador</label><input type="email" id="cpEmail" autocomplete="username" placeholder="professor@exemplo.com" ${chosen==='equipe'?'required':''}></div><label id="cpLegacyWrap" class="cp-legacy-option" ${chosen==='gestao'||individualRequired?'hidden':''}><input type="checkbox" id="cpUseLegacy"> Usar senha coletiva temporária (migração)</label><div><label for="cpPassword">Senha pessoal · <span id="cpRoleLabel">${chosen==='gestao'?'Gestão':'Equipe Pedagógica'}</span></label><input type="password" id="cpPassword" autocomplete="current-password" required placeholder="Digite sua senha"></div><button type="submit" class="cp-btn">Entrar no painel</button><div id="cpFirstAccessWrap" class="cp-first-access" ${chosen==='gestao'?'hidden':''}><button type="button" id="cpFirstAccess">Primeiro acesso? Ativar convite</button><small>Seu acesso precisa ser criado pela Gestão. O cadastro na planilha, sozinho, não gera senha.</small></div><div id="cpForgotWrap" class="cp-forgot-wrap" ${chosen==='gestao'?'hidden':''}><button type="button" id="cpForgotPassword" aria-expanded="false">Esqueci minha senha</button><p id="cpForgotInstructions" hidden>Para recuperar o acesso, solicite à Coordenação um <strong>link individual de redefinição</strong>. A Gestão encontrará seu cadastro em <strong>Acessos da equipe → Redefinir senha</strong>. O link expira em 24 horas. Não compartilhe sua senha nem seu link.</p></div><p class="cp-error" role="alert">${safe(error)}</p></form><div class="cp-gateway-foot"><span>A Gestão publica · a Equipe acompanha</span><span>Calendário 2026 · Acesso restrito</span></div></div></div>`;
   $('#cpGatewayLogo').src=logo();
-  root.querySelectorAll('[data-cp-role]').forEach(b=>b.onclick=()=>{chosen=b.dataset.cpRole;root.querySelectorAll('[data-cp-role]').forEach(x=>x.classList.toggle('active',x===b));$('#cpRoleLabel').textContent=chosen==='gestao'?'Gestão':'Equipe Pedagógica';$('#cpEmailWrap').hidden=chosen==='gestao';$('#cpLegacyWrap').hidden=chosen==='gestao'||individualRequired;$('#cpUseLegacy').checked=false;$('#cpFirstAccessWrap').hidden=chosen==='gestao';$('#cpEmail').required=chosen==='equipe';(chosen==='equipe'?$('#cpEmail'):$('#cpPassword')).focus()});
+  root.querySelectorAll('[data-cp-role]').forEach(b=>b.onclick=()=>{chosen=b.dataset.cpRole;root.querySelectorAll('[data-cp-role]').forEach(x=>x.classList.toggle('active',x===b));$('#cpRoleLabel').textContent=chosen==='gestao'?'Gestão':'Equipe Pedagógica';$('#cpEmailWrap').hidden=chosen==='gestao';$('#cpLegacyWrap').hidden=chosen==='gestao'||individualRequired;$('#cpUseLegacy').checked=false;$('#cpFirstAccessWrap').hidden=chosen==='gestao';$('#cpForgotWrap').hidden=chosen==='gestao';$('#cpEmail').required=chosen==='equipe';(chosen==='equipe'?$('#cpEmail'):$('#cpPassword')).focus()});
   $('#cpUseLegacy').onchange=()=>{const collective=$('#cpUseLegacy').checked;$('#cpEmailWrap').hidden=collective;$('#cpEmail').required=!collective};
   $('#cpFirstAccess').onclick=()=>activationGateway(true);
+  $('#cpForgotPassword').onclick=()=>{
+    const instructions=$('#cpForgotInstructions'),btn=$('#cpForgotPassword');
+    const expanded=instructions.hidden;
+    instructions.hidden=!expanded;btn.setAttribute('aria-expanded',String(expanded));
+  };
    $('#cpLoginForm').onsubmit=async e=>{e.preventDefault();const btn=$('#cpLoginForm button[type=submit]');btn.disabled=true;try{const r=await api('login',{role:chosen,email:chosen==='equipe'&&!$('#cpUseLegacy').checked?$('#cpEmail').value.trim():'',password:$('#cpPassword').value});role=r.role;await enter();}catch(err){gateway((err.message||'Credenciais inválidas.')+' '+(err.status===503?'Contate a administração.':''));}finally{btn.disabled=false;}};
  }
  async function logout(){window.CoraHelpdesk?.teardown();teacherProfile=null;try{await api('logout',{})}catch{}clearInterval(timer);timer=null;gateway();}
@@ -95,7 +100,7 @@
    '<label>Função<select name="profile"><option>Professor</option><option>Coordenação</option><option>Funcionário</option></select></label>'+
    '<fieldset class="cp-segment-fieldset"><legend>Segmentos de atuação <small>(marque todos)</small></legend>'+segmentCheckboxes()+'</fieldset>'+
    '<button class="cp-btn" type="submit">Criar acesso e convite</button></form>'+
-   '<div id="cpAccountInvite" class="cp-account-invite" hidden><strong>Convite gerado · aguardando envio</strong><p>O sistema gerou o link de ativação, mas <b>não enviou nenhum e-mail ainda</b>. Escolha uma das opções e entregue o convite apenas ao professor autorizado. Validade: 7 dias.</p>'+
+   '<div id="cpAccountInvite" class="cp-account-invite" hidden><strong id="cpInviteTitle">Convite gerado · aguardando envio</strong><p id="cpInviteDescription">O sistema gerou o link de ativação, mas <b>não enviou nenhum e-mail ainda</b>. Escolha uma das opções e entregue o convite apenas ao professor autorizado. Validade: 7 dias.</p>'+
    '<textarea id="cpAccountInviteUrl" readonly rows="3" aria-label="Link de ativação individual"></textarea><div class="cp-invite-buttons"><button type="button" id="cpCopyInvite" class="cp-btn soft">Copiar link de ativação</button><a id="cpEmailInvite" href="#" class="cp-btn" target="_self">Preparar e-mail de convite</a></div><p class="cp-invite-email-notice" id="cpInviteEmailNotice">Preparar e-mail abre o aplicativo de e-mail; você ainda precisa tocar em Enviar.</p></div>'+
    '<div class="cp-account-cutover"><strong id="cpCutoverTitle">Acesso coletivo em migração</strong><p id="cpCutoverDescription">Cadastre e ative as contas antes de exigir login individual para toda a escola.</p><button id="cpEnforceIndividual" type="button" class="cp-btn gold">Exigir login individual para todos</button></div>'+
    '<p role="status" id="cpAccountsStatus" aria-live="polite"></p><div id="cpAccountsList"></div></section>');
@@ -159,8 +164,9 @@
       const editor=row?.querySelector('.cp-segment-editor');if(editor)editor.hidden=!editor.hidden;
       return;
     }
-    const label={suspend:'Suspender',disable:'Desativar',enable:'Reativar',reinvite:'Reemitir convite'}[operation];
-    if(operation!=='updateSegments'&&!confirm(label+' '+email+'?'))return;
+    const label={resetPassword:'Redefinir senha',suspend:'Suspender',disable:'Desativar',enable:'Reativar',reinvite:'Reemitir convite'}[operation];
+    const confirmation=operation==='resetPassword'?'Gerar um link de recuperação para '+email+'? Confira a identidade do colaborador antes de compartilhar. A senha atual só será substituída quando ele criar uma nova.':label+' '+email+'?';
+    if(operation!=='updateSegments'&&!confirm(confirmation))return;
     btn.disabled=true;
     try{
       const input={operation,email};
@@ -170,6 +176,7 @@
       }
       const result=await api('accounts',input);
       if(result.inviteUrl)showInvite(result.inviteUrl,result.member?.email);
+      if(result.resetUrl)showInvite(result.resetUrl,result.member?.email,'recovery');
       await loadAccounts();
     }catch(error){$('#cpAccountsStatus').textContent=error.message}finally{btn.disabled=false}
   };
@@ -226,13 +233,24 @@
 
  }
  function renderNoticeRows(){const area=$('#cpNoticeRows');if(!area)return;area.innerHTML=managerNotices.length?managerNotices.map(n=>`<div class="cp-notice-row"><span><span class="cp-notice-saved">✓ Adicionado</span> <strong>${safe(n.title)}</strong> · ${safe(n.type)} · ${safe(n.publishAt).replace('T',' ')}${n.eventDate?' · Evento '+safe(n.eventDate):''}</span><button class="cp-btn soft" data-cp-remove="${safe(n.id)}">Excluir</button></div>`).join(''):'<p class="cp-muted">Nenhum aviso criado. O calendário oficial ainda pode ser publicado.</p>';area.querySelectorAll('[data-cp-remove]').forEach(b=>b.onclick=()=>{managerNotices=managerNotices.filter(n=>n.id!==b.dataset.cpRemove);localStorage.setItem(noticeKey(year),JSON.stringify(managerNotices));renderNoticeRows()});}
- function showInvite(link,email=''){
+ function showInvite(link,email='',kind='activation'){
+  const recovery=kind==='recovery';
   $('#cpAccountInvite').hidden=false;$('#cpAccountInviteUrl').value=link;
-  const mailSubject='Colégio Cora Coralina — ativação do Calendário';
-  const mailBody='Olá!\n\nA Gestão do Colégio Cora Coralina autorizou seu acesso individual à Equipe Pedagógica do Calendário Anual.\n\nAbra o link abaixo, confira seu e-mail e defina uma senha pessoal com pelo menos 10 caracteres, letras e números:\n\n'+link+'\n\nO convite vale por 7 dias e pode ser usado apenas uma vez. Não compartilhe este link.\n\nAtenciosamente,\nCoordenação Pedagógica';
+  $('#cpInviteTitle').textContent=recovery?'Recuperação de senha · link gerado':'Convite gerado · aguardando envio';
+  $('#cpInviteDescription').textContent=recovery
+   ?'A senha atual permanece válida até o colaborador cadastrar uma nova. Este link individual expira em 24 horas, funciona uma única vez e deve ser entregue somente ao titular. Nenhum e-mail foi enviado automaticamente.'
+   :'O convite de ativação expira em 7 dias. Envie o link apenas ao colaborador autorizado; nenhum e-mail foi enviado automaticamente.';
+  $('#cpCopyInvite').textContent=recovery?'Copiar link de redefinição':'Copiar link de ativação';
+  $('#cpEmailInvite').textContent=recovery?'Preparar e-mail de recuperação':'Preparar e-mail de convite';
+  const mailSubject=recovery?'Colégio Cora Coralina — redefinição de senha':'Colégio Cora Coralina — ativação do Calendário';
+  const mailBody=recovery
+   ?'Olá!\n\nA Coordenação do Colégio Cora Coralina gerou um link individual de recuperação de acesso.\n\nAbra o link abaixo e crie uma nova senha pessoal com pelo menos 10 caracteres, letras e números:\n\n'+link+'\n\nO link expira em 24 horas e pode ser utilizado apenas uma vez. Não compartilhe este link. Seu cadastro e histórico de acessos serão mantidos. Após redefinir, entre novamente no aplicativo e confira as notificações.\n\nAtenciosamente,\nCoordenação Pedagógica'
+   :'Olá!\n\nA Gestão do Colégio Cora Coralina autorizou seu acesso individual à Equipe Pedagógica do Calendário Anual.\n\nAbra o link abaixo, confira seu e-mail e defina uma senha pessoal com pelo menos 10 caracteres, letras e números:\n\n'+link+'\n\nO convite vale por 7 dias e pode ser usado apenas uma vez. Não compartilhe este link.\n\nAtenciosamente,\nCoordenação Pedagógica';
   $('#cpEmailInvite').href='mailto:'+encodeURIComponent(email)+'?subject='+encodeURIComponent(mailSubject)+'&body='+encodeURIComponent(mailBody);
-  $('#cpInviteEmailNotice').textContent='Nenhum e-mail foi enviado automaticamente. Use Preparar e-mail e confirme o envio, ou copie o link.';
-  $('#cpAccountsStatus').textContent='Convite gerado para '+email+'. Agora envie o link; a conta só ficará Ativa quando o professor criar a senha.';
+  $('#cpInviteEmailNotice').textContent='O e-mail não foi enviado. Confira o endereço e envie manualmente; o link também pode ser copiado.';
+  $('#cpAccountsStatus').textContent=recovery
+   ?'Link de redefinição criado para '+email+'. Entregue somente ao titular após conferir a identidade. O cadastro e o histórico foram preservados.'
+   :'Convite gerado para '+email+'. Envie o link; a conta ficará Ativa após o professor criar a senha.';
   $('#cpAccountInvite').scrollIntoView({behavior:'smooth',block:'center'});
  }
  const fmtAccess=iso=>iso?new Date(iso).toLocaleString('pt-BR',{timeZone:'America/Fortaleza',dateStyle:'short',timeStyle:'short'}):'Ainda não registrado';
@@ -252,8 +270,8 @@
     $('#cpCutoverTitle').textContent=enforcing?'Login individual obrigatório':'Acesso coletivo ainda permitido';
     $('#cpCutoverDescription').textContent=enforcing?'A senha coletiva não permite mais consultar publicações. Suspender uma conta bloqueia o acesso imediatamente.':'Distribua os convites e confira as ativações. Depois, ative a exigência de login pessoal para todos.';
     list.innerHTML=(data.members||[]).length?data.members.map(member=>{
-     const operations=member.status==='Ativo'?['suspend','disable','reinvite']:member.status==='Suspenso'?['enable','disable','reinvite']:member.status==='Desativado'?['enable']:['reinvite','disable'];
-     const labels={suspend:'Suspender',disable:'Desativar',enable:'Reativar',reinvite:'Reemitir convite'};
+     const operations=member.status==='Ativo'?['resetPassword','suspend','disable']:member.status==='Suspenso'?['enable','disable','reinvite']:member.status==='Desativado'?['enable']:['reinvite','disable'];
+     const labels={resetPassword:'Redefinir senha',suspend:'Suspender',disable:'Desativar',enable:'Reativar',reinvite:'Reemitir convite'};
      return '<div class="cp-account-person"><div><strong>'+safe(member.name)+'</strong><small>'+safe(member.email)+' · '+safe(member.profile)+' · '+safe(member.segment)+'</small></div>'+
       '<span class="cp-account-status">'+(member.status==='Pendente'?'Aguardando ativação':safe(member.status))+'</span>'+
        '<div class="cp-account-audit"><span><b>Ativação</b>'+safe(fmtAccess(member.activatedAt))+'</span><span><b>Primeiro acesso monitorado</b>'+safe(fmtAccess(member.firstAccessAt))+'</span><span><b>Último acesso</b>'+safe(fmtAccess(member.lastLogin))+'</span><span><b>Acessos registrados</b>'+(member.accessCount==null?'Histórico anterior não disponível':String(member.accessCount))+'</span></div>'+
@@ -264,6 +282,48 @@
        '<button type="button" data-account-operation="updateSegments" data-account-email="'+safe(member.email)+'">Salvar segmentos</button></div></div>';
     }).join(''):'<p class="cp-muted">Ainda não há colaboradores cadastrados.</p>';
   }catch(error){list.textContent='Erro ao consultar colaboradores: '+error.message}
+ }
+ function recoveryGateway(){
+  const params=new URLSearchParams(location.hash.slice(1));
+  const code=params.get('redefinir')||'';
+  if(!code)return false;
+  const email=params.get('email')||'';
+  role='';chosen='equipe';
+  document.body.classList.add('portal-locked');
+  document.body.classList.remove('portal-loading');
+  root.innerHTML='<div class="cp-gateway"><div class="cp-login-shell"><div class="cp-login-head"><img id="cpRecoveryLogo" alt="Colégio Cora Coralina"><div><small>COLÉGIO CORA CORALINA · ACESSO INDIVIDUAL</small><h1>Redefinir minha senha</h1><p>Crie uma nova senha para continuar acessando o Calendário Escolar.</p></div></div>'+
+   '<div class="cp-activation-help"><strong>Recuperação autorizada pela Gestão</strong><p>Este link é individual e expira em 24 horas. Sua nova senha substitui a anterior, sem excluir sua conta nem seu histórico. Após a troca, ative novamente as notificações do aparelho.</p></div>'+
+   '<form id="cpRecoveryForm" class="cp-auth"><label>E-mail do colaborador<input id="cpRecoveryEmail" type="email" autocomplete="username" required></label>'+
+   '<label>Nova senha (mínimo 10 caracteres, com letras e números)<input id="cpRecoveryPassword" type="password" minlength="10" maxlength="120" autocomplete="new-password" required></label>'+
+   '<label>Confirme a nova senha<input id="cpRecoveryConfirmation" type="password" minlength="10" maxlength="120" autocomplete="new-password" required></label>'+
+   '<button class="cp-btn" type="submit">Salvar minha nova senha</button><p id="cpRecoveryError" class="cp-error" role="alert"></p></form>'+
+   '<div class="cp-activation-footer"><button type="button" class="cp-btn soft" id="cpRecoveryBack">Voltar ao login</button></div></div></div>';
+  $('#cpRecoveryLogo').src=logo();
+  $('#cpRecoveryEmail').value=email;
+  $('#cpRecoveryBack').onclick=()=>{
+   history.replaceState(null,'',location.pathname+location.search);
+   gateway();
+  };
+  $('#cpRecoveryForm').onsubmit=async event=>{
+   event.preventDefault();
+   const button=$('#cpRecoveryForm button[type=submit]');
+   const password=$('#cpRecoveryPassword').value,confirmation=$('#cpRecoveryConfirmation').value;
+   if(password!==confirmation){$('#cpRecoveryError').textContent='As senhas não conferem. Digite novamente.';return}
+   if(password.length<10||!/[A-Za-zÀ-ÿ]/.test(password)||!/[0-9]/.test(password)){
+    $('#cpRecoveryError').textContent='A senha precisa ter no mínimo 10 caracteres, incluindo letras e números.';return;
+   }
+   button.disabled=true;
+   try{
+    const reply=await api('reset-password',{email:$('#cpRecoveryEmail').value.trim(),code,password});
+    history.replaceState(null,'',location.pathname+location.search);
+    role=reply.role;chosen='equipe';
+    await enter();
+   }catch(error){
+    $('#cpRecoveryError').textContent=error.message||'Não foi possível redefinir a senha. Solicite outro link à Gestão.';
+    button.disabled=false;
+   }
+  };
+  return true;
  }
  function activationGateway(manual=false){
   const params=new URLSearchParams(location.hash.slice(1)),initialCode=params.get('ativar')||'',email=params.get('email')||'';
@@ -816,7 +876,7 @@
  async function start(){
   document.body.classList.add('portal-loading');
   try{
-   if(activationGateway())return;
+   if(recoveryGateway()||activationGateway())return;
    const s=await api('me');individualRequired=Boolean(s.individualRequired);
    if(s.role){role=s.role;await enter()}else gateway();
   }catch(e){unavailable(e);}
