@@ -10,6 +10,17 @@
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, match => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[match]));
   const isCurrentYear = () => new Date().getFullYear() === YEAR;
   let selectedMonth = window.CoraYears?.month ?? (isCurrentYear() ? new Date().getMonth() : 0);
+  // Prefere uma lista concisa no celular; pode ser alternada a qualquer momento.
+  const MONTH_VIEW_KEY='cora_month_events_view_v1';
+  const MONTH_PREVIEW_SIZE=5;
+  let monthView='resumida';
+  try {monthView=localStorage.getItem(MONTH_VIEW_KEY)==='estendida'?'estendida':'resumida'} catch {}
+  function changeMonthView(mode){
+    monthView=mode==='estendida'?'estendida':'resumida';
+    try{localStorage.setItem(MONTH_VIEW_KEY,monthView)}catch{}
+    renderEvents();
+  }
+
   let events = [];
   let allFiles = [];
   let editing = null;
@@ -104,8 +115,21 @@
   }
   function renderEvents() {
     const list = eventsFor(selectedMonth);
+    const summary=monthView==='resumida';
+    const preview=summary?list.slice(0,MONTH_PREVIEW_SIZE):list;
+    const panel=document.querySelector('.events-panel');
+    panel?.classList.toggle('is-compact',summary);
+    const compact=$('#monthViewCompact'),extended=$('#monthViewExtended');
+    if(compact){compact.classList.toggle('is-active',summary);compact.setAttribute('aria-pressed',String(summary))}
+    if(extended){extended.classList.toggle('is-active',!summary);extended.setAttribute('aria-pressed',String(!summary))}
+    const counter=$('#monthViewCount'),footer=$('#monthViewFooter'),all=$('#monthViewAll');
+    if(counter)counter.textContent=list.length===0?'Nenhum evento cadastrado neste mês':summary&&list.length>MONTH_PREVIEW_SIZE?
+      'Exibindo '+preview.length+' de '+list.length+' eventos · '+(list.length-preview.length)+' outros disponíveis':
+      list.length+' evento'+(list.length===1?'':'s')+' neste mês';
+    if(footer)footer.hidden=!(summary&&list.length>MONTH_PREVIEW_SIZE);
+    if(all)all.textContent='Ver todos os '+list.length+' eventos';
     if (!list.length) { $('#eventList').innerHTML = '<div class="empty"><div class="empty-icon">▦</div>Nenhum evento neste mês.<br/>Clique no calendário para começar.</div>'; return; }
-    $('#eventList').innerHTML = list.map(event => `<div class="event"><div class="event-date"><b>${Number(event.date.slice(8,10))}</b><small>${MONTHS[selectedMonth].slice(0,3)}</small></div><div class="event-info"><strong>${escapeHtml(event.title)}</strong>${event.notes?`<small>${escapeHtml(event.notes)}</small>`:''}<span class="tag">${escapeHtml(event.type)}</span>${event.time?`<small class="event-meta">Horário: ${escapeHtml(event.time)} ${event.mode==='online'?' · On-line':''}</small>`:''}${event.status==='Em revisão'?'<small class="review-event">Em revisão · não divulgar</small>':''}${event.audience&&event.audience!=='Todos'?`<small class="event-meta">Para: ${escapeHtml(event.audience)}</small>`:''}</div><div class="event-actions"><button data-google="${escapeHtml(event.id)}" aria-label="Adicionar ao Google Agenda" title="Google Agenda">G</button><button data-edit="${escapeHtml(event.id)}" aria-label="Editar evento" title="Editar">✎</button><button data-delete="${escapeHtml(event.id)}" aria-label="Excluir evento" title="Excluir">✕</button></div></div>`).join('');
+    $('#eventList').innerHTML = preview.map(event => `<div class="event"><div class="event-date"><b>${Number(event.date.slice(8,10))}</b><small>${MONTHS[selectedMonth].slice(0,3)}</small></div><div class="event-info"><strong>${escapeHtml(event.title)}</strong>${event.notes?`<small>${escapeHtml(event.notes)}</small>`:''}<span class="tag">${escapeHtml(event.type)}</span>${event.time?`<small class="event-meta">Horário: ${escapeHtml(event.time)} ${event.mode==='online'?' · On-line':''}</small>`:''}${event.status==='Em revisão'?'<small class="review-event">Em revisão · não divulgar</small>':''}${event.audience&&event.audience!=='Todos'?`<small class="event-meta">Para: ${escapeHtml(event.audience)}</small>`:''}</div><div class="event-actions"><button data-google="${escapeHtml(event.id)}" aria-label="Adicionar ao Google Agenda" title="Google Agenda">G</button><button data-edit="${escapeHtml(event.id)}" aria-label="Editar evento" title="Editar">✎</button><button data-delete="${escapeHtml(event.id)}" aria-label="Excluir evento" title="Excluir">✕</button></div></div>`).join('');
     $('#eventList').querySelectorAll('[data-edit]').forEach(button=>button.addEventListener('click',eventClick=>{
       eventClick.preventDefault();
       const item=events.find(event=>String(event.id)===String(button.dataset.edit));
@@ -478,6 +502,9 @@
     ['dragenter','dragover'].forEach(type=>area.addEventListener(type,event=>{event.preventDefault();area.classList.add('dragging');}));
     ['dragleave','drop'].forEach(type=>area.addEventListener(type,event=>{event.preventDefault();area.classList.remove('dragging');}));
     area.addEventListener('drop',event=>importFiles([...event.dataTransfer.files]));
+    $('#monthViewCompact')?.addEventListener('click',()=>changeMonthView('resumida'));
+    $('#monthViewExtended')?.addEventListener('click',()=>changeMonthView('estendida'));
+    $('#monthViewAll')?.addEventListener('click',()=>changeMonthView('estendida'));
     $('#backupBtn').addEventListener('click',downloadBackup);
     $('#restoreBtn').addEventListener('click',()=>$('#restorePicker').click());
     $('#restorePicker').addEventListener('change',async event=>{if(event.target.files[0])await restoreBackup(event.target.files[0]);event.target.value='';});
