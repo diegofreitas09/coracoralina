@@ -296,25 +296,38 @@
   const compact=words.length>2?[words[0],words[words.length-1]]:words;
   return compact.map(w=>w.toLocaleLowerCase('pt-BR').replace(/(^|[-’'])\p{L}/gu,v=>v.toLocaleUpperCase('pt-BR'))).join(' ');
  }
+ const isIOSDevice=()=>/iPad|iPhone|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ const isHomeScreenApp=()=>Boolean(window.matchMedia?.('(display-mode: standalone)').matches||navigator.standalone===true);
+ function showAppInstallGuide(){
+  const entry=document.getElementById('installCalendarApp');
+  if(entry){entry.click();return}
+  const dialog=document.getElementById('calendarInstallDialog');
+  if(dialog&&typeof dialog.showModal==='function'&&!dialog.open){dialog.showModal();return}
+  toast('No iPhone, abra o calendário no Safari, toque em Compartilhar e escolha Adicionar à Tela de Início.');
+ }
  function renderTeamWelcome(){
   const area=$('#cpWelcome');if(!area||role!=='equipe')return;
   const fullName=teacherProfile?.name||'';
   const greeting='Olá, '+shortWelcomeName(fullName)+'!';
-  const supported='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+  const needsIOSInstall=isIOSDevice()&&!isHomeScreenApp();
+  const supported=!needsIOSInstall&&'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
   const blocked=supported&&Notification.permission==='denied';
   const info=pushConfirmed
    ?'<div class="cp-welcome-push is-enabled"><span class="cp-welcome-push-symbol" aria-hidden="true">✓</span><div><strong>Notificações ativadas</strong><small>Seu aparelho está cadastrado para avisos da Gestão.</small></div></div>'
    :!pushChecked
     ?'<div class="cp-welcome-push"><span class="cp-welcome-push-symbol" aria-hidden="true">◌</span><div><strong>Verificando notificações</strong><small>Consultando as permissões deste aparelho.</small></div></div>'
     :blocked
-     ?'<div class="cp-welcome-push needs-setup"><span class="cp-welcome-push-symbol" aria-hidden="true">!</span><div><strong>Notificações bloqueadas</strong><small>Autorize o Calendário nas configurações do navegador ou Android.</small></div></div>'
+     ?'<div class="cp-welcome-push needs-setup"><span class="cp-welcome-push-symbol" aria-hidden="true">!</span><div><strong>Notificações bloqueadas</strong><small>Autorize o Calendário em Ajustes → Notificações no aparelho.</small></div></div>'
+     :needsIOSInstall
+      ?'<div class="cp-welcome-push needs-setup"><span class="cp-welcome-push-symbol" aria-hidden="true">i</span><div><strong>Instale no iPhone</strong><small>Abra no Safari, toque em Compartilhar → Adicionar à Tela de Início. Depois abra o ícone para ativar as notificações.</small></div><button type="button" id="cpWelcomeInstallIOS">Como instalar</button></div>'
      :!supported
-      ?'<div class="cp-welcome-push"><span class="cp-welcome-push-symbol" aria-hidden="true">i</span><div><strong>Notificações não disponíveis</strong><small>Abra o aplicativo pelo Chrome no Android para verificar o suporte.</small></div></div>'
+      ?'<div class="cp-welcome-push"><span class="cp-welcome-push-symbol" aria-hidden="true">i</span><div><strong>Notificações não disponíveis</strong><small>Verifique o navegador e a versão do sistema. No iPhone, é necessário iOS 16.4 ou superior e abrir o app instalado.</small></div></div>'
       :'<div class="cp-welcome-push needs-setup"><span class="cp-welcome-push-symbol" aria-hidden="true">!</span><div><strong>Ative as notificações</strong><small>Receba avisos da Gestão e lembretes de entregas.</small></div><button type="button" id="cpWelcomeEnablePush">Ativar agora</button></div>';
   area.innerHTML='<div class="cp-welcome-person"><span class="cp-welcome-avatar" aria-hidden="true">'+
    safe((fullName.trim()[0]||'P').toLocaleUpperCase('pt-BR'))+
    '</span><div><small>ACESSO À EQUIPE PEDAGÓGICA</small><h2>'+safe(greeting)+'</h2></div></div>'+info;
   $('#cpWelcomeEnablePush')?.addEventListener('click',enableLocalNotifications);
+  $('#cpWelcomeInstallIOS')?.addEventListener('click',showAppInstallGuide);
  }
  async function team(){teacherProfile=null;pushChecked=false;pushConfirmed=false;const deep=new URLSearchParams(location.search);year=Number(deep.get('ano'))||2026;if(deep.get('avisos')==='1')showBell=true;document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><section id="cpWelcome" class="cp-welcome" aria-label="Boas-vindas e notificações"></section><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpEnableAlerts').onclick=enableLocalNotifications;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};$('#cpTeamYear').onchange=e=>{year=Number(e.target.value)||2026;month=0;showBell=false;tab='resumo';refresh()};await refresh();void confirmDevicePush();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},30000);}
  async function refresh(){try{const [result,identity]=await Promise.all([api('state',undefined,'year='+year),api('delivery-profile',undefined,'year='+year).catch(()=>({identified:false,statuses:{}}))]);teacherProfile=identity.identified?identity:null;availableYears=Array.isArray(result.availableYears)?result.availableYears:[2026];data=result.publication;
@@ -347,7 +360,7 @@
        vibrate:[180,90,180],silent:false,renotify:false,data:{url:'./?avisos=1'}
      });
      return true;
-   }catch(error){console.warn('Aviso do Android indisponível',error);return false}
+   }catch(error){console.warn('Aviso do aparelho indisponível',error);return false}
  }
 
  const urlBase64ToUint8=base64=>{
@@ -356,12 +369,13 @@
   return Uint8Array.from(raw,ch=>ch.charCodeAt(0));
  };
  async function registerDeviceForPush(){
+  if(isIOSDevice()&&!isHomeScreenApp())throw new Error('No iPhone, instale o calendário pelo Safari em Compartilhar → Adicionar à Tela de Início e abra o ícone instalado.');
   if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){
-   throw new Error('Este navegador não oferece Web Push. Abra o app instalado pelo Chrome do Android.');
+   throw new Error('Este aparelho não oferece Web Push neste modo. No iPhone, é necessário iOS 16.4 ou superior e o app aberto pela Tela de Início.');
   }
   let permission=Notification.permission;
   if(permission!=='granted')permission=await Notification.requestPermission();
-  if(permission!=='granted')throw new Error('Notificações bloqueadas nas permissões do Android.');
+  if(permission!=='granted')throw new Error('Permissão não concedida. Verifique os ajustes de notificações do aparelho.');
   const config=await api('push-key');
   if(!config?.publicKey)throw new Error('O servidor de notificações ainda não está pronto.');
   const reg=await navigator.serviceWorker.ready;
@@ -382,6 +396,7 @@
   return subscription;
  }
  async function enableLocalNotifications(){
+  if(isIOSDevice()&&!isHomeScreenApp()){showAppInstallGuide();return}
   const button=$('#cpEnableAlerts');
   const welcomeButton=$('#cpWelcomeEnablePush');if(welcomeButton){welcomeButton.disabled=true;welcomeButton.textContent='Ativando...'}
   if(button){button.disabled=true;button.textContent='Conectando...'}
@@ -390,7 +405,7 @@
    updatePushButton(true);
    try{
      const result=await api('push-test',{subscription:subscription.toJSON()});
-     toast(result.sent?'Celular inscrito! Teste de push enviado pelo servidor: confira a notificação do Android.':'Celular inscrito; teste ainda não confirmado.');
+     toast(result.sent?'Dispositivo cadastrado! Teste enviado: confira as notificações do aparelho.':'Dispositivo cadastrado; teste ainda não confirmado.');
    }catch(testError){
      toast('Celular inscrito, mas o teste de envio falhou: '+String(testError.message||testError));
    }
@@ -403,8 +418,8 @@
   pushChecked=true;pushConfirmed=Boolean(active);
   const button=$('#cpEnableAlerts');if(!button){renderTeamWelcome();return;}
   button.classList.toggle('cp-push-active',Boolean(active));
-  button.textContent=active?'✓ Notificações ativas':'Ativar notificações';
-  button.title=active?'Este aparelho está inscrito para receber avisos publicados pela Gestão.':'Autorize o Android para receber avisos com o aplicativo fechado.';
+  button.textContent=active?'✓ Notificações ativas':(isIOSDevice()&&!isHomeScreenApp()?'Instalar no iPhone':'Ativar notificações');
+  button.title=active?'Este aparelho está inscrito para receber avisos publicados pela Gestão.':(isIOSDevice()&&!isHomeScreenApp()?'Instale pelo Safari e abra o ícone da Tela de Início para ativar os avisos.':'Ative as notificações para receber avisos com o aplicativo fechado.');
   renderTeamWelcome();
  }
  async function confirmDevicePush(){
