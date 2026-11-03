@@ -104,6 +104,32 @@ export async function activateEmployee(input,secret){
    trackingStartedAt:previous.trackingStartedAt||now,failedLogins:0,lockedUntil:''});
  return {ok:true,role:'equipe',member:publicMember(updated),cookie:signedSession(updated,secret)};
 }
+/**
+ * Reset autorizado pela Gestão, sem apagar histórico ou mudar o status de conta ativa.
+ * A senha antiga continua válida até o novo segredo ser confirmado.
+ * O token aleatório só é armazenado como hash e expira em 24 horas.
+ */
+export async function resetEmployeePassword(input,secret){
+ const email=emailOf(input?.email),code=String(input?.code||''),password=input?.password;
+ if(!validEmail(email)||code.length<32||code.length>100||!securePassword(password))
+  return error('Link inválido ou senha fora dos requisitos (mínimo 10 caracteres, com letras e números).');
+ const record=await account(keyFor(email));
+ if(!record||record.status!=='Ativo'||!record.resetHash||
+    !secureEqual(digest(code),record.resetHash)||Date.parse(record.resetExpiresAt||'')<=Date.now())
+  return error('Link de recuperação inválido ou expirado. Peça outro à Coordenação.',401);
+ const now=new Date().toISOString(),salt=randomBytes(16).toString('hex');
+ const updated={...record,salt,passwordHash:derive(password,salt),
+  resetHash:'',resetExpiresAt:'',resetAt:now,
+  sessionVersion:(record.sessionVersion||0)+1,updatedAt:now};
+ await db().setJSON(record.id,updated);
+ const oldAudit=await activity().get(record.id,{type:'json',consistency:'strong'})||{};
+ await activity().setJSON(record.id,{...oldAudit,failedLogins:0,lockedUntil:'',passwordResetAt:now});
+ // Os aparelhos antigos devem inscrever novamente suas notificações.
+ await deleteUserRegistrations(record.id);
+ return {ok:true,role:'equipe',member:publicMember(updated),
+  cookie:signedSession(updated,secret)};
+}
+
 export async function accessPolicy(){
  const stored=await db().get('access-policy',{type:'json',consistency:'strong'});
  return {enforced:stored?.enforced===true,updatedAt:stored?.updatedAt||''};
@@ -140,6 +166,17 @@ export async function manageEmployee(input,baseUrl){
      !['Professor','Coordenação','Funcionário'].includes(input.profile)||!selected)
    return error('Preencha nome completo, perfil e segmento válidos.');
  }else if(!existing)return error('Conta não localizada.',404);
+ if(operation==='resetPassword'){
+  if(existing.status!=='Ativo')return error('A recuperação só está disponível para contas ativas. Regularize a situação da conta primeiro.',409);
+  const code=randomBytes(32).toString('base64url');
+  const expiresAt=new Date(Date.now()+24*60*60*1000).toISOString();
+  const updated={...existing,resetHash:digest(code),resetExpiresAt:expiresAt,resetRequestedAt:now,updatedAt:now};
+  await db().setJSON(id,updated);
+  const origin=new URL(baseUrl).origin;
+  return {ok:true,member:publicMember(updated),
+   resetUrl:origin+'/calendario-anual/#redefinir='+encodeURIComponent(code)+'&email='+encodeURIComponent(email),
+   expiresAt};
+ }
  if(operation==='create'||operation==='reinvite'){
   if(existing&&existing.status==='Desativado')return error('Reative a conta antes de emitir convite.');
   const code=randomBytes(32).toString('base64url'),expiry=new Date(Date.now()+7*86400000).toISOString();
