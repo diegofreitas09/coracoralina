@@ -5,6 +5,7 @@ import { getStore } from '@netlify/blobs';
 import {currentMember,loginEmployee,activateEmployee,listEmployees,manageEmployee,statuses,markDelivery,accessPolicy,enforceIndividualAccess} from './lib/cora-team-auth.mjs';
 import {vapidKeys,registrations,saveRegistration,deleteRegistration,dispatchPush,deliveryId,hasDelivered,markDelivered,testDevicePush} from './lib/cora-push-core.mjs';
 import {mirrorStatus,syncEmployeesToSheets} from './lib/cora-google-sheets-mirror.mjs';
+import {listHelpdesk,readHelpdesk,createQuestion,replyQuestion} from './lib/cora-helpdesk.mjs';
 
 const COOKIE='cora_portal_session';
 const YEAR=2026;
@@ -133,6 +134,31 @@ export default async function handler(request,context){
  }
  if(action==='logout'&&request.method==='POST')return answer({ok:true},200,{'set-cookie':`${COOKIE}=; Max-Age=0; ${baseCookie}`});
  if(!role)return answer({error:'Sessão expirada. Faça login.'},401);
+
+ // Atendimento pedagógico — acesso restrito à Gestão e à conta individual.
+ if(action==='help-list'&&request.method==='GET'){
+  const result=await listHelpdesk(role,member);
+  return answer(result,result.status||200);
+ }
+ if(action==='help-thread'&&request.method==='GET'){
+  const result=await readHelpdesk(role,member,{id:url.searchParams.get('id'),ownerId:url.searchParams.get('ownerId')});
+  return answer(result,result.status||200);
+ }
+ if(['help-create','help-reply'].includes(action)&&request.method==='POST'){
+  if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Solicitação inválida.'},403);
+  const size=Number(request.headers.get('content-length')||0);
+  if(size>6000)return answer({error:'Mensagem muito longa.'},413);
+  let payload;try{payload=await request.json()}catch{return answer({error:'Mensagem inválida.'},400)}
+  const result=action==='help-create'?await createQuestion(role,member,payload):await replyQuestion(role,member,payload);
+  if(result.error)return answer({error:result.error},result.status||400);
+  if(action==='help-reply'&&role==='gestao'&&result.recipientId){
+   const job=dispatchPush({title:'Resposta da Gestão Escolar',body:'Sua dúvida recebeu uma resposta. Acesse o aplicativo para consultar.',kind:'helpdesk',
+    tag:'cora-helpdesk-'+String(payload.id||'').slice(0,65)},{targetUserId:result.recipientId}).catch(e=>console.warn('Notificação de resposta não enviada',e.message));
+   if(context?.waitUntil)context.waitUntil(job);else await job;
+  }
+  return answer({ok:true,id:result.id||payload.id,at:result.at||result.createdAt,ownerId:result.ownerId||null});
+ }
+
 
  if(action==='push-key'&&request.method==='GET'){
   return answer({publicKey:vapidKeys().publicKey,enabled:true});
