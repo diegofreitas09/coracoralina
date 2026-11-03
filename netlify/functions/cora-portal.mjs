@@ -5,7 +5,7 @@ import { getStore } from '@netlify/blobs';
 import {currentMember,loginEmployee,activateEmployee,listEmployees,manageEmployee,statuses,markDelivery,accessPolicy,enforceIndividualAccess} from './lib/cora-team-auth.mjs';
 import {vapidKeys,registrations,saveRegistration,deleteRegistration,dispatchPush,deliveryId,hasDelivered,markDelivered,testDevicePush} from './lib/cora-push-core.mjs';
 import {mirrorStatus,syncEmployeesToSheets} from './lib/cora-google-sheets-mirror.mjs';
-import {listHelpdesk,readHelpdesk,createQuestion,replyQuestion} from './lib/cora-helpdesk.mjs';
+import {listHelpdesk,readHelpdesk,createQuestion,replyQuestion,markHelpdeskRead} from './lib/cora-helpdesk.mjs';
 
 const COOKIE='cora_portal_session';
 const YEAR=2026;
@@ -142,6 +142,14 @@ export default async function handler(request,context){
  }
  if(action==='help-thread'&&request.method==='GET'){
   const result=await readHelpdesk(role,member,{id:url.searchParams.get('id'),ownerId:url.searchParams.get('ownerId')});
+  return answer(result,result.status||200);
+ }
+ if(action==='help-read'&&request.method==='POST'){
+  if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Solicitação inválida.'},403);
+  const size=Number(request.headers.get('content-length')||0);
+  if(size>1500)return answer({error:'Solicitação muito longa.'},413);
+  let payload;try{payload=await request.json()}catch{return answer({error:'Solicitação inválida.'},400)}
+  const result=await markHelpdeskRead(role,member,payload);
   return answer(result,result.status||200);
  }
  if(['help-create','help-reply'].includes(action)&&request.method==='POST'){
