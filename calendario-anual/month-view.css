@@ -1,0 +1,54 @@
+/* Modo resumido / estendido para eventos do mês — Gestão */
+#app .events-panel .panel-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#app .month-view-toolbar{
+ display:flex;justify-content:space-between;align-items:center;gap:10px;
+ padding:12px 16px 8px;background:#f9fbfd;border-bottom:0;
+}
+#app .month-view-caption{font-size:12px;color:#5d758b;font-weight:750}
+#app .month-view-switch{display:inline-flex;gap:3px;padding:4px;border-radius:11px;background:#e7eef5;border:1px solid #d9e4ec}
+#app .month-view-switch button{
+ border:0;background:transparent;color:#526c83;
+ padding:9px 14px;border-radius:8px;font-size:12px;font-weight:750;min-height:36px
+}
+#app .month-view-switch button.is-active{background:#fff;color:#174b76;box-shadow:0 2px 7px #1739531b}
+#app .month-view-switch button:focus-visible,#app .month-view-all:focus-visible{outline:2px solid #bb9751;outline-offset:2px}
+#app .month-view-count{
+ padding:0 16px 11px;color:#668099;background:#f9fbfd;
+ font-size:11px;line-height:1.4;border-bottom:1px solid #e7edf3
+}
+#app .events-panel .events-list{max-height:none;overflow-y:visible;padding:6px 14px}
+#app .events-panel .event{gap:12px;padding:11px 3px;min-height:66px}
+#app .events-panel .event-date{min-width:43px}
+#app .events-panel .event-info{flex:1;min-width:0}
+#app .events-panel .event-info strong{font-size:12px;line-height:1.35}
+#app .events-panel .event-actions{
+ display:flex;flex-flow:row nowrap;align-items:center;gap:5px;
+ align-self:center;flex:0 0 auto
+}
+#app .events-panel .event-actions button{width:33px;height:33px;flex:0 0 33px;font-size:14px}
+#app .events-panel.is-compact .event{min-height:61px;padding:9px 2px}
+#app .events-panel.is-compact .event-info>small{display:none}
+#app .events-panel.is-compact .event-info .tag{margin-top:3px}
+#app .month-view-footer{padding:12px 14px 15px;border-top:1px solid #edf1f6;background:#fff}
+#app .month-view-footer[hidden]{display:none!important}
+#app .month-view-all{
+ display:flex;align-items:center;justify-content:center;width:100%;min-height:42px;
+ background:#edf4fa;color:#18507d;border:1px solid #d5e4f0;
+ border-radius:11px;font-size:12px;font-weight:800;cursor:pointer
+}
+#app .month-view-all:hover{background:#ddebf6}
+@media(max-width:700px){
+ #app .month-view-toolbar{padding:10px 12px 7px}
+ #app .month-view-count{padding:0 12px 11px}
+ #app .events-panel .events-list{padding:5px 9px}
+ #app .events-panel .event{gap:8px;padding:10px 1px}
+ #app .events-panel .event-actions{gap:3px}
+ #app .events-panel .event-actions button{width:30px;height:32px;flex-basis:30px;font-size:13px}
+ #app .events-panel .event-date{min-width:38px}
+ #app .events-panel .event-info strong{font-size:12px}
+}
+@media(max-width:370px){
+ #app .month-view-caption{font-size:11px}
+ #app .month-view-switch button{padding:8px 9px}
+ #app .events-panel .event-actions button{width:28px;flex-basis:28px}
+}
