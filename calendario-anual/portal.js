@@ -564,6 +564,16 @@
  }
  function eventHtml(e){const stage=(data?.stages||[]).find(st=>st.start&&st.end&&e.date>=st.start&&e.date<=st.end);return `<article class="cp-list-entry"><time>${safe(e.date.slice(8,10))}/${safe(e.date.slice(5,7))}</time><div><strong>${safe(e.title)}</strong><span class="cp-tag">${safe(e.type||'Atividade')}</span>${stage?`<span class="cp-tag cp-tag-stage">${stage.number}ª etapa · até ${safe(stage.end.slice(8,10)+'/'+stage.end.slice(5,7))}</span>`:''}${e.notes?`<p>${safe(e.notes)}</p>`:''}</div></article>`}
  function noticeHtml(n){return `<article class="cp-notice ${n.type==='Urgente'?'urgent':''}"><small>${safe(n.type)} · ${safe((n.publishAt||'').replace('T',' '))}</small><h3>${safe(n.title)}</h3><p>${safe(n.body)}</p>${n.eventDate?`<small>Data relacionada: ${safe(n.eventDate)} · Alerta ${Number(n.leadDays)||0} dia(s) antes</small>`:''}</article>`}
+ function cpTeamTileIcon(name){
+  const shapes={
+   calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/>',
+   check:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18m-12 6 2 2 4-4"/>',
+   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/>',
+   message:'<path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 21l1.9-5.5a9 9 0 0 1-.9-4A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8v.5Z"/><path d="M8.5 11.5h8"/>',
+   pdf:'<path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10Z"/><path d="M13 3v7h7M8 14h8M8 18h6"/>'
+  };
+  return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(shapes[name]||shapes.calendar)+'</svg>';
+ }
  function drawTeam(){const here=$('#cpView');if(!here)return;
   const events=filteredEvents(),notes=activeNotices(),assess=events.filter(e=>isAssessment(e)&&!isSecond(e)),alertList=upcoming(),unread=alertList.filter(a=>a.unread).length;
   const badge=$('#cpBellCount');if(badge){badge.style.display=unread?'block':'none';badge.textContent=unread>99?'99+':String(unread);badge.setAttribute('aria-label',unread+' alertas não lidos')}const bell=$('#cpBell');if(bell){bell.classList.toggle('has-unread',unread>0);bell.setAttribute('aria-label',unread?unread+' alertas novos. Abrir notificações':'Abrir notificações')}
@@ -585,10 +595,10 @@
     '<span class="cp-flow-stage-date"><small>Fim</small>'+fmtStage(st.end)+'</span>'+
     (active?'<em>Em andamento</em>':'')+'</button>';
   }).join('');
-  const quickLinks=[['calendario','▦','Calendário','Atividades e projetos'],['avaliacoes','✓','Avaliações','Provas e simulados'],
-    ['entregas','⌛','Entregas','Prazos e e-mails'],['avisos','✉','Comunicados','Orientações da Gestão'],['pdf','↓','PDF anual','Documento completo']].map(item=>
-    '<button type="button" class="cp-flow-link" data-cp-tab="'+item[0]+'"><span class="cp-flow-icon">'+item[1]+'</span>'+
-    '<span><strong>'+item[2]+'</strong><small>'+item[3]+'</small></span><b>›</b></button>').join('');
+  const quickLinks=[['calendario','calendar','Calendário','Atividades e projetos'],['avaliacoes','check','Avaliações','Provas e simulados'],
+    ['entregas','clock','Entregas','Prazos e e-mails'],['avisos','message','Comunicados','Orientações da Gestão'],['pdf','pdf','PDF anual','Documento completo']].map(item=>
+    '<button type="button" class="cp-flow-link" data-cp-tab="'+item[0]+'"><span class="cp-flow-icon">'+cpTeamTileIcon(item[1])+'</span>'+
+    '<span><strong>'+item[2]+'</strong><small>'+item[3]+'</small></span></button>').join('');
   // Área de ferramentas externas da Equipe; usa a marca original do Gestor Escolar.
   const roteiroIcon='<img src="google-sheets-icon.svg?v=20261102" width="41" height="41" alt="" loading="lazy" />';
   const gestorIcon='<img src="gestor-escolar-icon.svg?v=20261102" width="41" height="41" alt="" loading="lazy" />';
@@ -616,14 +626,21 @@
      '<span class="cp-teacher-tool-copy"><strong>SAE Digital</strong><small>Portal e recursos pedagógicos</small></span>'+
      '<span class="cp-teacher-tool-open" aria-hidden="true">'+openIcon+'</span></a>'+
    '</div></section>';
-  const flowHeader=showBell?'':'<section class="cp-flow-hero"><div class="cp-flow-hero-text">'+
+  const previewEvents=events.filter(e=>e.date>=todayISO&&String(e.title||'').trim()).slice(0,2);
+  const preview='<section class="cp-next-preview"><div class="cp-next-preview-head"><h3>Próximos compromissos</h3><button type="button" data-cp-tab="calendario">Ver agenda completa ›</button></div>'+
+   (previewEvents.length?'<div class="cp-next-preview-grid">'+previewEvents.map(e=>
+    '<button type="button" class="cp-next-preview-item" data-cp-tab="calendario"><span class="cp-next-preview-date"><strong>'+safe(e.date.slice(8,10))+'</strong><small>'+safe(MONTHS[Number(e.date.slice(5,7))-1]?.slice(0,3)||'Mês')+'</small></span><span class="cp-next-preview-info"><strong>'+safe(e.title)+'</strong><small>'+safe(e.type||'Atividade escolar')+'</small></span></button>').join('')+'</div>':
+    '<div class="cp-next-preview-empty">Nenhum compromisso futuro publicado para este ano.</div>')+'</section>';
+  const flowHeader=(showBell||tab!=='resumo')?'':'<section class="cp-flow-hero"><div class="cp-flow-hero-text">'+
    '<small>COLÉGIO CORA CORALINA · EQUIPE PEDAGÓGICA</small><h2>Seu ano letivo, organizado.</h2>'+
    '<p>Uma visão clara das atividades, avaliações e informações da Gestão para '+year+'.</p>'+
    '<div class="cp-flow-tags"><span>'+events.length+' atividades</span><span>'+assess.length+' avaliações</span><span>'+notes.length+' comunicados</span></div></div>'+
    '<div class="cp-flow-feature"><small>ETAPAS DO ANO · '+year+'</small><strong>'+(closestStage?closestStage.number+'ª etapa':'Períodos letivos')+'</strong>'+
    '<span>'+(closestStage?fmtStage(closestStage.start)+' até '+fmtStage(closestStage.end):'A definir pela Gestão')+'</span>'+
    '<button type="button" data-cp-tab="etapas">Consultar etapas ›</button></div></section>'+
+   '<div class="cp-quick-header"><h3>Acesso rápido</h3><small>Ferramentas do ano letivo</small></div>'+
    '<div class="cp-flow-links">'+quickLinks+'</div>'+
+   preview+
    teacherTools+
    '<section class="cp-flow-stage-section"><div class="cp-flow-stage-title"><div><small>PLANEJAMENTO · '+year+'</small>'+
    '<h3>Início e fim das etapas</h3></div><span>Consulte antes de planejar avaliações</span></div>'+
