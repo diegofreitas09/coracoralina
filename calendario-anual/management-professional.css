@@ -243,3 +243,17 @@
 @media(prefers-reduced-motion:reduce){
   .cp-manager-actions .cp-btn{transition:none}
 }
+
+/* Pictogramas vetoriais uniformes; sem emojis decorativos. */
+#app .cp-stat-svg{width:19px;height:19px;display:block}
+#app .cp-button-icon{width:16px;height:16px;flex:0 0 16px;display:block}
+#app .top-actions .btn,#app .welcome-actions .btn,
+#app .official-banner-actions .btn,#app #quickEvent{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px
+}
+#app .stat-icon{font-size:initial}
+@media(max-width:900px){
+ #app .stat-icon{width:37px;height:37px;flex-basis:37px}
+ #app .welcome-actions .btn,#app .official-banner-actions .btn{line-height:1.3}
+ #app #quickEvent{min-height:38px}
+}
