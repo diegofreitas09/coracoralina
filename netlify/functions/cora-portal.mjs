@@ -2,7 +2,7 @@
 // Passwords and session keys are set in Netlify project environment variables, never in Git.
 import { createHmac, createHash, timingSafeEqual, randomBytes, scryptSync } from 'node:crypto';
 import { getStore } from '@netlify/blobs';
-import {currentMember,loginEmployee,activateEmployee,listEmployees,manageEmployee,statuses,markDelivery,accessPolicy,enforceIndividualAccess} from './lib/cora-team-auth.mjs';
+import {currentMember,loginEmployee,activateEmployee,resetEmployeePassword,listEmployees,manageEmployee,statuses,markDelivery,accessPolicy,enforceIndividualAccess} from './lib/cora-team-auth.mjs';
 import {vapidKeys,registrations,saveRegistration,deleteRegistration,dispatchPush,deliveryId,hasDelivered,markDelivered,testDevicePush} from './lib/cora-push-core.mjs';
 import {mirrorStatus,syncEmployeesToSheets} from './lib/cora-google-sheets-mirror.mjs';
 import {listHelpdesk,readHelpdesk,createQuestion,replyQuestion,markHelpdeskRead} from './lib/cora-helpdesk.mjs';
@@ -128,6 +128,16 @@ export default async function handler(request,context){
   if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Solicitação não autorizada.'},400);
   let input;try{input=await request.json()}catch{return answer({error:'Dados inválidos.'},400)}
   const result=await activateEmployee(input,vars().secret);
+  if(result.error)return answer({error:result.error},result.status||400);
+  await queueMirror(context);
+  return answer({role:'equipe',member:result.member,ok:true},200,{'set-cookie':result.cookie});
+ }
+ if(action==='reset-password'&&request.method==='POST'){
+  if(request.headers.get('x-cora-request')!=='portal')return answer({error:'Solicitação inválida.'},403);
+  const size=Number(request.headers.get('content-length')||0);
+  if(size>1800)return answer({error:'Solicitação muito longa.'},413);
+  let input;try{input=await request.json()}catch{return answer({error:'Dados inválidos.'},400)}
+  const result=await resetEmployeePassword(input,vars().secret);
   if(result.error)return answer({error:result.error},result.status||400);
   await queueMirror(context);
   return answer({role:'equipe',member:result.member,ok:true},200,{'set-cookie':result.cookie});
