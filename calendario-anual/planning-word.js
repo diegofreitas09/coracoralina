@@ -4,11 +4,13 @@
  const NS='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
  const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&apos;'}[ch]));
  const p=(text,{size=21,color='243F58',bold=false,before=0,after=95,shade='',keep=false,center=false,border=false}={})=>{
-  const props='<w:pPr><w:spacing w:before="'+before+'" w:after="'+after+'" w:line="300" w:lineRule="auto"/>'+
-   (center?'<w:jc w:val="center"/>':'')+
-   (shade?'<w:shd w:val="clear" w:color="auto" w:fill="'+shade+'"/>':'')+
+  // Propriedades na ordem prevista pelo esquema OOXML (Word).
+  const props='<w:pPr>'+
    (keep?'<w:keepNext/>':'')+
    (border?'<w:pBdr><w:bottom w:val="single" w:sz="20" w:color="D6B873" w:space="7"/></w:pBdr>':'')+
+   (shade?'<w:shd w:val="clear" w:color="auto" w:fill="'+shade+'"/>':'')+
+   '<w:spacing w:before="'+before+'" w:after="'+after+'" w:line="300" w:lineRule="auto"/>'+
+   (center?'<w:jc w:val="center"/>':'')+
    '</w:pPr>';
   const rprops='<w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos"/>'+
    (bold?'<w:b/>':'')+
