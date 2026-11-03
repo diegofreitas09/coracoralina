@@ -93,17 +93,22 @@
   // Gestão: o cadastro da planilha é espelho administrativo; a autorização efetiva ocorre neste painel.
   root.insertAdjacentHTML('beforeend','<section id="cpAccountsPanel" class="cp-accounts-panel cp-hidden">'+
    '<div class="cp-accounts-head"><div><small>SEGURANÇA E COLABORADORES</small><h2>Gestão de colaboradores e acessos</h2><p>O cadastro, a autenticação e o histórico de logins são gerenciados aqui. A planilha é apenas uma cópia administrativa.</p></div><button class="cp-btn soft" id="cpAccountsClose" type="button">Fechar</button></div>'+
-   '<p><a href="https://docs.google.com/spreadsheets/d/1tnOgWrN04AMiK88lkCCePeP3iOJ0AHnbN_91SpK5kyA/edit" target="_blank" rel="noopener noreferrer">Abrir planilha Cora Família · Acessos Calendário</a></p>'+
-   '<div class="cp-audit-export"><div><strong>Histórico de acessos — fonte: Gestão</strong><p>Veja abaixo a ativação, o primeiro e último acesso e a contagem de logins. A planilha não controla permissões: recebe uma cópia destes dados quando a integração Google está autorizada.</p><p class="cp-mirror-status" id="cpMirrorStatus" role="status">Verificando conexão da planilha...</p></div><div class="cp-mirror-actions"><button type="button" id="cpSyncMirror" class="cp-btn" disabled>Sincronizar cópia no Google Sheets</button><button type="button" id="cpCopyAudit" class="cp-btn soft">Copiar relatório (alternativa manual)</button></div></div>'+
+   '<div id="cpAccessDashboard" class="cp-access-dashboard" aria-label="Indicadores e gráficos de acessos" aria-live="polite"></div>'+ 
+   '<details class="cp-access-section" id="cpAccessSync"><summary>Relatórios e integração com a planilha <span>Expandir</span></summary>'+ 
+   '<div class="cp-access-section-body"><p><a href="https://docs.google.com/spreadsheets/d/1tnOgWrN04AMiK88lkCCePeP3iOJ0AHnbN_91SpK5kyA/edit" target="_blank" rel="noopener noreferrer">Abrir planilha Cora Família · Acessos Calendário</a></p>'+
+   '<div class="cp-audit-export"><div><strong>Histórico de acessos — fonte: Gestão</strong><p>Veja abaixo a ativação, o primeiro e último acesso e a contagem de logins. A planilha não controla permissões: recebe uma cópia destes dados quando a integração Google está autorizada.</p><p class="cp-mirror-status" id="cpMirrorStatus" role="status">Verificando conexão da planilha...</p></div><div class="cp-mirror-actions"><button type="button" id="cpSyncMirror" class="cp-btn" disabled>Sincronizar cópia no Google Sheets</button><button type="button" id="cpCopyAudit" class="cp-btn soft">Copiar relatório (alternativa manual)</button></div></div></div></details>'+
+    '<details class="cp-access-section" id="cpAccessCreate"><summary>Cadastrar professor ou colaborador <span>Expandir</span></summary><div class="cp-access-section-body>'+ 
     '<div class="cp-invite-howto"><strong>Como o professor recebe a senha?</strong><p><b>1.</b> A Gestão cadastra o e-mail aqui (a planilha sozinha não cria a conta). <b>2.</b> Gere o convite e envie o link ao professor. <b>3.</b> O professor abre o link e cria uma senha pessoal. <b>4.</b> A conta muda de Pendente para Ativo. <b>Não existe envio automático de e-mail.</b></p></div>'+
    '<form id="cpAccountCreate" class="cp-account-form"><label>Nome completo<input name="name" required minlength="5" maxlength="100"></label><label>E-mail individual<input name="email" type="email" required></label>'+
    '<label>Função<select name="profile"><option>Professor</option><option>Coordenação</option><option>Funcionário</option></select></label>'+
    '<fieldset class="cp-segment-fieldset"><legend>Segmentos de atuação <small>(marque todos)</small></legend>'+segmentCheckboxes()+'</fieldset>'+
-   '<button class="cp-btn" type="submit">Criar acesso e convite</button></form>'+
+   '<button class="cp-btn" type="submit">Criar acesso e convite</button></form></div></details>'+
    '<div id="cpAccountInvite" class="cp-account-invite" hidden><strong id="cpInviteTitle">Convite gerado · aguardando envio</strong><p id="cpInviteDescription">O sistema gerou o link de ativação, mas <b>não enviou nenhum e-mail ainda</b>. Escolha uma das opções e entregue o convite apenas ao professor autorizado. Validade: 7 dias.</p>'+
    '<textarea id="cpAccountInviteUrl" readonly rows="3" aria-label="Link de ativação individual"></textarea><div class="cp-invite-buttons"><button type="button" id="cpCopyInvite" class="cp-btn soft">Copiar link de ativação</button><a id="cpEmailInvite" href="#" class="cp-btn" target="_self">Preparar e-mail de convite</a></div><p class="cp-invite-email-notice" id="cpInviteEmailNotice">Preparar e-mail abre o aplicativo de e-mail; você ainda precisa tocar em Enviar.</p></div>'+
-   '<div class="cp-account-cutover"><strong id="cpCutoverTitle">Acesso coletivo em migração</strong><p id="cpCutoverDescription">Cadastre e ative as contas antes de exigir login individual para toda a escola.</p><button id="cpEnforceIndividual" type="button" class="cp-btn gold">Exigir login individual para todos</button></div>'+
-   '<p role="status" id="cpAccountsStatus" aria-live="polite"></p><div id="cpAccountsList"></div></section>');
+   '<details class="cp-access-section" id="cpAccessPolicy"><summary>Segurança e política de acesso <span>Expandir</span></summary><div class="cp-access-section-body">'+
+   '<div class="cp-account-cutover"><strong id="cpCutoverTitle">Acesso coletivo em migração</strong><p id="cpCutoverDescription">Cadastre e ative as contas antes de exigir login individual para toda a escola.</p><button id="cpEnforceIndividual" type="button" class="cp-btn gold">Exigir login individual para todos</button></div></div></details>'+
+   '<p role="status" id="cpAccountsStatus" aria-live="polite"></p>'+ 
+   '<section class="cp-access-directory" aria-label="Lista de colaboradores"><div id="cpAccessFilters"></div><div id="cpAccountsList"></div><div id="cpAccessPager"></div></section></section>');
   $('#cpPublishNow').insertAdjacentHTML('beforebegin','<button id="cpAccountsOpen" class="cp-btn soft" type="button">'+adminIcon('users')+'<span>Acessos da equipe</span></button>');
   $('#cpSyncMirror').onclick=async()=>{
    const button=$('#cpSyncMirror');button.disabled=true;
@@ -269,6 +274,7 @@
     $('#cpEnforceIndividual').hidden=enforcing;
     $('#cpCutoverTitle').textContent=enforcing?'Login individual obrigatório':'Acesso coletivo ainda permitido';
     $('#cpCutoverDescription').textContent=enforcing?'A senha coletiva não permite mais consultar publicações. Suspender uma conta bloqueia o acesso imediatamente.':'Distribua os convites e confira as ativações. Depois, ative a exigência de login pessoal para todos.';
+    if(window.CoraAccountsUI?.mount){window.CoraAccountsUI.mount(data.members||[],segmentCheckboxes);return}
     list.innerHTML=(data.members||[]).length?data.members.map(member=>{
      const operations=member.status==='Ativo'?['resetPassword','suspend','disable']:member.status==='Suspenso'?['enable','disable','reinvite']:member.status==='Desativado'?['enable']:['reinvite','disable'];
      const labels={resetPassword:'Redefinir senha',suspend:'Suspender',disable:'Desativar',enable:'Reativar',reinvite:'Reemitir convite'};
