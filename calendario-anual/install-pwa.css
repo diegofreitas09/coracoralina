@@ -19,3 +19,6 @@
 .calendar-install-link{display:inline-flex!important;align-items:center;justify-content:center;text-decoration:none!important}
 .calendar-install-foot{font-size:11px;color:#738199;line-height:1.5;margin:14px 0 0}
 @media(max-width:520px){.calendar-install-dialog{padding:17px}.calendar-install-heading h2{font-size:19px}.calendar-install-heading img{width:66px;height:66px}.calendar-install-actions{flex-direction:column;align-items:stretch}.calendar-install-actions .btn{width:100%;text-align:center;justify-content:center}}
+
+/* Elementos exclusivos da Gestão não aparecem no guia do professor. */
+.calendar-install-dialog [hidden]{display:none!important}

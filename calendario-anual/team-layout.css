@@ -115,3 +115,16 @@
   .cp-team .cp-head-bottom-actions{width:100%;justify-content:flex-start}
 }
 @media(prefers-reduced-motion:reduce){.cp-team .cp-head-tools .cp-bell.has-unread{animation:none}}
+
+/* A instalação fica sempre visível também para os professores. */
+.cp-team .cp-head-bottom-actions #cpInstallApp{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:39px;padding:8px 13px;border-radius:10px;
+  background:#eacb81!important;border:1px solid #f5e1b4!important;
+  color:#153757!important;font-size:12px;font-weight:800;
+  white-space:nowrap;box-shadow:0 2px 8px #061c3625
+}
+.cp-team .cp-head-bottom-actions #cpInstallApp:hover{background:#f5db9b!important}
+.cp-team .cp-head-bottom-actions #cpInstallApp .cp-action-icon{width:17px;height:17px;flex:0 0 17px}
+.cp-team .cp-head-bottom-actions #cpInstallApp:focus-visible{outline:3px solid #fff;outline-offset:2px}
+@media(max-width:730px){.cp-team .cp-head-bottom-actions #cpInstallApp{min-height:36px;padding:8px 10px;font-size:11px}}

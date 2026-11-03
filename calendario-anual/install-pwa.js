@@ -8,6 +8,8 @@
   const backupButton = document.getElementById('calendarInstallBackup');
   const status = document.getElementById('calendarInstallStatus');
   if (!openButton || !dialog || !installButton || !status) return;
+  const backupWarning = dialog.querySelector('.calendar-install-warning');
+  const installSubtitle = dialog.querySelector('.calendar-install-heading p');
   let deferredPrompt = null;
   const isIOS = /iPad|iPhone|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   function updateSteps() {
@@ -27,6 +29,10 @@
   const installed = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   function refresh() {
     updateSteps();
+    const teamMode = Boolean(document.querySelector('#coraPortal .cp-team'));
+    if (backupButton) backupButton.hidden = teamMode;
+    if (backupWarning) backupWarning.hidden = teamMode;
+    if (installSubtitle) installSubtitle.textContent = teamMode ? 'Equipe Pedagógica • acesso individual' : 'Calendário Anual • Ícone 3D azul e dourado';
     if (installed()) {
       openButton.textContent = 'Atualizar ícone do app';
       status.textContent = isIOS ? 'O aplicativo já está aberto pela Tela de Início. Para atualizar o ícone no iPhone, faça backup antes de remover e adicionar novamente.' : 'O aplicativo já está instalado neste dispositivo. O Android pode conservar o ícone anterior. Faça um backup antes de remover e instalar novamente.';
@@ -46,6 +52,7 @@
     if (typeof dialog.showModal === 'function') dialog.showModal();
     else window.alert(status.textContent);
   }
+  window.CoraInstallApp = { open: showGuide };
   window.addEventListener('beforeinstallprompt', event => {
     event.preventDefault();
     deferredPrompt = event;

@@ -377,6 +377,7 @@
   const shapes={
    bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
    refresh:'<path d="M20 11a8 8 0 0 0-14.6-4.4L3 9"/><path d="M3 3v6h6"/><path d="M4 13a8 8 0 0 0 14.6 4.4L21 15"/><path d="M15 15h6v6"/>',
+   download:'<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v4h16v-4"/>',
    exit:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
    alerts:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>'
   };
@@ -395,6 +396,7 @@
      <label class="cp-year-label">Ano letivo <select id="cpTeamYear" aria-label="Selecionar ano letivo">${availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('')}</select></label>
      <div class="cp-head-bottom-actions">
        <button class="cp-btn soft cp-alert-button" type="button" id="cpEnableAlerts" title="Ativar notificações mesmo com o aplicativo fechado">${cpTeamIcon('alerts')}<span class="cp-alert-label">Ativar notificações</span></button>
+       <button class="cp-btn cp-install-app" type="button" id="cpInstallApp" title="Instalar ou atualizar a Agenda Cora neste dispositivo">${cpTeamIcon('download')}<span>${isHomeScreenApp()?'Atualizar aplicativo':'Instalar aplicativo'}</span></button>
      </div>
    </div>
  </header>`}
@@ -410,6 +412,7 @@
  const isIOSDevice=()=>/iPad|iPhone|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
  const isHomeScreenApp=()=>Boolean(window.matchMedia?.('(display-mode: standalone)').matches||navigator.standalone===true);
  function showAppInstallGuide(){
+  if(typeof window.CoraInstallApp?.open==='function'){window.CoraInstallApp.open();return}
   const entry=document.getElementById('installCalendarApp');
   if(entry){entry.click();return}
   const dialog=document.getElementById('calendarInstallDialog');
@@ -440,7 +443,7 @@
   $('#cpWelcomeEnablePush')?.addEventListener('click',enableLocalNotifications);
   $('#cpWelcomeInstallIOS')?.addEventListener('click',showAppInstallGuide);
  }
- async function team(){teacherProfile=null;pushChecked=false;pushConfirmed=false;const deep=new URLSearchParams(location.search);year=Number(deep.get('ano'))||2026;if(deep.get('avisos')==='1')showBell=true;document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><section id="cpWelcome" class="cp-welcome" aria-label="Boas-vindas e notificações"></section><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpEnableAlerts').onclick=enableLocalNotifications;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};$('#cpTeamYear').onchange=e=>{year=Number(e.target.value)||2026;month=0;showBell=false;tab='resumo';refresh()};window.CoraHelpdesk?.mount('equipe',root);await refresh();void confirmDevicePush();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},30000);}
+ async function team(){teacherProfile=null;pushChecked=false;pushConfirmed=false;const deep=new URLSearchParams(location.search);year=Number(deep.get('ano'))||2026;if(deep.get('avisos')==='1')showBell=true;document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><section id="cpWelcome" class="cp-welcome" aria-label="Boas-vindas e notificações"></section><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpEnableAlerts').onclick=enableLocalNotifications;$('#cpInstallApp').onclick=showAppInstallGuide;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};$('#cpTeamYear').onchange=e=>{year=Number(e.target.value)||2026;month=0;showBell=false;tab='resumo';refresh()};window.CoraHelpdesk?.mount('equipe',root);await refresh();void confirmDevicePush();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},30000);}
  async function refresh(){try{const [result,identity]=await Promise.all([api('state',undefined,'year='+year),api('delivery-profile',undefined,'year='+year).catch(()=>({identified:false,statuses:{}}))]);teacherProfile=identity.identified?identity:null;availableYears=Array.isArray(result.availableYears)?result.availableYears:[2026];data=result.publication;
     const newNoticeIds=new Set(activeNotices().map(n=>String(n.id)));
     const knownIds=seenPublicationIds.get(year);
