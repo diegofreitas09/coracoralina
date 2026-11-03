@@ -1,0 +1,117 @@
+/* Equipe Pedagógica — interface institucional responsiva. */
+.cp-team .cp-team-head{
+  display:block;
+  padding:15px clamp(14px,3vw,32px) 13px;
+  background:linear-gradient(115deg,#0a2442 0%,#0d3f6b 100%);
+  border-bottom:2px solid #d7b968;
+  box-shadow:0 5px 20px #08234118;
+}
+.cp-team .cp-head-top,.cp-team .cp-head-bottom{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:16px;
+  max-width:1240px;
+  margin:0 auto;
+}
+.cp-team .cp-head-bottom{margin-top:12px;padding-top:11px;border-top:1px solid #ffffff21}
+.cp-team .cp-head-brand{display:flex;align-items:center;gap:12px;min-width:0}
+.cp-team .cp-head-brand img{
+  display:block;width:48px;height:51px;padding:3px;flex:0 0 48px;
+  object-fit:contain;background:#fff;border:1px solid #dbe7f3;border-radius:11px;
+}
+.cp-team .cp-head-title{min-width:0}
+.cp-team .cp-head-title small{display:block;color:#aecaDF;letter-spacing:1.1px;font-size:9px;line-height:1.2;font-weight:800}
+.cp-team .cp-head-title h1{margin:4px 0 0;font-size:clamp(19px,2.4vw,27px);line-height:1.1;letter-spacing:-.65px;color:#fff}
+.cp-team .cp-head-tools,.cp-team .cp-head-bottom-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.cp-team .cp-head-tools{flex:0 0 auto;flex-wrap:nowrap}
+.cp-team .cp-head-tools .cp-icon-button{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:40px;padding:9px 12px;border-radius:10px;
+  background:#ffffff0f;border:1px solid #ffffff3d;color:#f2f8ff;
+  font-size:12px;font-weight:700;box-shadow:none;white-space:nowrap
+}
+.cp-team .cp-head-tools .cp-icon-button:hover{background:#ffffff25;border-color:#ffffff80}
+.cp-team .cp-head-tools .cp-bell{
+  min-width:40px;min-height:40px;background:#ffffff0f!important;
+  color:#f2f8ff!important;border:1px solid #ffffff3d!important;font-size:inherit!important;
+  box-shadow:none
+}
+.cp-team .cp-head-tools .cp-bell.has-unread{border-color:#f3cd69!important;box-shadow:0 0 0 2px #eec96842}
+.cp-team .cp-action-icon{width:18px;height:18px;display:block;flex:0 0 18px}
+.cp-team .cp-head-tools .cp-logout{color:#f4e5e5;border-color:#ffffff2b}
+.cp-team .cp-year-label{display:flex;align-items:center;gap:10px;white-space:nowrap;margin:0;color:#dcebf6;font-size:12px;letter-spacing:.15px}
+.cp-team .cp-year-label select{
+  width:auto;min-width:87px;min-height:38px;padding:7px 12px;
+  border:1px solid #a3bbcf;background:#f7fafc;color:#123b5e;border-radius:9px;
+  font-size:14px;font-weight:800
+}
+.cp-team .cp-head-bottom-actions #cpEnableAlerts{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:8px 12px;min-height:39px;border-radius:10px;
+  color:#e7f3ff!important;background:#ffffff12!important;border:1px solid #ffffff4d!important;
+  font-size:12px;font-weight:750
+}
+/* O estado positivo já aparece na faixa de boas-vindas; não duplicar no cabeçalho. */
+.cp-team .cp-head-bottom-actions #cpEnableAlerts.cp-push-active{display:none!important}
+.cp-team .cp-head-bottom-actions .cp-help-launch{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:39px;padding:8px 15px;border-radius:10px;
+  background:#f8f0d7;color:#153b5f;border:1px solid #ead7a1;
+  box-shadow:none;font:750 12px/1.2 inherit;white-space:nowrap
+}
+.cp-team .cp-head-bottom-actions .cp-help-launch:hover{background:#fff6df}
+.cp-team .cp-head-bottom-actions .cp-help-launch svg{width:17px;height:17px;flex:0 0 17px}
+.cp-team .cp-welcome{margin-bottom:15px;padding:13px 17px;border-radius:14px;box-shadow:0 3px 12px #153c6309}
+.cp-team .cp-welcome-push{padding:9px 11px;gap:10px}
+.cp-team .cp-flow-hero{margin-bottom:15px;box-shadow:0 10px 24px #123f6b17}
+.cp-team .cp-flow-hero .cp-flow-tags{margin-top:16px}
+.cp-team .cp-icon-button:focus-visible,.cp-team #cpEnableAlerts:focus-visible,.cp-team .cp-year-label select:focus-visible{
+  outline:3px solid #ecc96b;outline-offset:3px
+}
+@media(max-width:730px){
+  .cp-team .cp-team-head{padding:13px 14px 11px}
+  .cp-team .cp-head-top,.cp-team .cp-head-bottom{gap:10px}
+  .cp-team .cp-head-brand{gap:9px;flex:1 1 auto;min-width:0}
+  .cp-team .cp-head-brand img{width:43px;height:46px;flex-basis:43px;border-radius:9px}
+  .cp-team .cp-head-title small{font-size:8px;letter-spacing:.8px}
+  .cp-team .cp-head-title h1{font-size:clamp(17px,4.8vw,23px);letter-spacing:-.45px}
+  .cp-team .cp-head-tools{gap:5px}
+  .cp-team .cp-head-tools .cp-icon-button{width:38px;height:38px;min-height:38px;padding:0;border-radius:10px}
+  .cp-team .cp-head-tools .cp-bell{width:38px;min-width:38px;min-height:38px}
+  .cp-team .cp-head-tools .cp-action-label{display:none}
+  .cp-team .cp-head-bottom{margin-top:10px;padding-top:10px}
+  .cp-team .cp-head-bottom .cp-year-label{width:auto;gap:7px;font-size:11px}
+  .cp-team .cp-year-label select{min-width:74px;min-height:36px;padding:6px 9px}
+  .cp-team .cp-head-bottom-actions .cp-help-launch{padding:8px 10px;font-size:11px;min-height:36px}
+  .cp-team .cp-head-bottom-actions #cpEnableAlerts{padding:8px 10px;min-height:36px;font-size:11px}
+  .cp-team .cp-welcome{padding:12px 13px;gap:10px}
+  .cp-team .cp-welcome-person{flex-basis:100%;gap:10px}
+  .cp-team .cp-welcome-person h2{font-size:clamp(19px,5vw,24px)}
+  .cp-team .cp-welcome-person small{letter-spacing:.65px;font-size:8px}
+  .cp-team .cp-welcome-avatar{width:37px;height:37px;flex-basis:37px;border-radius:10px;font-size:17px}
+  .cp-team .cp-welcome-push{flex-basis:100%;padding:8px 10px}
+  .cp-team .cp-welcome-push-symbol{width:29px;height:29px;flex-basis:29px;border-radius:8px;font-size:16px}
+  .cp-team .cp-welcome-push small{font-size:10px}
+  .cp-team .cp-flow-hero{grid-template-columns:1fr;gap:14px;padding:20px 18px;border-radius:17px}
+  .cp-team .cp-flow-hero h2{font-size:clamp(24px,6.2vw,29px);letter-spacing:-.7px;margin:7px 0 8px}
+  .cp-team .cp-flow-hero p{font-size:12px;line-height:1.55}
+  .cp-team .cp-flow-hero .cp-flow-tags{margin-top:13px;gap:6px}
+  .cp-team .cp-flow-tags span{padding:6px 9px;font-size:10px}
+  .cp-team .cp-flow-feature{padding:13px;border-radius:13px}
+  .cp-team .cp-team-main{padding:13px 12px 48px}
+}
+@media(max-width:410px){
+  .cp-team .cp-head-bottom{align-items:flex-start}
+  .cp-team .cp-head-bottom-actions{flex:0 1 auto}
+  .cp-team .cp-head-bottom-actions #cpEnableAlerts:not(.cp-push-active){width:100%}
+  .cp-team .cp-head-title small{font-size:7.5px;letter-spacing:.45px}
+  .cp-team .cp-head-title h1{font-size:17px}
+}
+@media(max-width:350px){
+  .cp-team .cp-head-top{flex-wrap:wrap}
+  .cp-team .cp-head-tools{margin-left:auto}
+  .cp-team .cp-head-bottom{flex-wrap:wrap}
+  .cp-team .cp-head-bottom-actions{width:100%;justify-content:flex-start}
+}
+@media(prefers-reduced-motion:reduce){.cp-team .cp-head-tools .cp-bell.has-unread{animation:none}}
