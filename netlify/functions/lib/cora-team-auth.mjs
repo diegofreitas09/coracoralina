@@ -96,7 +96,7 @@ export async function activateEmployee(input,secret){
   return error('Convite inválido ou expirado. Solicite outro à Gestão.',401);
  const salt=randomBytes(16).toString('hex'),now=new Date().toISOString();
  const updated={...r,status:'Ativo',salt,passwordHash:derive(password,salt),inviteHash:'',inviteExpiresAt:'',
-  sessionVersion:(r.sessionVersion||0)+1,activatedAt:now,updatedAt:now};
+  sessionVersion:(r.sessionVersion||0)+1,activatedAt:now,updatedAt:now,resetHash:'',resetExpiresAt:''};
  await db().setJSON(r.id,updated);
  const previous=await activity().get(r.id,{type:'json',consistency:'strong'})||{};
  await activity().setJSON(r.id,{...previous,firstAccessAt:previous.firstAccessAt||now,
@@ -182,7 +182,7 @@ export async function manageEmployee(input,baseUrl){
   const code=randomBytes(32).toString('base64url'),expiry=new Date(Date.now()+7*86400000).toISOString();
   const base=existing||{id,email,name:String(input.name).trim().slice(0,100),profile:input.profile,segment:segmentsLabel(selected),segments:selected,
     statuses:{},createdAt:now,sessionVersion:0};
-  const updated={...base,status:'Pendente',salt:'',passwordHash:'',inviteHash:digest(code),inviteExpiresAt:expiry,
+  const updated={...base,status:'Pendente',salt:'',passwordHash:'',inviteHash:digest(code),inviteExpiresAt:expiry,resetHash:'',resetExpiresAt:'',
     sessionVersion:(base.sessionVersion||0)+1,updatedAt:now};
   await db().setJSON(id,updated);
   const ids=await db().get('member-index',{type:'json',consistency:'strong'})||[];
@@ -200,7 +200,7 @@ export async function manageEmployee(input,baseUrl){
  if(!['suspend','disable','enable'].includes(operation))return error('Operação inválida.');
  const next={suspend:'Suspenso',disable:'Desativado',enable:'Pendente'}[operation];
  const updated={...existing,status:next,sessionVersion:(existing.sessionVersion||0)+1,
-    inviteHash:'',inviteExpiresAt:'',updatedAt:now};
+    inviteHash:'',inviteExpiresAt:'',resetHash:'',resetExpiresAt:'',updatedAt:now};
  await db().setJSON(id,updated);
  await deleteUserRegistrations(id);
  return {ok:true,member:publicMember(updated)};
