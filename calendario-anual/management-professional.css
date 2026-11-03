@@ -1,0 +1,245 @@
+/* Gestão escolar · interface administrativa organizada e responsiva */
+.cp-manager-bar{
+  display:flex;flex-direction:column;align-items:stretch;gap:0;
+  padding:13px clamp(16px,2.8vw,36px) 12px;
+  background:linear-gradient(112deg,#0b2441 0%,#0d3154 100%);
+  border-bottom:1px solid #42607c;color:#fff;box-shadow:0 4px 18px #09264124;
+  z-index:99;
+}
+.cp-manager-headline,.cp-manager-statusline,.cp-manager-actions{
+  width:100%;max-width:1470px;margin:0 auto;
+}
+.cp-manager-headline{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.cp-manager-identity{display:flex;align-items:center;gap:11px;min-width:0}
+.cp-manager-emblem{
+  display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;
+  border:1px solid #ffffff35;background:#ffffff13;color:#e4c77e;border-radius:11px;
+}
+.cp-admin-icon{display:block;flex:0 0 18px;width:18px;height:18px}
+.cp-manager-identity-text{display:flex;flex-direction:column;min-width:0}
+.cp-manager-identity-text small{
+  display:block;color:#abc6de;letter-spacing:1px;font-size:9px;
+  line-height:1.3;font-weight:750;
+}
+.cp-manager-identity-text strong{
+  display:block;font-size:clamp(17px,2.3vw,22px);font-weight:850;
+  letter-spacing:-.45px;color:#fff;line-height:1.3;margin-top:2px;
+}
+.cp-manager-bar .cp-manager-logout{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  min-height:38px;padding:7px 12px;border:1px solid #ffffff3b;
+  background:#ffffff11;color:#eaf2fa;font-size:12px;font-weight:700;
+  border-radius:9px;white-space:nowrap;
+}
+.cp-manager-bar .cp-manager-logout:hover{background:#ffffff26}
+.cp-manager-statusline{
+  display:flex;align-items:center;gap:8px;min-height:27px;margin-top:4px;
+  padding-left:50px;
+}
+.cp-manager-statusline .cp-status{
+  display:block;color:#adc4d9;font-size:11px;line-height:1.4;
+  max-width:100%;overflow-wrap:anywhere
+}
+.cp-status-indicator{width:6px;height:6px;flex:0 0 6px;background:#74c4a1;border-radius:50%}
+.cp-manager-actions{
+  display:flex;align-items:center;justify-content:flex-start;gap:9px;
+  margin-top:12px;padding-top:12px;border-top:1px solid #ffffff1c;
+  flex-wrap:wrap
+}
+.cp-manager-actions .cp-btn,.cp-manager-actions .cp-help-launch{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:42px;border-radius:10px;padding:9px 13px;
+  font-size:12px;line-height:1.25;font-weight:750;white-space:normal;
+  text-align:center;box-shadow:none
+}
+.cp-manager-actions #cpTogglePanel,.cp-manager-actions #cpAccountsOpen{
+  background:#ffffff10;border:1px solid #ffffff3f;color:#ecf6ff
+}
+.cp-manager-actions #cpTogglePanel:hover,.cp-manager-actions #cpAccountsOpen:hover{
+  background:#ffffff23
+}
+.cp-manager-actions .cp-help-launch{
+  background:#ffffff10;border:1px solid #ffffff3f;color:#ecf6ff;
+  font:750 12px/1.25 inherit;
+}
+.cp-manager-actions .cp-help-launch:hover{background:#ffffff23}
+.cp-manager-actions .cp-help-launch svg{display:block;flex:0 0 18px}
+.cp-manager-actions #cpPublishNow{
+  background:#e8c87b;border:1px solid #eed6a2;color:#19364c;
+  margin-left:auto;padding-inline:16px
+}
+.cp-manager-actions #cpPublishNow:hover{background:#f5d994}
+.cp-manager-bar button:focus-visible,#app .topbar button:focus-visible{
+  outline:3px solid #e9c976;outline-offset:2px
+}
+/* Identidade institucional e navegação mais compactas */
+#app .topbar{
+  min-height:65px;padding:12px clamp(16px,2.6vw,35px);
+  gap:15px
+}
+#app .topbar .top-actions .btn{font-size:12px;min-height:38px}
+#app .topbar #exportBtn{background:#245d91}
+#app .welcome{box-shadow:0 9px 25px #143c5c12;border-radius:16px;padding:22px 25px}
+#app .welcome h1{line-height:1.15}
+#app .welcome-actions{gap:8px}
+#app .welcome-actions .btn{font-size:12px;border-radius:9px}
+#app .stats{margin:16px 0 20px;gap:10px}
+#app .stat{box-shadow:0 4px 15px #173b5f09}
+#app .official-banner{margin-bottom:22px;border-radius:15px;box-shadow:0 6px 20px #113a6c12}
+/* Leitura em tablets e smartphones, inclusive navegadores em modo ampliado */
+@media(max-width:1180px){
+  #app .sidebar{padding:12px 17px 10px;row-gap:6px}
+  #app .brand{
+    grid-column:1;grid-row:1;min-height:64px;
+    width:auto;padding:0;border:0;margin:0;min-width:0
+  }
+  #app .brand .school-logo{
+    width:50px!important;height:53px!important;min-width:50px!important;
+    max-width:50px!important;flex:0 0 50px!important;border-radius:9px
+  }
+  #app .brand .brand-heading{
+    align-items:flex-start;text-align:left;padding-right:0;justify-content:center
+  }
+  #app .brand .brand-heading .brand-school{font-size:9px;letter-spacing:.3px}
+  #app .brand .brand-heading .brand-management{
+    font-size:clamp(21px,3.2vw,28px)!important;line-height:1.05;letter-spacing:.1px
+  }
+  #app .brand .brand-heading .brand-calendar{
+    font-size:clamp(10px,1.5vw,13px);letter-spacing:.6px
+  }
+  #app .year-block{
+    grid-row:1;grid-column:2;margin:0;padding:0;display:flex;justify-content:flex-end;gap:6px
+  }
+  #app #monthNav{
+    grid-row:2;grid-column:1/-1;min-width:0;max-width:100%;padding:5px 0 1px;
+    overflow-x:auto;scroll-snap-type:x proximity;
+  }
+  #app #monthNav button{scroll-snap-align:start;font-size:12px;min-height:39px}
+  #app .main-shell{width:100%}
+  #app .content{max-width:1180px}
+}
+@media(max-width:900px){
+  .cp-manager-bar{position:relative;top:auto;padding:12px 15px 13px}
+  .cp-manager-headline{align-items:center}
+  .cp-manager-statusline{padding-left:0;margin-top:8px}
+  .cp-manager-identity-text small{font-size:9px;letter-spacing:.4px}
+  .cp-manager-actions{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:9px;margin-top:11px;padding-top:11px
+  }
+  .cp-manager-actions .cp-btn,.cp-manager-actions .cp-help-launch{
+    width:100%;min-width:0;min-height:44px;margin:0;
+    font-size:12px;padding:10px 9px;gap:7px
+  }
+  .cp-manager-actions #cpPublishNow{
+    margin:0;background:#e6c67e;border-color:#ebd299
+  }
+  .cp-manager-actions #cpTogglePanel{order:1}
+  .cp-manager-actions #cpAccountsOpen{order:2}
+  .cp-manager-actions .cp-help-launch{order:3}
+  .cp-manager-actions #cpPublishNow{order:4}
+  #app .topbar{
+    align-items:stretch;flex-direction:column;gap:10px;
+    padding:12px 15px 14px;min-height:0
+  }
+  #app .breadcrumbs{font-size:10px;letter-spacing:.7px;width:100%}
+  #app .topbar .top-actions{
+    display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%
+  }
+  #app .topbar .top-actions .btn{
+    width:100%;min-width:0;min-height:42px;padding:9px 10px;
+    font-size:12px;border-radius:10px
+  }
+  #app .topbar #exportBtn{grid-column:1/-1}
+  #app .content{padding:15px!important}
+  #app .welcome{padding:20px 18px;border-radius:16px;gap:14px}
+  #app .welcome h1{font-size:clamp(22px,3.5vw,30px);margin:6px 0}
+  #app .welcome p{font-size:12px;line-height:1.5}
+  #app .welcome-actions{
+    display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%
+  }
+  #app .welcome-actions .btn{
+    display:inline-flex;min-width:0;min-height:42px;
+    white-space:normal;padding:9px 9px;font-size:12px
+  }
+  #app .stats{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;
+    margin:13px 0 17px
+  }
+  #app .stat{padding:12px;min-height:78px;gap:10px;border-radius:13px}
+  #app .stat-icon{
+    width:35px;height:35px;flex:0 0 35px;
+    font-size:18px;border-radius:10px
+  }
+  #app .stat strong{font-size:24px;letter-spacing:-.7px}
+  #app .stat span{font-size:11px;margin-top:3px;line-height:1.3}
+  #app .official-banner{
+    display:grid;grid-template-columns:54px minmax(0,1fr);
+    align-items:start;column-gap:12px;row-gap:12px;padding:15px;border-radius:14px
+  }
+  #app .official-banner-icon{
+    width:54px;height:54px;min-width:54px;flex-basis:54px;font-size:15px
+  }
+  #app .official-banner-copy strong{font-size:14px}
+  #app .official-banner-copy span{font-size:11px;line-height:1.5}
+  #app .official-banner-actions{
+    grid-column:1/-1;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px
+  }
+  #app .official-banner-actions .btn{
+    width:100%;min-width:0;white-space:normal;min-height:41px;font-size:11px;padding:8px 7px
+  }
+  #app .month-area .section-heading{gap:10px}
+  #app .month-area .section-heading h2{font-size:23px}
+  #app .month-switch{display:flex;gap:6px}
+  #app .month-switch button{min-height:38px}
+  #app .panels{grid-template-columns:minmax(0,1fr);gap:12px}
+  #app .panel{border-radius:14px}
+  #app .panel-title{padding:12px;gap:8px}
+  #app .panel-title strong{font-size:13px}
+  #app .calendar{padding:5px}
+  #app .weekday{font-size:10px;padding:8px 0}
+  #app .day{min-height:52px;padding:4px 2px}
+  #app .day.has-event{min-height:60px}
+  #app .day .date-num{font-size:11px}
+  #app .events-list{padding:6px 10px}
+  #app .event-info strong{font-size:12px}
+  #app .event-info small{font-size:10px;line-height:1.45}
+}
+@media(max-width:550px){
+  #app .sidebar{grid-template-columns:minmax(0,1fr) auto;gap:6px;padding:10px 12px 7px}
+  #app .brand{min-height:57px}
+  #app .brand .school-logo{
+    width:41px!important;height:45px!important;min-width:41px!important;
+    max-width:41px!important;flex:0 0 41px!important;
+  }
+  #app .brand .brand-heading .brand-school{font-size:8px}
+  #app .brand .brand-heading .brand-management{font-size:21px!important}
+  #app .brand .brand-heading .brand-calendar{font-size:10px}
+  #app .year-block{min-width:0;gap:5px}
+  #app .year-block select{min-width:75px;font-size:13px;padding:7px}
+  #app .year-block button{min-width:34px;min-height:36px}
+  #app .year-badge{display:none}
+  #app #monthNav{margin-top:0;padding-bottom:4px}
+  #app #monthNav button{font-size:11px;min-height:38px;padding:8px 10px}
+  .cp-manager-emblem{width:36px;height:36px;flex-basis:36px}
+  .cp-manager-identity-text strong{font-size:19px}
+  .cp-manager-actions .cp-btn,.cp-manager-actions .cp-help-launch{
+    font-size:11.5px;line-height:1.25;
+  }
+  #app .welcome-actions .btn{font-size:11px}
+  #app .month-area .section-heading{flex-direction:column;align-items:stretch}
+  #app .month-switch{width:100%}
+  #app .month-switch button:nth-child(2){flex:1}
+  #app .day .event-quantity{display:none}
+}
+@media(max-width:370px){
+  #app .brand .brand-heading .brand-management{font-size:18px!important}
+  #app .brand .brand-heading .brand-calendar{font-size:9px}
+  #app .year-block select{min-width:68px;padding:5px}
+  .cp-manager-identity-text small{font-size:8px}
+  .cp-manager-actions .cp-btn,.cp-manager-actions .cp-help-launch{font-size:11px}
+}
+/* Estado acessível; respeita preferências de movimento */
+@media(prefers-reduced-motion:reduce){
+  .cp-manager-actions .cp-btn{transition:none}
+}
