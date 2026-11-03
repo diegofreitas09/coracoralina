@@ -28,7 +28,7 @@
   if(!ctx)return;
   const count=ctx.mode==='gestao'
    ?ctx.threads.filter(x=>x.status==='Aguardando Gestão').length
-   :ctx.threads.filter(x=>x.status==='Respondida').length;
+   :ctx.threads.filter(x=>x.unread===true).length;
   const node=ctx.button.querySelector('.cp-help-count');
   if(node){node.textContent=count>99?'99+':String(count);node.hidden=count===0;}
  }
@@ -55,10 +55,10 @@
   const box=ctx.layer.querySelector('#cpHelpList');
   if(!box)return;
   const items=ctx.threads.filter(t=>ctx.filter==='todos'||(ctx.filter==='pendentes'?isPending(t):!isPending(t)));
-  box.innerHTML=items.length?items.map(t=>'<button type="button" class="cp-help-thread'+(ctx.current?.id===t.id?' active':'')+
+  box.innerHTML=items.length?items.map(t=>'<button type="button" class="cp-help-thread'+(ctx.current?.id===t.id?' active':'')+(ctx.mode==='equipe'&&t.unread?' is-unread':'')+
    '" data-help-thread="'+escapeHTML(t.id)+'" data-help-owner="'+escapeHTML(t.ownerId)+'">'+
    '<span class="cp-help-thread-top"><strong>'+escapeHTML(t.title)+'</strong><time>'+escapeHTML(dateTime(t.lastAt))+'</time></span>'+
-   (ctx.mode==='gestao'?'<small>'+escapeHTML(t.author?.name||'Colaborador')+'</small>':'')+
+   (ctx.mode==='gestao'?'<small>'+escapeHTML(t.author?.name||'Colaborador')+'</small>':(t.unread?'<small class="cp-help-new-reply">Nova resposta da Gestão</small>':''))+
    '<span class="cp-help-thread-sub"><span class="cp-help-pill '+(isPending(t)?'pending':'answered')+'">'+
    (ctx.mode==='gestao'?(isPending(t)?'Aguardando resposta':'Respondida'):(isPending(t)?'Aguardando Gestão':'Respondida'))+
    '</span><small>'+escapeHTML(t.category)+'</small></span></button>').join(''):
@@ -118,6 +118,22 @@
    const reply=await request('help-thread',undefined,{id,ownerId});
    if(ctx!==token||ctx.current?.id!==id)return;
    token.current=reply.thread;token.messages=reply.messages||[];showError('');renderThread();renderList();
+   // Só confirma leitura depois que a conversa foi carregada e mostrada ao professor.
+   // O servidor verifica a mensagem e salva a leitura por conta, inclusive entre aparelhos.
+   if(token.mode==='equipe'){
+    const lastManagerAnswer=[...token.messages].reverse().find(message=>message.from==='gestao'&&message.id);
+    if(lastManagerAnswer){
+     try{
+      await request('help-read',{id, messageId:lastManagerAnswer.id});
+      if(ctx===token){
+       const thread=token.threads.find(x=>x.id===id&&x.ownerId===reply.thread.ownerId);
+       if(thread&&thread.status==='Respondida'){thread.unread=false;badge();renderList()}
+      }
+     }catch(error){
+      if(ctx===token)showError('A mensagem foi exibida, mas não foi possível confirmar a leitura. Atualize a conversa.');
+     }
+    }
+   }
   }catch(e){if(ctx===token)showError(e.message);}
  }
  async function sendNew(form){
@@ -148,7 +164,12 @@
   ctx.button.setAttribute('aria-expanded','true');
   showError('');await fetchList();
   if(ctx.current?.id)await showThread(ctx.current.id,ctx.current.ownerId);
-  else renderThread();
+  else {
+   // Se houver uma única resposta nova, já abrir diretamente a conversa ao entrar.
+   const unread=ctx.mode==='equipe'?ctx.threads.filter(t=>t.unread===true):[];
+   if(unread.length===1)await showThread(unread[0].id,unread[0].ownerId);
+   else renderThread();
+  }
   const close=ctx.layer.querySelector('#cpHelpClose');close?.focus();
  }
  function close(){
