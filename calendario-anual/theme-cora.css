@@ -1,0 +1,127 @@
+/* Modo dia / noite — padrão claro preservado, escuro de alto contraste. */
+.cora-theme-toggle{
+ display:inline-flex;align-items:center;justify-content:center;gap:8px;
+ min-height:39px;padding:9px 12px;border-radius:10px;border:1px solid #ffffff59;
+ background:#ffffff17;color:#eaf5ff;font:750 12px/1 system-ui,-apple-system,sans-serif;
+ white-space:nowrap;cursor:pointer;transition:background .18s,border-color .18s;
+}
+.cora-theme-toggle:hover{background:#ffffff2a;border-color:#ffffff9a}
+.cora-theme-toggle:focus-visible{outline:3px solid #f1d386;outline-offset:2px}
+.cora-theme-toggle svg{display:block;width:19px;height:19px}
+.cora-theme-sun,.cora-theme-day-label{display:none}
+html[data-cora-theme="dark"] .cora-theme-sun,
+html[data-cora-theme="dark"] .cora-theme-day-label{display:inline-flex}
+html[data-cora-theme="dark"] .cora-theme-moon,
+html[data-cora-theme="dark"] .cora-theme-night-label{display:none}
+.cp-manager-actions .cora-theme-toggle{min-height:42px}
+.cp-login-shell{position:relative}
+.cp-login-head .cora-theme-toggle{margin-left:auto;align-self:flex-start;flex:0 0 auto;border-color:#bad0e1;background:#eef5fd;color:#183e60}
+.cp-team .cp-head-bottom-actions .cora-theme-toggle{flex:0 0 auto}
+@media(max-width:730px){
+ .cp-team .cp-head-bottom-actions .cora-theme-toggle{width:37px;height:37px;min-height:37px;padding:0}
+ .cp-team .cp-head-bottom-actions .cora-theme-toggle .cora-theme-night-label,
+ .cp-team .cp-head-bottom-actions .cora-theme-toggle .cora-theme-day-label{display:none}
+ .cp-login-head .cora-theme-toggle{width:38px;height:38px;padding:0}
+ .cp-login-head .cora-theme-toggle .cora-theme-night-label,
+ .cp-login-head .cora-theme-toggle .cora-theme-day-label{display:none}
+}
+html[data-cora-theme="dark"]{
+ color-scheme:dark;--navy:#0c2037;--navy2:#081a2c;--blue:#82bdef;
+ --ink:#e5eef8;--soft:#adc0d4;--border:#35516b;--wash:#091724;--white:#13293e
+}
+html[data-cora-theme="dark"] body,html[data-cora-theme="dark"] body.portal-locked{
+ background:#091724;color:#e8f1fc
+}
+html[data-cora-theme="dark"] #coraPortal{color:#e8f1fc}
+html[data-cora-theme="dark"] .cp-gateway{background:radial-gradient(ellipse at top left,#183b5f,#0a1929 70%,#07111f)}
+html[data-cora-theme="dark"] .cp-login-shell,
+html[data-cora-theme="dark"] .cp-login-head,
+html[data-cora-theme="dark"] .cp-gateway-foot{background:#13293f;color:#e8f1fc;border-color:#35516b}
+html[data-cora-theme="dark"] .cp-login-head :is(h1,small),html[data-cora-theme="dark"] .cp-role strong{color:#ecf5ff}
+html[data-cora-theme="dark"] .cp-login-head p,html[data-cora-theme="dark"] .cp-role span:last-child,
+html[data-cora-theme="dark"] .cp-gateway-foot{color:#b4c7d9}
+html[data-cora-theme="dark"] .cp-role{background:#192f46;color:#e9f3fd;border-color:#395875}
+html[data-cora-theme="dark"] .cp-role.active{background:#21445f;border-color:#79c2f9}
+html[data-cora-theme="dark"] .cp-login-head .cora-theme-toggle{background:#284762;color:#eaf4ff;border-color:#547894}
+html[data-cora-theme="dark"] .cp-auth label{color:#dbeafa}
+html[data-cora-theme="dark"] #coraPortal :is(input:not([type=checkbox]):not([type=radio]),textarea,select){
+ background:#0d2235!important;color:#f0f7ff!important;border-color:#51718d!important;
+}
+html[data-cora-theme="dark"] #coraPortal :is(input,textarea)::placeholder{color:#a2b7ca}
+html[data-cora-theme="dark"] #coraPortal :is(input,select,textarea):focus-visible{outline:2px solid #8dcdf6;outline-offset:1px}
+html[data-cora-theme="dark"] :is(.cp-manager-bar,.cp-team-head){
+ background:linear-gradient(110deg,#071a2e,#102d4b)!important;border-color:#3e5872!important
+}
+html[data-cora-theme="dark"] .cp-team{
+ background:linear-gradient(155deg,#0a1827,#10263a 55%,#0c1d30)!important;color:#e9f1fb
+}
+html[data-cora-theme="dark"] .cp-team-main{color:#e9f1fb}
+html[data-cora-theme="dark"] .cp-team .cp-flow-hero{
+ background:linear-gradient(110deg,#18314d,#1b4262 62%,#15546a)!important;border-color:#486988;color:#fff
+}
+html[data-cora-theme="dark"] .cp-team .cp-flow-hero p{color:#cfdfef}
+html[data-cora-theme="dark"] .cp-team .cp-flow-feature{background:#ffffff14;border-color:#ffffff42}
+html[data-cora-theme="dark"] .cp-team :is(
+ .cp-flow-link,.cp-flow-stage-section,.cp-teacher-tools,.cp-teacher-tool,
+ .cp-list-entry,.cp-notice,.cp-paper,.cp-metric,.cp-stage-card,.cp-bell-panel,
+ .cp-delivery-stage,.cp-delivery-personal,.cp-delivery-identity,
+ .cp-next-preview,.cp-next-preview-item,.cp-alert-entry,.cp-deadline-card,
+ .cp-deadline-total,.cp-calendar-panel,.cp-assessment-card
+){background:#152b41!important;color:#e9f2fc!important;border-color:#395775!important;box-shadow:0 4px 18px #020b1826}
+html[data-cora-theme="dark"] .cp-team :is(.cp-flow-link,.cp-teacher-tool):hover{background:#213e57!important;border-color:#78a4c5!important}
+html[data-cora-theme="dark"] .cp-team .cp-flow-stage{background:#192f47!important;border-color:#3a5a72!important}
+html[data-cora-theme="dark"] .cp-team .cp-flow-stage.active{background:#16473f!important;border-color:#73d6b0!important}
+html[data-cora-theme="dark"] .cp-team .cp-install-shortcut{background:#29394b!important;border-color:#ad9a64!important}
+html[data-cora-theme="dark"] .cp-team .cp-install-shortcut .cp-flow-icon{background:#52472d;color:#ffe2a5}
+html[data-cora-theme="dark"] .cp-team :is(
+ .cp-flow-link,.cp-teacher-tools-head,.cp-teacher-tool-copy,.cp-list-entry,
+ .cp-notice,.cp-delivery-identity,.cp-delivery-stage,.cp-delivery-body,
+ .cp-main-heading,.cp-flow-stage-title,.cp-metric
+) :is(h2,h3,strong){color:#edf5ff!important}
+html[data-cora-theme="dark"] .cp-team :is(
+ .cp-flow-link,.cp-teacher-tools-head,.cp-teacher-tool-copy,.cp-list-entry,
+ .cp-notice,.cp-delivery-stage,.cp-delivery-identity,.cp-delivery-body
+) :is(p,small){color:#b2c8dc!important}
+html[data-cora-theme="dark"] .cp-team :is(.cp-muted,.cp-updated,.cp-flow-stage-date,.cp-flow-stage-date small){color:#b0c7dc!important}
+html[data-cora-theme="dark"] .cp-team .cp-teacher-tool{color:#f0f7ff!important}
+html[data-cora-theme="dark"] .cp-team .cp-teacher-tool-icon{background:#f5f7fa!important;border-color:#c7d1df!important}
+html[data-cora-theme="dark"] .cp-team .cp-flow-icon{background:#244862;color:#c9e9ff}
+html[data-cora-theme="dark"] .cp-team .cp-flow-tabs{background:#14293e!important;border-color:#36516b!important}
+html[data-cora-theme="dark"] .cp-team .cp-flow-tabs button{color:#c5daeb!important}
+html[data-cora-theme="dark"] .cp-team .cp-flow-tabs button.active{background:#28587d!important;color:#fff!important}
+html[data-cora-theme="dark"] .cp-team .cp-tabs button{background:#172f45;color:#bcd4e9;border-color:#3c5a76}
+html[data-cora-theme="dark"] .cp-team .cp-tabs button.active{background:#2b6798;color:#fff}
+html[data-cora-theme="dark"] .cp-team :is(.cp-tag,.cp-list-entry time,.cp-delivery-time){background:#224863;color:#d0eaff}
+html[data-cora-theme="dark"] .cp-team .cp-delivery-personal:is(.pending,.late,.done){background:#26394a!important}
+html[data-cora-theme="dark"] .cp-team .cp-delivery-action{background:#25425c;color:#e6f1fb;border-color:#547592}
+html[data-cora-theme="dark"] .cp-team .cp-delivery-action.is-submit[aria-pressed=true]{background:#1d5947;color:#eefff8}
+html[data-cora-theme="dark"] .cp-team .cp-delivery-action.is-missing[aria-pressed=true]{background:#743a36;color:#fff1ec}
+html[data-cora-theme="dark"] .cp-team .cp-welcome-push:not(.is-enabled){background:#2d3f4c;border-color:#756b58}
+html[data-cora-theme="dark"] .cp-team .cp-welcome-push:not(.is-enabled) :is(strong,small){color:#ffe6ae}
+html[data-cora-theme="dark"] .cp-team :is(.cp-quick-header,.cp-flow-stage-title,.cp-main-heading) :is(h2,h3){color:#eaf3fe!important}
+html[data-cora-theme="dark"] :is(.cp-manager-panel,.cp-accounts-panel){background:#152b41;color:#eaf3fe;border-color:#3c5a75}
+html[data-cora-theme="dark"] :is(.cp-manager-panel,.cp-accounts-panel) :is(h2,h3,legend,strong,label){color:#e8f2fb}
+html[data-cora-theme="dark"] :is(.cp-manager-panel,.cp-accounts-panel) p,
+html[data-cora-theme="dark"] .cp-notice-row span{color:#b5c9dc}
+html[data-cora-theme="dark"] .cp-notice-row{background:#1b354d;border-color:#44637a}
+html[data-cora-theme="dark"] #app{background:#091724;color:#e8f1fa}
+html[data-cora-theme="dark"] #app .main-shell{background:#0d1f30;color:#eaf3fc}
+html[data-cora-theme="dark"] #app :is(
+ .topbar,.welcome,.stat,.official-banner,.studio-section,.studio-card,.studio-form,
+ .studio-preview,.calendar-card,.month-card,.month-panel,.year-card,.panel,
+ .section-card,.event-card,.assessment-card,.deadline-card,.year-transfer-panel
+){background:#162d43!important;color:#e8f2fb!important;border-color:#385775!important}
+html[data-cora-theme="dark"] #app :is(h1,h2,h3,strong,.stat strong){color:#eef6fe}
+html[data-cora-theme="dark"] #app :is(p,.muted,.field-hint,small){color:#b4c8da}
+html[data-cora-theme="dark"] #app .btn-outline,
+html[data-cora-theme="dark"] #app .btn-ghost{background:#24425e;color:#e9f4fc;border-color:#507390}
+html[data-cora-theme="dark"] #app :is(input:not([type=checkbox]),textarea,select){background:#10263b!important;color:#f1f8ff!important;border-color:#4d6982!important}
+html[data-cora-theme="dark"] #app :is(input,textarea)::placeholder{color:#a0b7cd}
+html[data-cora-theme="dark"] #app .planning-paper{background:#fff!important;color:#182e44!important;color-scheme:light}
+html[data-cora-theme="dark"] :is(.calendar-install-dialog,.cp-help-dialog){background:#142a40;color:#eaf4ff;border-color:#4a6581}
+html[data-cora-theme="dark"] :is(.calendar-install-dialog,.cp-help-dialog) :is(h2,h3,p){color:#edf6ff}
+html[data-cora-theme="dark"] .calendar-install-status{background:#244460;color:#e4f3ff;border-color:#527897}
+html[data-cora-theme="dark"] .calendar-install-warning{background:#59452c;color:#fff0cd}
+html[data-cora-theme="dark"] .calendar-install-steps ol{color:#bcd3e5}
+html[data-cora-theme="dark"] .calendar-install-close{background:#29425a;color:#f0f7fe}
+@media(prefers-reduced-motion:reduce){.cora-theme-toggle{transition:none}}
