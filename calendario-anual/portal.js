@@ -289,7 +289,33 @@
    toast('Publicado '+year+': '+res.counts.events+' eventos e '+res.counts.notices+' comunicados'+status+'.');
   }catch(e){toast('Não foi possível publicar: '+e.message);}finally{btn.disabled=false;}
  }
- function teamNav(){return `<div class="cp-team-head"><img id="cpTeamLogo" alt="Brasão do Colégio Cora Coralina"><div><small>COLÉGIO CORA CORALINA · AMBIENTE DE CONSULTA</small><h1>Equipe Pedagógica</h1></div><label class="cp-year-label">Ano letivo <select id="cpTeamYear" aria-label="Ano letivo">${availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('')}</select></label><span class="cp-spacer"></span><button class="cp-btn soft" type="button" id="cpEnableAlerts" title="Ativar notificações mesmo com o aplicativo fechado">Ativar notificações</button><button class="cp-btn cp-bell" id="cpBell" aria-label="Abrir notificações">🔔<em id="cpBellCount" style="display:none">0</em></button><button class="cp-btn" id="cpRefresh">Atualizar</button><button class="cp-btn" id="cpTeamLogout">Sair</button></div>`}
+
+ function cpTeamIcon(name){
+  const shapes={
+   bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
+   refresh:'<path d="M20 11a8 8 0 0 0-14.6-4.4L3 9"/><path d="M3 3v6h6"/><path d="M4 13a8 8 0 0 0 14.6 4.4L21 15"/><path d="M15 15h6v6"/>',
+   exit:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
+   alerts:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>'
+  };
+  return '<svg class="cp-action-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(shapes[name]||'')+'</svg>';
+ }
+ function teamNav(){return `<header class="cp-team-head" aria-label="Navegação da Equipe Pedagógica">
+   <div class="cp-head-top">
+     <div class="cp-head-brand"><img id="cpTeamLogo" alt="Brasão do Colégio Cora Coralina"><div class="cp-head-title"><small>COLÉGIO CORA CORALINA</small><h1>Equipe Pedagógica</h1></div></div>
+     <div class="cp-head-tools" aria-label="Ações rápidas">
+       <button class="cp-btn cp-icon-button cp-bell" type="button" id="cpBell" title="Central de notificações" aria-label="Abrir notificações">${cpTeamIcon('bell')}<em id="cpBellCount" style="display:none">0</em></button>
+       <button class="cp-btn cp-icon-button" type="button" id="cpRefresh" title="Atualizar dados" aria-label="Atualizar dados">${cpTeamIcon('refresh')}<span class="cp-action-label">Atualizar</span></button>
+       <button class="cp-btn cp-icon-button cp-logout" type="button" id="cpTeamLogout" title="Sair da conta" aria-label="Sair da conta">${cpTeamIcon('exit')}<span class="cp-action-label">Sair</span></button>
+     </div>
+   </div>
+   <div class="cp-head-bottom">
+     <label class="cp-year-label">Ano letivo <select id="cpTeamYear" aria-label="Selecionar ano letivo">${availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('')}</select></label>
+     <div class="cp-head-bottom-actions">
+       <button class="cp-btn soft cp-alert-button" type="button" id="cpEnableAlerts" title="Ativar notificações mesmo com o aplicativo fechado">${cpTeamIcon('alerts')}<span class="cp-alert-label">Ativar notificações</span></button>
+     </div>
+   </div>
+ </header>`}
+
 
  // Conta individual autenticada fornece o nome; nunca reutilizar o e-mail digitado sem validação.
  function shortWelcomeName(full){
@@ -420,7 +446,9 @@
   pushChecked=true;pushConfirmed=Boolean(active);
   const button=$('#cpEnableAlerts');if(!button){renderTeamWelcome();return;}
   button.classList.toggle('cp-push-active',Boolean(active));
-  button.textContent=active?'✓ Notificações ativas':(isIOSDevice()&&!isHomeScreenApp()?'Instalar no iPhone':'Ativar notificações');
+  const label=button.querySelector('.cp-alert-label');
+  const caption=active?'Notificações ativas':(isIOSDevice()&&!isHomeScreenApp()?'Instalar no iPhone':'Ativar notificações');
+  if(label)label.textContent=caption;else button.textContent=caption;
   button.title=active?'Este aparelho está inscrito para receber avisos publicados pela Gestão.':(isIOSDevice()&&!isHomeScreenApp()?'Instale pelo Safari e abra o ícone da Tela de Início para ativar os avisos.':'Ative as notificações para receber avisos com o aplicativo fechado.');
   renderTeamWelcome();
  }
