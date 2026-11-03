@@ -67,3 +67,8 @@ body.cp-help-visible{overflow:hidden}
  .cp-help-footer{padding:7px 11px;font-size:10px}.cp-help-bubble{max-width:93%}
  .cp-help-launch{min-height:39px;font-size:12px;padding:8px 11px}
 }
+
+/* Atendimento: destaque apenas para respostas realmente não lidas. */
+.cp-help-thread.is-unread{border-left-color:#bf974e;background:#fffcf4}
+.cp-help-thread.is-unread .cp-help-thread-top strong{color:#123e62}
+.cp-help-thread .cp-help-new-reply{display:inline-block;color:#825b18;background:#fff2cf;border:1px solid #efdda7;border-radius:6px;padding:3px 7px;font-size:10px;font-weight:800}
