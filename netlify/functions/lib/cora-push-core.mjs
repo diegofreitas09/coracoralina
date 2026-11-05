@@ -87,7 +87,12 @@ export async function dispatchPush(message,{timeout=4500,targetUserId=null}={}){
    }
   }));
  }
- if(stale.size)await store().setJSON('registrations',all.filter(x=>!stale.has(x.id)));
+ if(stale.size){
+  // Uma entrega dirigida a um professor não pode apagar inscrições dos demais.
+  // Releia o índice completo antes de excluir somente os endpoints inválidos.
+  const current=await registrations();
+  await store().setJSON('registrations',current.filter(x=>!stale.has(x.id)));
+ }
  return {registered:all.length,sent,failed,expired};
 }
 
