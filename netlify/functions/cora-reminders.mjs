@@ -74,7 +74,8 @@ export default async function handler(){
    if(await hasDelivered(item.id))continue;
    try{
     const stats=await dispatchPush({...item,year,urgent:item.kind==='notice'||item.kind==='assessment-deadline'});
-    if(stats.registered)await markDelivered(item.id,{kind:item.kind,year,sent:stats.sent,failed:stats.failed});
+    // Não registrar como entregue quando todos os serviços de push recusarem o envio.
+    if(stats.sent>0)await markDelivered(item.id,{kind:item.kind,year,sent:stats.sent,failed:stats.failed});
    }catch(e){console.error('Erro de envio agendado',e.message)}
   }
  }
