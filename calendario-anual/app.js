@@ -405,7 +405,7 @@
       const {PDFDocument}=await getPDFLib();const pdf=await PDFDocument.create();
       pdf.setTitle('Calendário Anual '+YEAR+' — Colégio Cora Coralina');pdf.setAuthor('Colégio Cora Coralina');
       await attachCanvas(pdf,coverCanvas());
-      const problems=[];
+      const problems=[];let attachedOriginals=0;
       for(let month=0;month<12;month++){
         await attachCanvas(pdf,calendarCanvas(month));
         const projects=window.CoraYears?.getProjects?.(YEAR)?.[month]||[];
@@ -418,12 +418,24 @@
         const files=filesFor(month);
         for(let part=0,total=Math.ceil(files.length/LISTING_PER_PAGE);part<total;part++)
           await attachCanvas(pdf,listingCanvas(month,'files',files,part,total));
-        for(const file of files){if(!/\.(pdf|png|jpg|jpeg|webp)$/i.test(file.name))continue;
-          try{await appendFile(pdf,file);}catch(error){problems.push(file.name);await attachCanvas(pdf,pdfErrorCanvas(file,error.message||error));}
+        for(const file of files){
+          try{
+            if(/\.(pdf|png|jpg|jpeg|webp)$/i.test(file.name)){
+              await appendFile(pdf,file);
+            }else{
+              // Word, Excel e outros formatos não devem sumir silenciosamente do PDF completo.
+              // O original é preservado como anexo sem fingir que foi convertido em página.
+              await pdf.attach(await file.blob.arrayBuffer(),file.name,{
+                mimeType:file.blob.type||'application/octet-stream',
+                description:'Arquivo original do calendário escolar'
+              });
+              attachedOriginals++;
+            }
+          }catch(error){problems.push(file.name);await attachCanvas(pdf,pdfErrorCanvas(file,error.message||error));}
         }
       }
       const data=await pdf.save();downloadBlob(new Blob([data],{type:'application/pdf'}),`Calendario_Anual_Cora_Coralina_${YEAR}_Completo.pdf`);
-      notify(`PDF completo criado: ${pdf.getPageCount()} páginas.${problems.length?` ${problems.length} anexo(s) ilegível(is).`:''}`);
+      notify(`PDF completo criado: ${pdf.getPageCount()} páginas.${attachedOriginals?` ${attachedOriginals} arquivo(s) original(is) anexado(s).`:''}${problems.length?` ${problems.length} anexo(s) com erro.`:''}`);
     }catch(error){console.error(error);notify('Exportação direta indisponível. Use a impressão do navegador e selecione “Salvar como PDF”.');printCalendar();}
     finally{btn.disabled=false;btn.textContent='↓ Baixar PDF completo';}
   }
