@@ -324,7 +324,8 @@ export default async function handler(request,context){
       urgent:notice.type==='Urgente',kind:'notice'});
     sentStats.registered=stats.registered;
     sentStats.sent+=stats.sent;sentStats.failed+=stats.failed;sentStats.expired+=stats.expired;
-    if(stats.registered){await markDelivered(id,{...stats,year,kind:'notice'});sentStats.notices++}
+    // Um cadastro ativo não equivale a envio aceito pelo provedor push.
+    if(stats.sent>0){await markDelivered(id,{...stats,year,kind:'notice'});sentStats.notices++}
    }catch(error){console.error('Falha ao enviar push da Gestão',error.message)}
   }
   return answer({ok:true,year,availableYears:years,updatedAt:state.updatedAt,push:sentStats,counts:{events:events.length,notices:notices.length,birthdays:birthdays.length,stages:stages.filter(x=>x.start&&x.end).length}});
