@@ -43,8 +43,8 @@ export default async function handler(){
    for(const e of data.events||[]){
     const distance=daysUntil(e.date,day);
     if(e.assessmentDelivery===true){
-      // Prazo obrigatório: uma única tentativa diária, EXATAMENTE 5 dias antes.
-      if(distance!==5)continue;
+      // Inicia os avisos em D-5 e repete em dias posteriores somente se nenhum envio foi aceito.
+      if(distance===null||distance<0||distance>5)continue;
       const stage=Math.max(1,Math.min(4,Number(e.stageNumber)||1));
       const until=e.date.split('-').reverse().join('/');
       const body='Lembrete: entregar '+(e.deliveryTypes||'as avaliações')+
@@ -57,7 +57,7 @@ export default async function handler(){
       continue;
     }
     if(e.type==='Entrega de conteúdo'){
-      if(distance!==5)continue;
+      if(distance===null||distance<0||distance>5)continue;
       pending.push({id:deliveryId('content-deadline',year,e.id,e.date+'-5d'),
         kind:'assessment-deadline',title:'Prazo de entrega de conteúdo',
         body:(e.title||'Entrega de conteúdo')+' — entregar à coordenação até '+e.date.split('-').reverse().join('/')+'. '+(e.notes||'Confira o calendário da Gestão.'),
