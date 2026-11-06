@@ -52,7 +52,7 @@ export default async function handler(){
         (e.fundamentalEmail||'coordenacaofundamentalcora@gmail.com')+
         '. Ensino Médio: '+(e.medioEmail||'coordenacaomediocora@gmail.com')+'.';
       pending.push({id:deliveryId('assessment-deadline',year,e.id,e.date+'-5d'),
-        kind:'assessment-deadline',title:'Entrega das avaliações — '+stage+'ª etapa',
+        kind:'assessment-deadline',stageNumber:stage,title:'Entrega das avaliações — '+stage+'ª etapa',
         body,tag:'entrega-avaliacoes-'+year+'-'+stage+'-'+e.date,urgent:true});
       continue;
     }
