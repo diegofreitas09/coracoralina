@@ -58,12 +58,21 @@ export async function hasDelivered(id){return Boolean(await store().get('sent-'+
 export async function markDelivered(id,value){await store().setJSON('sent-'+id,{at:new Date().toISOString(),...value})}
 export async function dispatchPush(message,{timeout=4500,targetUserId=null}={}){
  const legacy=await registrations(),accounts=getStore('cora-calendar-team-accounts-v1'),cache=new Map(),all=[];
+ const stage=Number(message.stageNumber),year=Number(message.year);
+ const checkDelivery=message.kind==='assessment-deadline'&&Number.isInteger(year)&&Number.isInteger(stage)&&stage>=1&&stage<=4;
+ const deliveryStore=checkDelivery?getStore('cora-calendar-team-deliveries-v1'):null,deliveryCache=new Map();
  for(const record of legacy){
   if(targetUserId&&record.userId!==targetUserId)continue;
   if(!/^member-[a-f0-9]{64}$/.test(String(record.userId||'')))continue;
   if(!cache.has(record.userId))cache.set(record.userId,await accounts.get(record.userId,{type:'json',consistency:'strong'}));
   const member=cache.get(record.userId);
-  if(member?.status==='Ativo'&&member.sessionVersion===record.sessionVersion)all.push(record);
+  if(member?.status==='Ativo'&&member.sessionVersion===record.sessionVersion){
+   if(checkDelivery){
+    if(!deliveryCache.has(record.userId))deliveryCache.set(record.userId,await deliveryStore.get(record.userId,{type:'json',consistency:'strong'})||{});
+    if(deliveryCache.get(record.userId)?.[year+'-'+stage]?.status==='entregue')continue;
+   }
+   all.push(record);
+  }
  }
  if(!all.length)return {registered:0,sent:0,failed:0,expired:0};
  const {publicKey,privateKey,subject}=vapidKeys();
