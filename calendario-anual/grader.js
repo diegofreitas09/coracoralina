@@ -10,10 +10,16 @@
  const letters=['A','B','C','D','E'];
  const num=v=>Number(v)||0;
  let api,notify,container,items=[],loaded=false,error='',loading=false,selected='',view='list',draft=null,result=null;
- let photoUrl='',photoFile=null,scanStatus='',busy=false,teacher='';
+ let photoUrl='',photoFile=null,scanStatus='',busy=false,teacher='',identity='',revision=0;
  const selectedTest=()=>items.find(t=>t.id===selected);
  const emptyDraft=()=>({id:uid(),title:'',subject:'',grade:'',className:'',date:today(),questionCount:10,options:5,maxScore:10,key:Array(10).fill('')});
  function resetPhoto(){if(photoUrl)URL.revokeObjectURL(photoUrl);photoUrl='';photoFile=null;scanStatus=''}
+ function reset(){
+  revision++;
+  resetPhoto();
+  items=[];loaded=false;error='';loading=false;busy=false;selected='';view='list';draft=null;result=null;
+  identity='';teacher='';container=null;
+ }
  function setResult(record){
   const t=selectedTest();if(!t)return;
   result={id:record?.id||uid(),name:record?.name||'',number:record?.number||'',date:record?.date||t.date,
@@ -117,15 +123,30 @@
   if(p)p.textContent=pending?pending+' questão(ões) ainda precisam de revisão. Acertos confirmados: '+correct+'.':'Resultado conferido: '+correct+' acertos · Nota '+score+' / '+t.maxScore+'.';
  }
  async function requestSave(operation,payload){
-  busy=true;try{const r=await api('gradebook',{operation,...payload});items=r.tests||[];loaded=true;error='';notify('Alterações salvas na sua conta.');return true}
-  catch(e){notify(e.message||'Não foi possível salvar.');return false}
-  finally{busy=false}
+  const current=revision;
+  busy=true;
+  try{
+   const r=await api('gradebook',{operation,...payload});
+   if(current!==revision)return false;
+   items=r.tests||[];loaded=true;error='';notify('Alterações salvas na sua conta.');return true;
+  }catch(e){
+   if(current===revision)notify(e.message||'Não foi possível salvar.');
+   return false;
+  }finally{if(current===revision)busy=false}
  }
  async function refresh(){
-  if(loading)return;loading=true;error='';draw();
-  try{const r=await api('gradebook');items=Array.isArray(r.tests)?r.tests:[];loaded=true}
-  catch(e){error=e.message||'Não foi possível carregar os gabaritos.'}
-  finally{loading=false;draw()}
+  if(loading)return;
+  const current=revision;
+  loading=true;error='';draw();
+  try{
+   const r=await api('gradebook');
+   if(current!==revision)return;
+   items=Array.isArray(r.tests)?r.tests:[];loaded=true;
+  }catch(e){
+   if(current===revision)error=e.message||'Não foi possível carregar os gabaritos.';
+  }finally{
+   if(current===revision){loading=false;draw()}
+  }
  }
  function changeView(next){view=next;draw()}
  function escapeCSV(v){let s=String(v??'');if(/^[\s]*[=+\-@]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'}
@@ -332,10 +353,13 @@
   finally{busy=false}
  }
  function mount({root,callApi,toast,profile}){
+  const next=String(profile?.email||profile?.id||'');
+  if(!next||identity&&identity!==next)reset();
+  if(next)identity=next;
   api=callApi;notify=toast;teacher=profile?.name||'Professor';container=$('#coraGrader',root);
   if(!container)return;
   container.onclick=onClick;container.onchange=onChange;container.onsubmit=e=>{void onSubmit(e)};
   if(!loaded){void refresh()}else draw();
  }
- window.CoraGrader={mount,placeholder:()=>'<div id="coraGrader" class="cora-grader"><div class="cg-panel"><p>Carregando corretor de gabaritos...</p></div></div>'};
+ window.CoraGrader={mount,reset,placeholder:()=>'<div id="coraGrader" class="cora-grader"><div class="cg-panel"><p>Carregando corretor de gabaritos...</p></div></div>'};
 })();
