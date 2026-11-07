@@ -128,7 +128,7 @@
   finally{loading=false;draw()}
  }
  function changeView(next){view=next;draw()}
- function escapeCSV(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
+ function escapeCSV(v){let s=String(v??'');if(/^[\s]*[=+\-@]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'}
  function downloadCSV(name,rows){
   const data='\ufeff'+rows.map(row=>row.map(escapeCSV).join(';')).join('\r\n');
   const blob=new Blob([data],{type:'text/csv;charset=utf-8'}),a=document.createElement('a'),url=URL.createObjectURL(blob);
