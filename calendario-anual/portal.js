@@ -744,7 +744,7 @@
   const compactYearSummary=()=>sameYearView?.yearSummary?.(annualSource,{selectedMonth:month,compact:true})||'';
   const selectedMonthGrid=(assessmentOnly=false,pdf=false)=>sameYearView?.monthGrid?.(
    {...annualSource,events:assessmentOnly?assess:events,
-    birthdays:assessmentOnly?[]:annualSource.birthdays,projects:assessmentOnly?[]:annualSource.projects},{pdf})||'';
+    birthdays:assessmentOnly?[]:annualSource.birthdays,projects:assessmentOnly?[]:annualSource.projects},{pdf,assessmentsOnly:assessmentOnly})||'';
   const sections=[['resumo','Visão Geral'],['calendario','Calendário '+year],['etapas','Etapas letivas'],['avaliacoes','Avaliações e Simulados'],['entregas','Prazos de entrega'],['aniversarios','🎂 Aniversariantes'],['avisos','Avisos'],['equipe','Equipe em números'],['correcao','Corretor de gabaritos'],['pdf','PDF Anual']];
   const tabs=`<div class="cp-tabs">${sections.map(([id,label])=>`<button class="${tab===id?'active':''}" data-cp-tab="${id}">${label}</button>`).join('')}</div>`;
   const alertPrompt=!showBell&&unread?'<button type="button" id="cpUnreadPrompt" class="cp-unread-banner">🔔 '+unread+' alerta(s) não lido(s) · Toque para ver os recados da Gestão</button>':'';
