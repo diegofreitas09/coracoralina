@@ -71,6 +71,58 @@
  }
  async function logout(){window.CoraHelpdesk?.teardown();teacherProfile=null;try{await api('logout',{})}catch{}clearInterval(timer);timer=null;gateway();}
  async function enter(){if(role==='gestao')manager();else await team();}
+
+ function publicationCandidates(targetYear){
+  const drafts=loadEventDraft(targetYear);
+  const added=(window.CoraAssessments?.publicationEvents?.(targetYear)||[])
+   .filter(e=>targetYear!==2026||e.assessmentDelivery);
+  const ready=[...drafts.filter(e=>e.status!=='Em revisão'&&!e.needsReview&&
+    !/^cora-(entrega-avaliacoes|periodo-avaliacao)-/.test(String(e.id||''))),...added];
+  return {drafts,ready};
+ }
+ let syncRevision=0;
+ async function checkYearSync(targetYear=Number(window.CoraYears?.activeYear)||2026){
+  if(role!=='gestao')return;
+  const area=$('#cpYearSyncGrid'),status=$('#cpYearSyncStatus');
+  if(!area||!status||!window.CoraYearSync)return;
+  const current=++syncRevision;
+  status.textContent='Conferindo '+targetYear+'...';
+  try{
+   const reply=await api('state',undefined,'year='+targetYear);
+   if(current!==syncRevision||role!=='gestao'||Number(window.CoraYears?.activeYear)!==targetYear)return;
+   const {drafts,ready}=publicationCandidates(targetYear);
+   const report=window.CoraYearSync.compare({
+    year:targetYear,drafts,approved:ready,publication:reply.publication,
+    projects:window.CoraYears?.getProjects?.(targetYear)||[],
+    birthdaysLocal:window.CoraBirthdays?.all?.()||[],
+    stages:window.CoraStages?.get?.(targetYear)||[]
+   });
+   const n=report.counts;
+   status.textContent=targetYear+' · '+n.synchronized+'/12 sincronizados · '+n.pending+' em revisão · '+n.stale+' com alterações · '+n.unpublished+' sem publicação';
+   area.innerHTML=report.months.map(m=>{
+    const className=m.status==='Em revisão'?'is-review':m.status==='Atualização pendente'?'is-stale':m.status==='Não publicado'?'is-unpublished':'';
+    return '<button type="button" class="cp-sync-month '+className+'" data-cp-sync-month="'+m.month+'">'+
+     '<strong>'+safe(m.name)+'</strong>'+
+     '<small>Na Gestão: '+m.ready+' aprovados · '+m.pending+' em revisão</small>'+
+     '<small>Na Equipe: '+m.published+' publicados</small>'+
+     '<small>Projetos: '+m.publishedProjects+'/'+m.projects+' · Aniversários: '+m.publishedBirthdays+'</small>'+
+     '<span class="cp-sync-status">'+safe(m.status)+(m.stagesPending?' · '+m.stagesPending+' etapa(s) por revisar':'')+'</span></button>';
+   }).join('');
+   area.querySelectorAll('[data-cp-sync-month]').forEach(btn=>btn.onclick=()=>{
+    const i=Number(btn.dataset.cpSyncMonth);
+    const selector='#monthNav [data-month="'+i+'"]';
+    document.querySelector(selector)?.click();
+    document.querySelector('.month-area')?.scrollIntoView({behavior:'smooth',block:'start'});
+   });
+   const note=$('#cpSyncLastCheck');
+   if(note)note.textContent=report.hasPublished?
+    'Comparação com a publicação de '+new Date(report.updatedAt).toLocaleString('pt-BR')+
+    '. Rascunhos e datas importadas precisam ser revisados na Gestão antes da publicação.':
+    'Este ano ainda não foi publicado para a Equipe. Confira os meses antes de usar “Publicar para equipe”.';
+  }catch(e){
+   if(current===syncRevision){status.textContent='Não foi possível conferir a sincronização';area.textContent=e.message||'Falha de conexão';}
+  }
+ }
  function manager(){
   year=Number(window.CoraYears?.activeYear)||2026;
   document.body.classList.remove('portal-locked','portal-loading');
@@ -99,6 +151,12 @@
       <button id="cpPublishNow" class="cp-btn cp-manager-publish" type="button">${adminIcon('send')}<span>Publicar para equipe</span></button>
     </nav>
   </header><section id="cpManagerPanel" class="cp-manager-panel cp-hidden"><h2>Comunicação com a equipe</h2><p>Os avisos ficam como rascunho neste dispositivo até você clicar em “Publicar para equipe”. Os eventos locais serão enviados junto com os avisos.</p><div class="cp-form-grid"><label>Título do aviso<input id="cpNoticeTitle" maxlength="130" placeholder="Ex.: Reunião de planejamento"></label><label>Tipo<select id="cpNoticeType"><option>Informativo</option><option>Urgente</option><option>Reunião</option><option>Avaliação</option></select></label><label>Data de início da publicação<input id="cpNoticePublish" type="datetime-local" value="${isoNow()}"></label><label class="cp-wide">Mensagem<textarea id="cpNoticeBody" placeholder="Escreva o recado, orientações ou uma alteração do calendário"></textarea></label><label>Data do evento (opcional)<input type="date" id="cpNoticeEventDate" min="2026-01-01" max="2026-12-31"></label><label>Alertar com antecedência<select id="cpNoticeLead"><option value="0">No dia</option><option value="1">1 dia antes</option><option value="2">2 dias antes</option><option value="3" selected>3 dias antes</option><option value="5">5 dias antes</option><option value="7">7 dias antes</option><option value="14">14 dias antes</option><option value="30">30 dias antes</option></select></label><label>Antecedência padrão de eventos<select id="cpDefaultLead"><option value="0">No dia</option><option value="1">1 dia</option><option value="2">2 dias</option><option value="3">3 dias</option><option value="5">5 dias</option><option value="7">7 dias</option><option value="14">14 dias</option></select></label><div class="cp-wide"><button type="button" class="cp-btn soft" id="cpAddNotice" aria-live="polite">Adicionar aviso</button><span id="cpNoticeSaveFeedback" class="cp-save-feedback" role="status" aria-live="polite"></span></div></div><h3>Avisos preparados</h3><div id="cpNoticeRows"></div><div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:13px"><button class="cp-btn gold" id="cpPublishPanel">Publicar calendário + avisos</button><span class="cp-status">Atualizações não são enviadas automaticamente ao salvar o rascunho.</span></div></section>`;
+  root.querySelector('.cp-manager-bar')?.insertAdjacentHTML('afterend',
+   '<details id="cpYearSync" class="cp-year-sync"><summary>Conferência dos 12 meses · Gestão e Equipe <span id="cpYearSyncStatus" class="cp-sync-caption">Verificando...</span></summary>'+
+   '<p>Compare o que está organizado neste aparelho com os eventos aprovados e publicados. Importações em revisão não são enviadas aos professores.</p>'+
+   '<div class="cp-sync-controls"><button type="button" id="cpSyncReload">Conferir sincronização</button><span id="cpSyncLastCheck" role="status"></span></div>'+
+   '<div id="cpYearSyncGrid" class="cp-sync-year-grid" aria-live="polite"></div></details>');
+  $('#cpSyncReload')?.addEventListener('click',()=>void checkYearSync());
   window.CoraHelpdesk?.mount('gestao',root);
   // Gestão: o cadastro da planilha é espelho administrativo; a autorização efetiva ocorre neste painel.
   root.insertAdjacentHTML('beforeend','<section id="cpAccountsPanel" class="cp-accounts-panel cp-hidden">'+
@@ -203,6 +261,7 @@
    year=Number(e.detail?.year)||2026;managerNotices=loadNoticeDraft(year);
    renderNoticeRows();
    const current=$('#cpPubStatus');if(current)current.textContent='Ano '+year+' · pronto para publicar';
+   void checkYearSync(year);
    const btn=$('#cpPublishNow');if(btn)btn.textContent='Publicar '+year+' para equipe';
    for(const field of ['cpNoticeEventDate']){const input=$('#'+field);if(input){input.min=year+'-01-01';input.max=year+'-12-31';input.value=''}}
   });
@@ -245,7 +304,8 @@
     // Somente a Gestão incorpora a lista institucional ao cadastro local.
     window.CoraBirthdays?.importBaseline?.(x.publication?.birthdays||[]);
     window.CoraBirthdays?.importConfirmedStaff?.(x.publication?.birthdays||[]);
-  }).catch(()=>{});
+    void checkYearSync(year);
+  }).catch(()=>{void checkYearSync(year)});
 
  }
  function renderNoticeRows(){const area=$('#cpNoticeRows');if(!area)return;area.innerHTML=managerNotices.length?managerNotices.map(n=>`<div class="cp-notice-row"><span><span class="cp-notice-saved">✓ Adicionado</span> <strong>${safe(n.title)}</strong> · ${safe(n.type)} · ${safe(n.publishAt).replace('T',' ')}${n.eventDate?' · Evento '+safe(n.eventDate):''}</span><button class="cp-btn soft" data-cp-remove="${safe(n.id)}">Excluir</button></div>`).join(''):'<p class="cp-muted">Nenhum aviso criado. O calendário oficial ainda pode ser publicado.</p>';area.querySelectorAll('[data-cp-remove]').forEach(b=>b.onclick=()=>{managerNotices=managerNotices.filter(n=>n.id!==b.dataset.cpRemove);localStorage.setItem(noticeKey(year),JSON.stringify(managerNotices));renderNoticeRows()});}
@@ -374,7 +434,11 @@
   return true;
  }
  async function publish(){
-  const year=Number(window.CoraYears?.activeYear)||2026;const drafts=loadEventDraft(year);const added=(window.CoraAssessments?.publicationEvents?.(year)||[]).filter(e=>year!==2026||e.assessmentDelivery);const events=[...drafts.filter(e=>e.status!=='Em revisão'&&!e.needsReview&&!/^cora-(entrega-avaliacoes|periodo-avaliacao)-/.test(String(e.id||''))),...added],btn=$('#cpPublishNow');if(!btn)return;btn.disabled=true;
+  const year=Number(window.CoraYears?.activeYear)||2026;const {drafts,ready:events}=publicationCandidates(year);
+  const pending=drafts.filter(e=>e.status==='Em revisão'||e.needsReview);
+  const btn=$('#cpPublishNow');if(!btn)return;
+  if(pending.length&&!confirm('Atenção: '+pending.length+' evento(s) de '+year+' ainda estão em revisão e NÃO serão enviados à Equipe. Deseja publicar somente os eventos aprovados?'))return;
+  btn.disabled=true;
   try{
    // Evita que uma primeira publicação apague o cadastro institucional anterior.
    const previous=await api('state',undefined,'year='+year);
@@ -388,6 +452,7 @@
      ?' · Web Push: '+res.push.sent+' envio(s) aceitos entre '+res.push.registered+' aparelho(s) cadastrado(s)'
      :' · Web Push: nenhum aparelho inscrito';
    toast('Publicado '+year+': '+res.counts.events+' eventos e '+res.counts.notices+' comunicados'+status+'.');
+   void checkYearSync(year);
   }catch(e){toast('Não foi possível publicar: '+e.message);}finally{btn.disabled=false;}
  }
 
@@ -753,6 +818,18 @@
   }else if(tab==='calendario'||tab==='avaliacoes'){
    const arr=(tab==='avaliacoes'?assess:events).filter(e=>Number(e.date.slice(5,7))===month+1);
    const birthdays=tab==='calendario'?publishedBirthdays().filter(p=>Number(p.month)===month+1):[];
+   const projectsMonth=tab==='calendario'&&Array.isArray(data?.projects?.[month])?data.projects[month]:[];
+   const yearOverview=tab==='calendario'
+    ?'<details class="cp-team-year-overview" open><summary>Visão anual de '+year+' · 12 meses</summary>'+
+      '<div class="cp-sync-year-grid">'+MONTHS.map((name,i)=>{
+       const count=events.filter(e=>Number(e.date.slice(5,7))===i+1).length;
+       const projects=Array.isArray(data?.projects?.[i])?data.projects[i].length:0;
+       const birthdayCount=publishedBirthdays().filter(p=>Number(p.month)===i+1).length;
+       return '<button type="button" data-cp-month="'+i+'" class="cp-sync-month '+(month===i?'is-active':'')+'">'+
+        '<strong>'+safe(name)+'</strong><small>'+count+' atividade(s) publicadas</small>'+
+        '<small>'+projects+' projeto(s) · '+birthdayCount+' aniversário(s)</small></button>';
+      }).join('')+'</div></details>':'';
+
    const annualBirthdays=tab==='calendario'
      ?'<details class="cp-birthday-calendar-list"><summary><strong>Ver os aniversariantes do ano inteiro</strong></summary><div class="cp-annual-birthday-grid">'+
        MONTHS.map((name,i)=>{
@@ -761,10 +838,12 @@
           (window.CoraCalendarBirthdays?.listHTML?.(people)||'<p>Sem registros</p>')+'</article>';
        }).join('')+'</div></details>':'';
    content=`<div class="cp-main-heading"><h2>${tab==='avaliacoes'?'Avaliações, simulados e sondagens':'Calendário escolar'}</h2><select id="cpMonthPicker" aria-label="Mês do calendário">${MONTHS.map((m,i)=>`<option value="${i}" ${month===i?'selected':''}>${m} de ${year}</option>`).join('')}</select></div>
-   <div class="cp-list">${arr.length?arr.map(eventHtml).join(''):'<p class="cp-muted">Nenhuma atividade publicada neste mês.</p>'}</div>
+   <div class="cp-list">${arr.length?arr.map(eventHtml).join(''):'<p class="cp-muted">Nenhuma atividade aprovada e publicada neste mês. Os projetos e aniversariantes podem aparecer abaixo.</p>'}</div>
+   ${tab==='calendario'?'<section class="cp-birthday-calendar-list"><h3>Projetos organizados em '+safe(MONTHS[month])+'</h3>'+
+     (projectsMonth.length?'<div class="cp-list">'+projectsMonth.map(p=>'<article class="cp-list-entry">'+safe(p)+'</article>').join('')+'</div>':'<p class="cp-muted">Nenhum projeto publicado para este mês.</p>')+'</section>':''}
    ${tab==='calendario'?'<section class="cp-birthday-calendar-list"><h3>Aniversariantes de '+safe(MONTHS[month])+'</h3>'+
      (window.CoraCalendarBirthdays?.listHTML?.(birthdays)||'<p>Sem aniversariantes</p>')+'</section>'+
-     '<div class="cg-toolbar"><button class="cp-btn gold" id="cpDownloadMonth" type="button">↓ Baixar calendário de '+safe(MONTHS[month])+' (PDF)</button></div>':''}${annualBirthdays}`;
+     '<div class="cg-toolbar"><button class="cp-btn gold" id="cpDownloadMonth" type="button">↓ Baixar calendário de '+safe(MONTHS[month])+' (PDF)</button></div>':''}${yearOverview}${annualBirthdays}`;
   }else if(tab==='entregas'){
     const rows=events.filter(e=>e.assessmentDelivery).sort((a,b)=>Number(a.stageNumber)-Number(b.stageNumber));
     const contents=events.filter(e=>e.type==='Entrega de conteúdo').sort((a,b)=>a.date.localeCompare(b.date));
@@ -840,6 +919,9 @@
   here.querySelector('#cpQuickInstall')?.addEventListener('click',showAppInstallGuide);
   here.querySelectorAll('[data-cp-stage]').forEach(b=>b.onclick=()=>{selectedStage=Number(b.dataset.cpStage)||0;tab='etapas';showBell=false;drawTeam()});
   $('#cpMonthPicker')?.addEventListener('change',e=>{month=Number(e.target.value);drawTeam()});
+  here.querySelectorAll('[data-cp-month]').forEach(button=>button.addEventListener('click',()=>{
+   month=Number(button.dataset.cpMonth)||0;drawTeam();
+  }));
   $('#cpStagePicker')?.addEventListener('change',e=>{selectedStage=Number(e.target.value)||0;drawTeam()});
   $('#cpBackFromBell')?.addEventListener('click',()=>{showBell=false;drawTeam();});
   $('#cpUnreadPrompt')?.addEventListener('click',()=>{showBell=true;drawTeam()});
