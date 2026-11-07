@@ -655,6 +655,8 @@
   return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(shapes[name]||shapes.calendar)+'</svg>';
  }
  function drawTeam(){const here=$('#cpView');if(!here)return;
+  // Preserva identificações e correções digitadas durante atualizações automáticas.
+  if(tab==='correcao'&&!showBell&&$('#coraGrader')?.querySelector('#cgTestForm, #cgResultForm'))return;
   const events=filteredEvents(),notes=activeNotices(),assess=events.filter(e=>isAssessment(e)&&!isSecond(e)),alertList=upcoming(),unread=alertList.filter(a=>a.unread).length;
   const badge=$('#cpBellCount');if(badge){badge.style.display=unread?'block':'none';badge.textContent=unread>99?'99+':String(unread);badge.setAttribute('aria-label',unread+' alertas não lidos')}const bell=$('#cpBell');if(bell){bell.classList.toggle('has-unread',unread>0);bell.setAttribute('aria-label',unread?unread+' alertas novos. Abrir notificações':'Abrir notificações')}
   const sections=[['resumo','Visão Geral'],['calendario','Calendário '+year],['etapas','Etapas letivas'],['avaliacoes','Avaliações e Simulados'],['entregas','Prazos de entrega'],['aniversarios','🎂 Aniversariantes'],['avisos','Avisos'],['equipe','Equipe em números'],['correcao','Corretor de gabaritos'],['pdf','PDF Anual']];
