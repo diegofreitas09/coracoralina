@@ -29,3 +29,11 @@ Módulo da área **Equipe Pedagógica** do Calendário Anual Cora Coralina.
 
 ## Implantação
 Os assets `grader.js` e `grader.css` são carregados antes de `portal.js`. O endpoint `/calendario-anual/api?action=gradebook` só permite GET/POST com sessão pessoal de membro da equipe; POST exige cabeçalho `x-cora-request: portal`. Os novos arquivos estão incluídos no cache de instalação PWA.
+
+## Leitura óptica com caneta azul ou preta (atualização)
+- O corretor avalia **a proporção da área circular interna preenchida**, sem confundir o contorno impresso com tinta.
+- Aceita azul escuro, azul médio, azul claro e preto, conforme o contraste com o branco do papel na foto. O cálculo compara pixels dentro da bolha com a luminosidade local do papel.
+- Uma única bolha com preenchimento suficiente (>≈56% do núcleo interno) conta como alternativa marcada. Uma bolha com menos de 16% de tinta detectável é considerada vazia; valores intermediários pedem revisão.
+- Marcação em X, traço, meia bolha ou duas alternativas pigmentadas são sinalizadas como **Revisar**. A correção final não pode ser salva com pendências.
+- A identificação funciona **somente com o modelo de folha padronizada** que possui quatro marcadores nos cantos e círculos nas posições previstas. O modelo da prova enviado na conversa, com duas colunas de cinco questões no cabeçalho, requer integração própria.
+- Testes feitos com imagens sintéticas: tinta azul, preta e tons de azul, marcas duplas, X, meia bolha, alternativa vazia, luminosidade normal e gradiente de sombra. **Ainda falta confirmar o desempenho em fotografias reais de diferentes câmeras e papéis.**

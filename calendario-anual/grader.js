@@ -96,9 +96,9 @@
    '<div class="cg-toolbar">'+button('test','← Avaliação')+
    '<label class="cg-btn primary cg-file-button">Capturar folha <input id="cgPhoto" type="file" accept="image/*" capture="environment" hidden></label>'+
    '<label class="cg-btn cg-file-button">Enviar imagem <input id="cgUpload" type="file" accept="image/*" hidden></label></div>'+
-   '<div class="cg-panel"><div class="cg-photowrap">'+(photoUrl?'<img class="cg-photo" src="'+safe(photoUrl)+'" alt="Prévia da folha capturada">':'<div class="cg-empty cg-photo-placeholder"><strong>Fotografe a folha inteira</strong><p>Use a folha padronizada com os quatro marcadores pretos nas extremidades. Para outros modelos, informe as alternativas manualmente.</p></div>')+'</div>'+
+   '<div class="cg-panel"><div class="cg-photowrap">'+(photoUrl?'<img class="cg-photo" src="'+safe(photoUrl)+'" alt="Prévia da folha capturada">':'<div class="cg-empty cg-photo-placeholder"><strong>Fotografe a folha inteira</strong><p>Pinte a área circular com caneta azul ou preta. Use a folha padronizada com os quatro quadrados pretos nos cantos. Outros modelos exigem correção manual.</p></div>')+'</div>'+
    (photoUrl?'<div class="cg-toolbar">'+button('scan','Ler marcações automaticamente','primary')+button('ocr','Ler cabeçalho (OCR)')+'</div>':'')+
-   '<p id="cgScanStatus" class="cg-note" role="status">'+safe(scanStatus||'A leitura exige uma folha nítida e o gabarito oficial previamente salvo. Marcas duplas ficam pendentes para revisão.')+'</p></div>'+
+   '<p id="cgScanStatus" class="cg-note" role="status">'+safe(scanStatus||'Pinte a região circular inteira com caneta azul ou preta. Riscos, marcações duplas e bolhas incompletas ficam para revisão.')+'</p></div>'+
    '<form id="cgResultForm" class="cg-panel cg-form"><div class="cg-subhead"><h3>Identificação do aluno</h3><small>Confirme os dados capturados. O nome manuscrito pode precisar de ajuste.</small></div>'+
    '<div class="cg-form-grid"><label>Nome do aluno<input name="name" required maxlength="130" value="'+safe(r.name)+'" placeholder="Nome completo"></label>'+
    '<label>Número / chamada<input name="number" maxlength="30" value="'+safe(r.number)+'" placeholder="Ex.: 12"></label>'+
@@ -189,7 +189,7 @@
    '<text x="500" y="131" text-anchor="middle" font-family="Arial" font-size="20">FOLHA DE RESPOSTAS • '+safe(t.title).slice(0,65)+'</text>'+
    tags+'<line x1="115" x2="887" y1="334" y2="334" stroke="#999"/>'+
    headings+marks+
-   '<text x="120" y="1291" font-family="Arial" font-size="17">Preencha completamente uma única bolha por questão com lápis escuro ou caneta.</text>'+
+   '<text x="120" y="1291" font-family="Arial" font-size="17">Pinte completamente uma bolha por questão com caneta azul ou preta.</text>'+
    '<text x="120" y="1320" font-family="Arial" font-size="16">Fotografe a folha inteira, incluindo os quatro quadrados pretos. Não dobre.</text></svg>';
   printDocument('Folha de respostas — '+t.title,svg);
  }
@@ -295,30 +295,51 @@
   }
   return found;
  }
+ // Reconhecimento óptico por preenchimento da área circular interna (azul ou preto).
+ // O círculo impresso e pequenos riscos não contam como preenchimento completo.
  function scanMarks(data,marks,w,h,t){
   const [tl,tr,bl,br]=marks,read=[];
   const position=(x,y)=>{const u=(x-65)/870,v=(y-65)/1284;
-   return {x:(1-u)*(1-v)*tl.x+u*(1-v)*tr.x+(1-u)*v*bl.x+u*v*br.x,
-    y:(1-u)*(1-v)*tl.y+u*(1-v)*tr.y+(1-u)*v*bl.y+u*v*br.y}};
+   return {x:(1-u)*(1-v)*tl.x+u*(1-v)*tr.x+(1-u)*v*bl.x+(u*v)*br.x,
+    y:(1-u)*(1-v)*tl.y+u*(1-v)*tr.y+(1-u)*v*bl.y+(u*v)*br.y}};
+  const light=(r,g,b)=>.2126*r+.7152*g+.0722*b;
+  const pixel=(x,y)=>{
+   const pos=position(x,y),px=Math.round(pos.x),py=Math.round(pos.y);
+   if(px<0||px>=w||py<0||py>=h)return null;
+   const off=(py*w+px)*4;
+   return [data.data[off],data.data[off+1],data.data[off+2]];
+  };
+  const covered=(cx,cy)=>{
+   // Mediana do papel externo à bolha: adapta-se a variações de iluminação.
+   const surroundings=[[17,0],[-17,0],[0,16],[0,-16],[17,9],[-17,-9]]
+    .map(([dx,dy])=>pixel(cx+dx,cy+dy)).filter(Boolean)
+    .map(rgb=>light(...rgb)).sort((x,y)=>x-y);
+   if(surroundings.length<3)return null;
+   const paper=surroundings[Math.floor(surroundings.length/2)];
+   let ink=0,total=0;
+   // Raio 7, distante do contorno impresso de raio 12.
+   for(let dy=-7;dy<=7;dy+=2)for(let dx=-7;dx<=7;dx+=2){
+    if(dx*dx+dy*dy>49)continue;
+    const rgb=pixel(cx+dx,cy+dy);
+    if(!rgb)continue;
+    const [r,g,b]=rgb,L=light(r,g,b);
+    const blue=b>=r+19&&b>=g+7&&r<215&&g<220;
+    const dark=L<Math.min(190,paper-36);
+    const blueInk=blue&&L<Math.min(229,paper-24);
+    if(dark||blueInk)ink++;
+    total++;
+   }
+   return total>=25?ink/total:null;
+  };
   for(let i=0;i<t.questionCount;i++){
-   const col=Math.floor(i/30),row=i%30,base=col?655:185,y=394+row*29;
-   const score=letters.slice(0,t.options).map((_,j)=>{
-    let dark=0,total=0;
-    for(let dy=-5;dy<=5;dy+=2)for(let dx=-5;dx<=5;dx+=2){
-     if(dx*dx+dy*dy>29)continue;
-     const p=position(base+65+j*43+dx,y+dy),x=Math.round(p.x),yy=Math.round(p.y);
-     if(x<0||x>=w||yy<0||yy>=h)continue;
-     const k=(yy*w+x)*4,a=data.data;
-     if((a[k]*.3+a[k+1]*.59+a[k+2]*.11)<155)dark++;
-     total++;
-    }
-    return total?dark/total:0;
-   });
-   const filled=score.map((s,j)=>({s,j})).filter(o=>o.s>.38);
-   read.push(filled.length===1?letters[filled[0].j]:filled.length===0?'-':'?');
+   const column=Math.floor(i/30),row=i%30,base=column?655:185,y=394+row*29;
+   const ratios=letters.slice(0,t.options).map((_,j)=>covered(base+65+j*43,y));
+   if(ratios.some(v=>v===null)){read.push('?');continue}
+   const marked=ratios.map((value,index)=>({value,index})).filter(x=>x.value>=.16);
+   if(marked.length===0)read.push('-');
+   else if(marked.length===1&&marked[0].value>=.56)read.push(letters[marked[0].index]);
+   else read.push('?'); // cruz, preenchimento incompleto ou dupla marcação
   }
-  if(read.filter(a=>a!=='-').length<Math.max(2,Math.floor(t.questionCount*.12)))
-   throw Error('Não consegui identificar marcações suficientes. Verifique iluminação, enquadramento e use a folha padronizada.');
   return read;
  }
  async function scanPhoto(){
@@ -326,7 +347,7 @@
   try{
    const c=await loadPhoto(),ctx=c.getContext('2d',{willReadFrequently:true}),data=ctx.getImageData(0,0,c.width,c.height);
    const marks=locateMarks(data,c.width,c.height),answers=scanMarks(data,marks,c.width,c.height,selectedTest());
-   result.answers=answers;scanStatus='Leitura concluída: '+answers.filter(a=>a!=='?'&&a!=='-').length+' marcações identificadas. Confira cada item antes de salvar.';
+   result.answers=answers;scanStatus='Leitura das bolhas concluída: '+answers.filter(a=>a!=='?'&&a!=='-').length+' marcações identificadas. Confira cada item antes de salvar.';
    draw();
   }catch(e){setStatus('Leitura automática não concluída: '+e.message+' Você pode registrar as respostas manualmente.')}
   finally{busy=false}
