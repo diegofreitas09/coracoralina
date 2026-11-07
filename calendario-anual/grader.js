@@ -287,11 +287,11 @@
  }
  function onChange(event){
   const x=event.target;
-  if(view==='capture'&&x.matches('[name="name"],[name="number"],[name="date"]'))updatePreview();
+  if(view==='capture'&&x.matches('[name="name"],[name="number"],[name="date"]')){confirmedSignature='';updatePreview()}
   if(x.matches('[data-cg-answer]')){
    const i=Number(x.dataset.index);
    if(x.dataset.cgAnswer==='key'&&draft)draft.key[i]=x.value==='?'?'':x.value;
-   if(x.dataset.cgAnswer==='result'&&result){result.answers[i]=x.value;updatePreview()}
+   if(x.dataset.cgAnswer==='result'&&result){result.answers[i]=x.value;confirmedSignature='';updatePreview()}
   }
   if(x.matches('[name="questionCount"],[name="options"]')&&draft){
    const form=$('#cgTestForm',container);const n=Math.max(1,Math.min(60,Number(form.elements.questionCount.value)||10));
@@ -454,7 +454,7 @@
   if(next)identity=next;
   api=callApi;notify=toast;teacher=profile?.name||'Professor';container=$('#coraGrader',root);
   if(!container)return;
-  container.onclick=onClick;container.onchange=onChange;container.oninput=e=>{if(view==='capture'&&e.target.matches('[name="name"],[name="number"],[name="date"]'))updatePreview()};container.onsubmit=e=>{void onSubmit(e)};
+  container.onclick=onClick;container.onchange=onChange;container.oninput=e=>{if(view==='capture'&&e.target.matches('[name="name"],[name="number"],[name="date"]')){confirmedSignature='';updatePreview()}};container.onsubmit=e=>{void onSubmit(e)};
   if(!loaded){void refresh()}else draw();
  }
  window.CoraGrader={mount,reset,placeholder:()=>'<div id="coraGrader" class="cora-grader"><div class="cg-panel"><p>Carregando corretor de gabaritos...</p></div></div>'};
