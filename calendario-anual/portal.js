@@ -154,9 +154,18 @@
   root.querySelector('.cp-manager-bar')?.insertAdjacentHTML('afterend',
    '<details id="cpYearSync" class="cp-year-sync"><summary>Conferência dos 12 meses · Gestão e Equipe <span id="cpYearSyncStatus" class="cp-sync-caption">Verificando...</span></summary>'+
    '<p>Compare o que está organizado neste aparelho com os eventos aprovados e publicados. Importações em revisão não são enviadas aos professores.</p>'+
-   '<div class="cp-sync-controls"><button type="button" id="cpSyncReload">Conferir sincronização</button><span id="cpSyncLastCheck" role="status"></span></div>'+
+   '<div class="cp-sync-controls"><button type="button" id="cpSyncReload">Conferir sincronização</button>'+
+   '<button type="button" id="cpPrepareSchoolYear">Importar estrutura do ano anterior</button>'+
+   '<span id="cpSyncLastCheck" role="status"></span></div>'+
    '<div id="cpYearSyncGrid" class="cp-sync-year-grid" aria-live="polite"></div></details>');
   $('#cpSyncReload')?.addEventListener('click',()=>void checkYearSync());
+  $('#cpPrepareSchoolYear')?.addEventListener('click',()=>{
+   const target=Number(window.CoraYears?.activeYear)||2026;
+   if(target<=2026)return;
+   window.CoraYearPlanner?.showFullYearWizard?.(target);
+  });
+  const prepareButton=$('#cpPrepareSchoolYear');
+  if(prepareButton)prepareButton.hidden=year<=2026;
   window.CoraHelpdesk?.mount('gestao',root);
   // Gestão: o cadastro da planilha é espelho administrativo; a autorização efetiva ocorre neste painel.
   root.insertAdjacentHTML('beforeend','<section id="cpAccountsPanel" class="cp-accounts-panel cp-hidden">'+
@@ -263,6 +272,7 @@
    const current=$('#cpPubStatus');if(current)current.textContent='Ano '+year+' · pronto para publicar';
    void checkYearSync(year);
    const btn=$('#cpPublishNow');if(btn)btn.textContent='Publicar '+year+' para equipe';
+   const prepareButton=$('#cpPrepareSchoolYear');if(prepareButton)prepareButton.hidden=year<=2026;
    for(const field of ['cpNoticeEventDate']){const input=$('#'+field);if(input){input.min=year+'-01-01';input.max=year+'-12-31';input.value=''}}
   });
   $('#cpTogglePanel').onclick=()=>$('#cpManagerPanel').classList.toggle('cp-hidden');
@@ -814,8 +824,10 @@
   }else if(!data){content='<div class="cp-paper"><h2>Nenhuma publicação disponível</h2><p class="cp-muted">A Gestão ainda não publicou o calendário e os comunicados para a equipe. O conteúdo ficará disponível aqui após a primeira publicação.</p></div>'}
   else if(showBell){content=`<div class="cp-bell-panel"><div class="cp-main-heading"><div class="cp-alert-heading-left"><button type="button" class="cp-btn soft cp-back-alert" id="cpBackFromBell" aria-label="Voltar à Equipe Pedagógica">← Voltar</button><h2>🔔 Central de alertas</h2></div><button class="cp-btn soft" id="cpMarkRead">Marcar como lidos</button></div>${alertList.length?alertList.map(a=>`<article class="cp-alert-entry ${a.unread?'unread':''}"><time>${safe(String(a.date||'').slice(0,10))}</time><div><small>${a.kind==='notice'?'Comunicado da Gestão':a.kind==='reminder'?'Lembrete programado':'Evento próximo'}</small><strong>${safe(a.title)}</strong><p>${safe(a.desc||'')}</p>${a.unread?'<span class="cp-tag cp-tag-new">Novo · não lido</span>':''}</div><button class="cp-btn soft" type="button" data-cp-read="${safe(a.id)}">✓ Lido</button></article>`).join(''):'<p class="cp-muted">Nenhuma atividade ou aviso exige atenção no período configurado.</p>'}</div>`;}
   else if(tab==='resumo'){
-   const today=dateStr(new Date());const future=events.filter(e=>e.date>=today).slice(0,9);
-   const thisMonth=new Date().getMonth()+1;
+   const now=new Date(),today=dateStr(now);
+   const firstRelevantDay=year===now.getFullYear()?today:year>now.getFullYear()?year+'-01-01':year+'-12-31';
+   const future=events.filter(e=>e.date>=firstRelevantDay).slice(0,9);
+   const thisMonth=year===now.getFullYear()?now.getMonth()+1:month+1;
    const birthdayList=publishedBirthdays().filter(p=>Number(p.month)===thisMonth);
    const nextMonth=thisMonth===12?1:thisMonth+1;
    const nextBirthdays=publishedBirthdays().filter(p=>Number(p.month)===nextMonth);
