@@ -32,6 +32,7 @@
     $('officialMonthImage').hidden=true;
     const projects=source.projects?.[month]||[];
     $('officialProjectList').innerHTML=projects.length?projects.map(item=>`<li>${String(item).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</li>`).join(''):'<li>Conferir projetos no documento original.</li>';
+    const area=$('officialBirthdayMonth');if(area)area.innerHTML=window.CoraCalendarBirthdays?.listHTML?.(window.CoraCalendarBirthdays.monthly(window.CoraCalendarBirthdays.local(),month))||'<p>Sem aniversariantes.</p>';
     $('officialEventCount').textContent=(source.events||[]).filter(item=>item.date.slice(5,7)===String(month+1).padStart(2,'0')).length;
     try{
       const uri=await loadPage(month+2);
