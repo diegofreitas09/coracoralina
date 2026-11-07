@@ -64,3 +64,18 @@
 [data-cora-theme="dark"] .cp-calendar-agenda{background:#24374b;border-color:#47617b}
 [data-cora-theme="dark"] .cp-calendar-agenda summary{color:#d3ebfc}
 [data-cora-theme="dark"] .cp-calendar-empty-note{background:#23384c;border-color:#435d78;color:#cbdeee}
+
+/* Visão Geral: primeiro o ano letivo, sem repetir etapas; navegação acessível no topo. */
+.cp-team .cp-tabs{margin:0 0 15px}
+.cp-team .cp-flow-hero{margin-bottom:10px}
+.cp-team .cy-summary{margin:10px 0 19px}
+.cp-team .cy-summary-heading p{max-width:600px}
+@media(max-width:850px){
+ .cp-team .cp-tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;
+   gap:7px;padding:3px 2px 10px;margin:0 0 12px;scroll-snap-type:x proximity;
+   -webkit-overflow-scrolling:touch;scrollbar-width:thin}
+ .cp-team .cp-tabs button{flex:0 0 auto;white-space:nowrap;padding:11px 14px;
+   scroll-snap-align:start}
+ .cp-team .cp-flow-hero{margin-bottom:9px}
+ .cp-team .cy-summary{margin:9px 0 15px}
+}
