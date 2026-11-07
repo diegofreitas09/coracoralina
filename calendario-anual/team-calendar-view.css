@@ -1,0 +1,57 @@
+/* Calendário visual com a mesma apresentação em todos os anos letivos. */
+.cy-summary,.cy-month{background:#fff;color:#173a60;border:1px solid #dce6f0;border-radius:19px;padding:18px;margin:15px 0;box-shadow:0 5px 20px rgba(11,42,76,.07);min-width:0}
+.cy-summary-heading,.cy-month-header{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}
+.cy-summary-heading small,.cy-month-header small{font-size:.66rem;letter-spacing:1.4px;font-weight:850;color:#6781a0}
+.cy-summary h3,.cy-month h3{font-size:clamp(1.22rem,3vw,1.75rem);margin:6px 0;color:#103e72}
+.cy-summary-heading p{font-size:.88rem;color:#667b8f;margin:3px 0}
+.cy-pill{font-size:.78rem;color:#785a18;background:#fff1c5;padding:7px 11px;border-radius:99px;font-weight:800}
+.cy-summary-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:16px}
+.cy-summary-stats>div{border:1px solid #dbe6f1;background:#f4f8fc;border-radius:12px;padding:11px;min-width:0}
+.cy-summary-stats strong{display:block;font-size:1.55rem;font-variant-numeric:tabular-nums;color:#184d81}
+.cy-summary-stats small{font-size:.75rem;color:#5e7790;display:block}
+.cy-summary-months{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:13px}
+.cy-summary-month{display:flex;flex-direction:column;gap:5px;padding:10px 12px;min-width:0;background:#fff;border:1px solid #dbe5ee;border-radius:11px;cursor:pointer;text-align:left;font:inherit;color:#385973}
+.cy-summary-month:hover{background:#f1f7ff;border-color:#7facd6}
+.cy-summary-month.is-selected{background:#eaf3fd;border-color:#346fa4;box-shadow:inset 0 0 0 1px #346fa4}
+.cy-summary-month strong{color:#1e4974;font-size:.83rem}
+.cy-summary-month span,.cy-summary-month small{font-size:.73rem;line-height:1.5;color:#61768b}
+.cy-summary-stages{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:15px}
+.cy-summary-stage{padding:11px;border-radius:11px;border-left:4px solid #e9c566;background:#f6f8fb;min-width:0}
+.cy-summary-stage b{display:block;font-size:.84rem;color:#1a486e}
+.cy-summary-stage span{font-size:.75rem;color:#5d7287}
+.cy-publication-note{font-size:.82rem;background:#fff7e8;color:#76571a;padding:12px;border-radius:10px;border:1px solid #f0d9a6;margin:15px 0 0}
+.cy-month-header{background:linear-gradient(120deg,#0f3054,#155a8f);color:white;padding:18px 20px;border-radius:13px;margin-bottom:12px}
+.cy-month-header h3,.cy-month-header small{color:white}
+.cy-month-header>span{font-size:.78rem;background:#ffffff25;padding:8px 11px;border-radius:99px}
+.cy-weekdays,.cy-day-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.cy-weekdays{margin-bottom:4px;text-align:center;color:#44617e;font-size:.73rem;font-weight:800}
+.cy-weekdays>span{padding:7px 0;background:#edf3f9;border-radius:7px}
+.cy-day{min-width:0;min-height:77px;background:#f8fafc;border:1px solid #e2eaf2;border-radius:7px;padding:6px 5px;display:flex;flex-direction:column;gap:3px;overflow:hidden}
+.cy-day.is-out{background:#f4f7fa;border-color:#f1f3f6}
+.cy-day.has-events{background:#fffdfa;border-color:#dfcf9b}
+.cy-day-num{font-size:.77rem;font-weight:800;color:#1e4569}
+.cy-day-item{font-size:.62rem;font-weight:650;color:#204e75;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;background:#e7f1fa;border-radius:4px;padding:2px 4px}
+.cy-day-item.is-stage{background:#f8e4a4;color:#624b10}
+.cy-day-item.is-birthday{background:#fcead9;color:#8c5821}
+.cy-extra{font-size:.58rem;color:#58728a}
+.cy-month-footer{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:13px}
+.cy-month-footer>div{background:#f5f8fb;border:1px solid #dce6f0;border-radius:11px;padding:12px 13px;min-width:0}
+.cy-month-footer strong{font-size:.87rem;color:#19476d}
+.cy-month-footer p,.cy-month-footer li{font-size:.79rem;color:#597087;line-height:1.5}
+.cy-month-footer p{margin:8px 0 0}
+.cy-month-footer ul{margin:8px 0 0;padding-left:19px}
+.cy-source-note{font-size:.71rem;color:#627b91;margin:10px 0 0}
+.cy-month.is-pdf-preview{background:#fff;padding:22px;border:1px solid #cbd9e8;max-width:1050px;margin:0 auto}
+.cy-month.is-pdf-preview .cy-day{min-height:100px}
+[data-cora-theme="dark"] .cy-summary,[data-cora-theme="dark"] .cy-month{background:#1b2d42;border-color:#3b536c;color:#dfeaf6}
+[data-cora-theme="dark"] .cy-summary h3,[data-cora-theme="dark"] .cy-month h3{color:#d9edff}
+[data-cora-theme="dark"] .cy-month-header h3{color:#fff}
+[data-cora-theme="dark"] .cy-summary-stats>div,[data-cora-theme="dark"] .cy-summary-month,[data-cora-theme="dark"] .cy-summary-stage,[data-cora-theme="dark"] .cy-month-footer>div,[data-cora-theme="dark"] .cy-day{background:#253a53;border-color:#49617c}
+[data-cora-theme="dark"] .cy-summary-stats strong,[data-cora-theme="dark"] .cy-summary-month strong,[data-cora-theme="dark"] .cy-summary-stage b,[data-cora-theme="dark"] .cy-month-footer strong{color:#d6eafb}
+[data-cora-theme="dark"] .cy-summary-month span,[data-cora-theme="dark"] .cy-day-num,[data-cora-theme="dark"] .cy-day-item,[data-cora-theme="dark"] .cy-month-footer p,[data-cora-theme="dark"] .cy-month-footer li{color:#d6e6f5}
+[data-cora-theme="dark"] .cy-weekdays>span{background:#354d68}
+[data-cora-theme="dark"] .cy-day-item{background:#31577a}
+[data-cora-theme="dark"] .cy-day-item.is-birthday{background:#6d4e30}
+[data-cora-theme="dark"] .cy-day-item.is-stage{background:#756034}
+@media(max-width:900px){.cy-summary-months{grid-template-columns:repeat(3,minmax(0,1fr))}.cy-summary-stages{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.cy-summary,.cy-month{padding:11px;border-radius:13px}.cy-summary-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.cy-summary-months{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.cy-summary-month{padding:8px}.cy-month-header{padding:12px}.cy-weekdays,.cy-day-grid{gap:2px}.cy-day{min-height:55px;padding:3px 2px;border-radius:4px}.cy-day-num{font-size:.7rem}.cy-day-item{font-size:.51rem;padding:1px 2px}.cy-month-footer{grid-template-columns:1fr;gap:7px}.cy-month.is-pdf-preview .cy-day{min-height:55px}.cy-month-header h3{font-size:1.25rem}}
