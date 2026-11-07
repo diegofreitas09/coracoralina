@@ -1,0 +1,35 @@
+/* Visão de sincronização dos 12 meses — Gestão e Equipe. */
+.cp-year-sync{margin:13px 18px 18px;border:1px solid #d5e3f0;border-radius:16px;background:#fff;padding:14px 18px;color:#183d62;box-shadow:0 4px 17px #102b4810}
+.cp-year-sync summary{cursor:pointer;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.91rem;font-weight:800;list-style:revert}
+.cp-year-sync summary .cp-sync-caption{font-weight:550;color:#596f84}
+.cp-year-sync p{color:#526b84;font-size:.86rem;line-height:1.5}
+.cp-sync-year-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,205px),1fr));gap:9px;margin-top:14px}
+.cp-sync-month{background:#f5f8fc;border:1px solid #e0e7f0;border-radius:11px;padding:12px;text-align:left;display:flex;flex-direction:column;gap:5px;font:inherit;color:#254563;min-width:0}
+.cp-sync-month strong{font-size:.9rem;color:#173a60}
+.cp-sync-month small{font-size:.75rem;color:#506984;line-height:1.4}
+.cp-sync-month .cp-sync-status{font-size:.74rem;font-weight:800;color:#356f56}
+.cp-sync-month.is-review{border-color:#ddbc72;background:#fff9eb}
+.cp-sync-month.is-review .cp-sync-status{color:#8e5905}
+.cp-sync-month.is-stale{border-color:#d09e84;background:#fff3e9}
+.cp-sync-month.is-stale .cp-sync-status{color:#a4542c}
+.cp-sync-month.is-unpublished{background:#f3f5f9}
+.cp-sync-month.is-unpublished .cp-sync-status{color:#6a7687}
+.cp-sync-month.is-active{outline:2px solid #326da8;outline-offset:1px}
+.cp-team-year-overview{margin:15px 0;padding:16px;border:1px solid #dce8f3;border-radius:15px;background:#f6f9fc}
+.cp-team-year-overview summary{cursor:pointer;font-weight:800;color:#244b73}
+.cp-team-year-overview .cp-sync-month{cursor:pointer}
+.cp-team-year-overview .cp-sync-month:hover{border-color:#4b87ba;background:#edf5ff}
+.cp-sync-controls{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:14px 0}
+.cp-sync-controls button{padding:9px 14px;border:1px solid #bfd2e3;background:white;border-radius:10px;color:#184773;font-weight:750;cursor:pointer}
+.cp-sync-controls span{font-size:.8rem;color:#566f85}
+.cp-sync-birthday-note{font-size:.86rem;color:#6a5680;margin:10px 0}
+[data-cora-theme="dark"] .cp-year-sync,[data-cora-theme="dark"] .cp-team-year-overview{background:#1b2c41;border-color:#3d5570;color:#e2edfa}
+[data-cora-theme="dark"] .cp-sync-month{background:#243a54;border-color:#405e7b;color:#d8e8fb}
+[data-cora-theme="dark"] .cp-sync-month strong{color:#d9ecff}
+[data-cora-theme="dark"] .cp-sync-month small{color:#c0cfdf}
+[data-cora-theme="dark"] .cp-sync-month.is-review,[data-cora-theme="dark"] .cp-sync-month.is-stale{background:#403726;border-color:#8d7345}
+[data-cora-theme="dark"] .cp-sync-month .cp-sync-status{color:#b1f4cd}
+[data-cora-theme="dark"] .cp-sync-month.is-review .cp-sync-status{color:#ffdd9d}
+[data-cora-theme="dark"] .cp-sync-month.is-stale .cp-sync-status{color:#ffbfa5}
+[data-cora-theme="dark"] .cp-team-year-overview summary{color:#d7e9fc}
+@media(max-width:700px){.cp-year-sync{margin:10px;padding:12px}.cp-sync-year-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.cp-sync-month{padding:10px}.cp-team-year-overview{padding:12px}}
