@@ -42,7 +42,7 @@
     (all.activities===0?'<p class="cy-publication-note">Ainda não há atividades pedagógicas publicadas para '+a.year+'. Os aniversários e projetos disponíveis continuam visíveis. A Gestão precisa conferir as datas importadas e publicar o calendário aprovado.</p>':'')+
   '</section>';
  }
- function monthGrid(source,{pdf=false}={}){
+ function monthGrid(source,{pdf=false,assessmentsOnly=false}={}){
   const a=normalize(source),start=new Date(a.year,a.month,1).getDay(),last=new Date(a.year,a.month+1,0).getDate(),
    count=Math.ceil((start+last)/7)*7,monthEvents=a.events.filter(e=>inMonth(e,a.month));
   let days='<div class="cy-weekdays">'+DAYS.map(x=>'<span>'+x+'</span>').join('')+'</div><div class="cy-day-grid">';
@@ -65,8 +65,8 @@
   return '<section class="cy-month '+(pdf?'is-pdf-preview':'')+'" aria-label="Calendário mensal de '+MONTHS[a.month]+' de '+a.year+'">'+
    '<header class="cy-month-header"><div><small>COLÉGIO CORA CORALINA · CALENDÁRIO ESCOLAR</small><h3>'+MONTHS[a.month]+' '+a.year+'</h3></div><span>'+events+' atividade(s)</span></header>'+
    days+
-   '<footer class="cy-month-footer"><div><strong>Projetos do mês</strong>'+ (projects.length?'<ul>'+projects.slice(0,6).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'<p>Não há projetos publicados.</p>')+'</div>'+
-    '<div><strong>Aniversariantes</strong>'+ (names.length?'<ul>'+names.slice(0,10).map(x=>'<li>'+String(x.day).padStart(2,'0')+'/'+String(x.month).padStart(2,'0')+' · '+esc(x.name)+'</li>').join('')+'</ul>':'<p>Não há aniversários neste mês.</p>')+'</div></footer>'+
+   (assessmentsOnly?'':'<footer class="cy-month-footer"><div><strong>Projetos do mês</strong>'+ (projects.length?'<ul>'+projects.slice(0,6).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'<p>Não há projetos publicados.</p>')+'</div>'+
+    '<div><strong>Aniversariantes</strong>'+ (names.length?'<ul>'+names.slice(0,10).map(x=>'<li>'+String(x.day).padStart(2,'0')+'/'+String(x.month).padStart(2,'0')+' · '+esc(x.name)+'</li>').join('')+'</ul>':'<p>Não há aniversários neste mês.</p>')+'</div></footer>')+
    '<p class="cy-source-note">Fonte: calendário publicado pela Gestão · '+a.year+'. Datas não publicadas não são exibidas.</p></section>';
  }
  window.CoraTeacherCalendar={yearSummary,monthGrid,totals,normalize};
