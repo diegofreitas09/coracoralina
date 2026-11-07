@@ -657,7 +657,7 @@
  function drawTeam(){const here=$('#cpView');if(!here)return;
   const events=filteredEvents(),notes=activeNotices(),assess=events.filter(e=>isAssessment(e)&&!isSecond(e)),alertList=upcoming(),unread=alertList.filter(a=>a.unread).length;
   const badge=$('#cpBellCount');if(badge){badge.style.display=unread?'block':'none';badge.textContent=unread>99?'99+':String(unread);badge.setAttribute('aria-label',unread+' alertas não lidos')}const bell=$('#cpBell');if(bell){bell.classList.toggle('has-unread',unread>0);bell.setAttribute('aria-label',unread?unread+' alertas novos. Abrir notificações':'Abrir notificações')}
-  const sections=[['resumo','Visão Geral'],['calendario','Calendário '+year],['etapas','Etapas letivas'],['avaliacoes','Avaliações e Simulados'],['entregas','Prazos de entrega'],['aniversarios','🎂 Aniversariantes'],['avisos','Avisos'],['equipe','Equipe em números'],['pdf','PDF Anual']];
+  const sections=[['resumo','Visão Geral'],['calendario','Calendário '+year],['etapas','Etapas letivas'],['avaliacoes','Avaliações e Simulados'],['entregas','Prazos de entrega'],['aniversarios','🎂 Aniversariantes'],['avisos','Avisos'],['equipe','Equipe em números'],['correcao','Corretor de gabaritos'],['pdf','PDF Anual']];
   const tabs=`<div class="cp-tabs">${sections.map(([id,label])=>`<button class="${tab===id?'active':''}" data-cp-tab="${id}">${label}</button>`).join('')}</div>`;
   const alertPrompt=!showBell&&unread?'<button type="button" id="cpUnreadPrompt" class="cp-unread-banner">🔔 '+unread+' alerta(s) não lido(s) · Toque para ver os recados da Gestão</button>':'';
 
@@ -676,7 +676,7 @@
     (active?'<em>Em andamento</em>':'')+'</button>';
   }).join('');
   const quickLinks=[['calendario','calendar','Calendário','Atividades e projetos'],['avaliacoes','check','Avaliações','Provas e simulados'],
-    ['entregas','clock','Entregas','Prazos e e-mails'],['avisos','message','Comunicados','Orientações da Gestão'],['equipe','people','Equipe em números','Professores e acessos'],['pdf','pdf','PDF anual','Documento completo']].map(item=>
+    ['entregas','clock','Entregas','Prazos e e-mails'],['avisos','message','Comunicados','Orientações da Gestão'],['equipe','people','Equipe em números','Professores e acessos'],['correcao','check','Corretor de gabaritos','Captura e notas da turma'],['pdf','pdf','PDF anual','Documento completo']].map(item=>
     '<button type="button" class="cp-flow-link" data-cp-tab="'+item[0]+'"><span class="cp-flow-icon">'+cpTeamTileIcon(item[1])+'</span>'+
     '<span><strong>'+item[2]+'</strong><small>'+item[3]+'</small></span></button>').join('')+
     '<button type="button" class="cp-flow-link cp-install-shortcut" id="cpQuickInstall" aria-label="'+(isHomeScreenApp()?'Atualizar':'Instalar')+' aplicativo Agenda Cora">'+
@@ -728,7 +728,9 @@
    '<h3>Início e fim das etapas</h3></div><span>Consulte antes de planejar avaliações</span></div>'+
    '<div class="cp-flow-stage-grid">'+flowStages+'</div></section>';
   let content='';
-  if(tab==='equipe'&&!showBell){
+  if(tab==='correcao'&&!showBell){
+   content=window.CoraGrader?.placeholder()||'<p>Corretor indisponível. Recarregue o aplicativo.</p>';
+  }else if(tab==='equipe'&&!showBell){
    content=teamStats?window.CoraTeamStats?.render(teamStats)||'<p class="cp-muted">Painel indisponível.</p>':
     '<section class="cp-team-metrics"><div class="cp-main-heading"><h2>Equipe em números</h2></div><p class="cp-muted">'+(teamStatsError?'Não foi possível carregar: '+safe(teamStatsError):'Consultando indicadores da equipe...')+'</p><button type="button" class="cp-btn soft" id="cpRetryTeamStats">Atualizar indicadores</button></section>';
   }else if(!data){content='<div class="cp-paper"><h2>Nenhuma publicação disponível</h2><p class="cp-muted">A Gestão ainda não publicou o calendário e os comunicados para a equipe. O conteúdo ficará disponível aqui após a primeira publicação.</p></div>'}
@@ -800,6 +802,7 @@
   else content=`<div class="cp-main-heading"><h2>Calendário anual ${year}</h2></div><div class="cp-paper"><h3>Documento publicado pela Gestão</h3><p>Inclui os 12 meses de ${year}, com atividades, etapas e projetos publicados.</p><button class="cp-btn gold" id="cpDownloadPublished">↓ Baixar PDF anual ${year}</button><p class="cp-status" id="cpPdfProgress"></p></div>`;
 
   here.innerHTML=`${flowHeader}${showBell?'':`<div class="cp-overview"><div class="cp-metric"><small>Atividades publicadas</small><strong>${events.length}</strong></div><div class="cp-metric"><small>Avaliações e simulados</small><strong>${assess.length}</strong></div><div class="cp-metric"><small>Avisos disponíveis</small><strong>${notes.length}</strong></div></div>${tabs}`}${alertPrompt}${content}<p class="cp-updated">Última publicação da Gestão: ${data?new Date(data.updatedAt).toLocaleString('pt-BR'):'ainda não publicada'} · Atualização automática enquanto o aplicativo estiver aberto.</p>`;
+  if(tab==='correcao'&&!showBell)window.CoraGrader?.mount({root:here,callApi:api,toast,profile:teacherProfile});
   here.querySelectorAll('[data-cp-delivery-status]').forEach(button=>button.addEventListener('click',async()=>{
     if(teacherSaving||!teacherProfile?.identified)return;
     const stage=Number(button.dataset.cpDeliveryStage),status=button.dataset.cpDeliveryStatus;
