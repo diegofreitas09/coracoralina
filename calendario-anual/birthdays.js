@@ -42,7 +42,53 @@
       return added;
     }catch{return 0;}
   }
-  window.CoraBirthdays={key:KEY,all:()=>sorted(read()),byMonth:n=>sorted(read().filter(p=>p.month===Number(n))),importBaseline};
+  const STAFF_SYNC_KEY='cora_birthdays_staff_confirmed_nov_2026_v1';
+  const STAFF_IDENTIFIERS=new Set([
+   'cora-staff-herculano-feitosa','cora-dec-2','cora-nov-john','cora-staff-alana-sales',
+   'cora-dec-3','cora-staff-gleiciane-felix','cora-staff-marcia-cristina',
+   'cora-staff-julia-barbosa','cora-staff-charles-andrade','cora-staff-maria-lucivania'
+  ]);
+  const STAFF_PREVIOUS_NAMES={'cora-dec-2':['Breno'],'cora-nov-john':['John'],'cora-dec-3':['Renan']};
+  // Importação única do lote institucional, inclusive nos navegadores que já haviam
+  // importado aniversariantes de novembro/dezembro. Exclusões posteriores não retornam.
+  function importConfirmedStaff(incoming){
+   if(!Array.isArray(incoming))return 0;
+   try{if(localStorage.getItem(STAFF_SYNC_KEY))return 0}catch{return 0}
+   const confirmed=incoming.filter(p=>STAFF_IDENTIFIERS.has(String(p?.id||'')));
+   if(confirmed.length!==STAFF_IDENTIFIERS.size)return 0;
+   const merged=[...read()];let changed=0;
+   for(const candidate of confirmed){
+    const name=String(candidate.name||'').trim().replace(/\s+/g,' ');
+    const day=Number(candidate.day),month=Number(candidate.month);
+    if(!name||!valid(day,month))return 0;
+    const matches=merged.map((p,i)=>{
+     if(String(p.id||'')===String(candidate.id))return i;
+     if(p.day!==day||p.month!==month)return -1;
+     const actual=normalize(p.name);
+     if(actual===normalize(name))return i;
+     return (STAFF_PREVIOUS_NAMES[String(candidate.id)]||[]).some(alias=>actual===normalize(alias))?i:-1;
+    }).filter(i=>i>=0);
+    if(matches.length){
+     const keep=matches.find(i=>normalize(merged[i].name)===normalize(name))??matches[0];
+     const old=merged[keep];
+     if((STAFF_PREVIOUS_NAMES[String(candidate.id)]||[]).some(alias=>normalize(old.name)===normalize(alias))){
+      merged[keep]={...old,name:name.slice(0,100)};changed++;
+     }
+     for(const i of matches.filter(i=>i!==keep).sort((a,b)=>b-a)){merged.splice(i,1);changed++}
+    }else{
+     merged.push({id:String(candidate.id),name:name.slice(0,100),role:String(candidate.role||'').slice(0,85),day,month});
+     changed++;
+    }
+   }
+   try{
+    localStorage.setItem(KEY,JSON.stringify(merged));
+    localStorage.setItem(STAFF_SYNC_KEY,'1');
+    people=merged;render();publish();
+    if(changed)feedback('✓ Cadastro institucional de aniversariantes atualizado ('+changed+' registro(s)).');
+    return changed;
+   }catch{return 0}
+  }
+  window.CoraBirthdays={key:KEY,all:()=>sorted(read()),byMonth:n=>sorted(read().filter(p=>p.month===Number(n))),importBaseline,importConfirmedStaff};
   monthFilter.innerHTML='<option value="all">Todos os meses</option>'+MONTHS.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
   monthFilter.value=String(new Date().getMonth()+1);
   function feedback(message,ok=true){const e=$('birthdayFeedback');e.textContent=message;e.classList.toggle('birthday-success',ok);e.classList.toggle('birthday-error',!ok)}
