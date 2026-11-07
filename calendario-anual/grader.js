@@ -342,7 +342,7 @@
    crop.getContext('2d').drawImage(c,0,0,c.width,crop.height,0,0,c.width,crop.height);
    const output=await window.Tesseract.recognize(crop,'por');
    const text=String(output?.data?.text||'');
-   const name=text.match(/(?:nome|aluno)\s*[:\-]\s*(.+)/i),number=text.match(/(?:n[úu]mero|n[ºo°]|chamada)\s*[:\-]\s*(\d{1,4})/i);
+   const name=text.match(/(?:nome|aluno\s*(?:\(a\))?)\s*[:\-]\s*([^\r\n]+)/i),number=text.match(/(?:n[úu]mero|n[ºo°]|chamada)\s*[:\-]\s*(\d{1,4})/i);
    const date=text.match(/(?:data)\s*[:\-]\s*(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/i);
    if(name)result.name=name[1].trim().slice(0,130);
    if(number)result.number=number[1];
