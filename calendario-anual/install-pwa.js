@@ -34,9 +34,10 @@
     if (backupWarning) backupWarning.hidden = teamMode;
     if (installSubtitle) installSubtitle.textContent = teamMode ? 'Equipe Pedagógica • acesso individual' : 'Calendário Anual • Ícone 3D azul e dourado';
     if (installed()) {
-      openButton.textContent = 'Atualizar ícone do app';
-      status.textContent = isIOS ? 'O aplicativo já está aberto pela Tela de Início. Para atualizar o ícone no iPhone, faça backup antes de remover e adicionar novamente.' : 'O aplicativo já está instalado neste dispositivo. O Android pode conservar o ícone anterior. Faça um backup antes de remover e instalar novamente.';
-      installButton.hidden = true;
+      openButton.textContent = 'Atualizar aplicativo';
+      status.textContent = 'O aplicativo já está instalado. Toque em Atualizar conteúdo agora para carregar as telas e os calendários mais recentes sem desinstalar. A troca do ícone antigo pode exigir reinstalação em alguns aparelhos.';
+      installButton.hidden = false;
+      installButton.textContent = 'Atualizar conteúdo agora';
     } else if (deferredPrompt && !isIOS) {
       openButton.textContent = 'Instalar aplicativo';
       status.textContent = 'Seu navegador permite instalar o Calendário Cora Coralina diretamente. Toque em Instalar agora.';
@@ -52,7 +53,20 @@
     if (typeof dialog.showModal === 'function') dialog.showModal();
     else window.alert(status.textContent);
   }
-  window.CoraInstallApp = { open: showGuide };
+  async function reloadLatest(){
+    if(document.querySelector('#cgResultForm, #cgTestForm')&&
+       !window.confirm('A atualização reabrirá o aplicativo e poderá descartar alterações ainda não salvas no corretor. Deseja continuar?'))return;
+    status.textContent='Buscando a versão mais recente do Calendário Cora Coralina...';
+    installButton.disabled=true;
+    try{
+      const reg=await navigator.serviceWorker?.getRegistration?.();
+      await reg?.update?.();
+    }catch(e){console.warn('Atualização do serviço offline indisponível:',e)}
+    const url=new URL(window.location.href);
+    url.searchParams.set('versao',String(Date.now()));
+    window.location.replace(url.toString());
+  }
+  window.CoraInstallApp = { open: showGuide,update:reloadLatest };
   window.addEventListener('beforeinstallprompt', event => {
     event.preventDefault();
     deferredPrompt = event;
@@ -73,6 +87,7 @@
     else window.alert('Use a opção Backup no topo do calendário antes de desinstalar.');
   });
   installButton.addEventListener('click', async () => {
+    if(installed()){await reloadLatest();return;}
     if (!deferredPrompt) { refresh(); return; }
     const prompt = deferredPrompt;
     deferredPrompt = null;
