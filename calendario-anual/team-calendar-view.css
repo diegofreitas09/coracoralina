@@ -55,3 +55,12 @@
 [data-cora-theme="dark"] .cy-day-item.is-stage{background:#756034}
 @media(max-width:900px){.cy-summary-months{grid-template-columns:repeat(3,minmax(0,1fr))}.cy-summary-stages{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.cy-summary,.cy-month{padding:11px;border-radius:13px}.cy-summary-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.cy-summary-months{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.cy-summary-month{padding:8px}.cy-month-header{padding:12px}.cy-weekdays,.cy-day-grid{gap:2px}.cy-day{min-height:55px;padding:3px 2px;border-radius:4px}.cy-day-num{font-size:.7rem}.cy-day-item{font-size:.51rem;padding:1px 2px}.cy-month-footer{grid-template-columns:1fr;gap:7px}.cy-month.is-pdf-preview .cy-day{min-height:55px}.cy-month-header h3{font-size:1.25rem}}
+
+/* Lista complementar de compromissos: o calendário visual já contém os projetos e aniversários. */
+.cp-calendar-agenda{margin:14px 0;background:#fff;border:1px solid #dae6f1;border-radius:12px;padding:12px 15px}
+.cp-calendar-agenda summary{font-size:.87rem;color:#225075;font-weight:780;cursor:pointer}
+.cp-calendar-agenda .cp-list{margin-top:12px}
+.cp-calendar-empty-note{margin:12px 0;padding:11px 13px;border-radius:11px;background:#f3f7fc;border:1px solid #dfebf6;color:#526c84;font-size:.82rem;line-height:1.55}
+[data-cora-theme="dark"] .cp-calendar-agenda{background:#24374b;border-color:#47617b}
+[data-cora-theme="dark"] .cp-calendar-agenda summary{color:#d3ebfc}
+[data-cora-theme="dark"] .cp-calendar-empty-note{background:#23384c;border-color:#435d78;color:#cbdeee}

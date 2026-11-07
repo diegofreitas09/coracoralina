@@ -837,8 +837,6 @@
    <h2 style="color:#12375e;margin-top:28px">Comunicados recentes</h2>${notes.slice(0,3).map(noticeHtml).join('')||'<p class="cp-muted">Sem avisos recentes.</p>'}`;
   }else if(tab==='calendario'||tab==='avaliacoes'){
    const arr=(tab==='avaliacoes'?assess:events).filter(e=>Number(e.date.slice(5,7))===month+1);
-   const birthdays=tab==='calendario'?publishedBirthdays().filter(p=>Number(p.month)===month+1):[];
-   const projectsMonth=tab==='calendario'&&Array.isArray(data?.projects?.[month])?data.projects[month]:[];
    const yearOverview=compactYearSummary();
 
    const annualBirthdays=tab==='calendario'
@@ -850,13 +848,10 @@
        }).join('')+'</div></details>':'';
    content=`<div class="cp-main-heading"><h2>${tab==='avaliacoes'?'Avaliações, simulados e sondagens':'Calendário escolar'}</h2><select id="cpMonthPicker" aria-label="Mês do calendário">${MONTHS.map((m,i)=>`<option value="${i}" ${month===i?'selected':''}>${m} de ${year}</option>`).join('')}</select></div>
    ${selectedMonthGrid(tab==='avaliacoes')}
-   <div class="cp-main-heading"><h3>${tab==='avaliacoes'?'Avaliações publicadas no mês':'Compromissos publicados no mês'}</h3></div>
-   <div class="cp-list">${arr.length?arr.map(eventHtml).join(''):'<p class="cp-muted">Nenhuma atividade aprovada e publicada neste mês. O calendário, os projetos e os aniversariantes continuam disponíveis.</p>'}</div>
-   ${tab==='calendario'?'<section class="cp-birthday-calendar-list"><h3>Projetos organizados em '+safe(MONTHS[month])+'</h3>'+
-     (projectsMonth.length?'<div class="cp-list">'+projectsMonth.map(p=>'<article class="cp-list-entry">'+safe(p)+'</article>').join('')+'</div>':'<p class="cp-muted">Nenhum projeto publicado para este mês.</p>')+'</section>':''}
-   ${tab==='calendario'?'<section class="cp-birthday-calendar-list"><h3>Aniversariantes de '+safe(MONTHS[month])+'</h3>'+
-     (window.CoraCalendarBirthdays?.listHTML?.(birthdays)||'<p>Sem aniversariantes</p>')+'</section>'+
-     '<div class="cg-toolbar"><button class="cp-btn gold" id="cpDownloadMonth" type="button">↓ Baixar calendário de '+safe(MONTHS[month])+' (PDF)</button></div>':''}${yearOverview}${annualBirthdays}`;
+   ${arr.length?'<details class="cp-calendar-agenda" open><summary>'+ (tab==='avaliacoes'?'Avaliações e simulados':'Compromissos do mês')+' · '+arr.length+'</summary><div class="cp-list">'+arr.map(eventHtml).join('')+'</div></details>':
+     '<p class="cp-calendar-empty-note">'+(tab==='avaliacoes'?'Nenhuma avaliação aprovada e publicada em '+MONTHS[month]+' de '+year+'.':
+      'Nenhuma atividade pedagógica aprovada e publicada em '+MONTHS[month]+' de '+year+'. Os projetos e aniversariantes já aparecem no próprio calendário. A Gestão pode ter eventos aguardando revisão.')+'</p>'}
+   ${tab==='calendario'?'<div class="cg-toolbar"><button class="cp-btn gold" id="cpDownloadMonth" type="button">↓ Baixar calendário de '+safe(MONTHS[month])+' (PDF)</button></div>':''}${yearOverview}${annualBirthdays}`;
   }else if(tab==='entregas'){
     const rows=events.filter(e=>e.assessmentDelivery).sort((a,b)=>Number(a.stageNumber)-Number(b.stageNumber));
     const contents=events.filter(e=>e.type==='Entrega de conteúdo').sort((a,b)=>a.date.localeCompare(b.date));
