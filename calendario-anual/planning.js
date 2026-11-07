@@ -135,7 +135,7 @@
   }
   function store(){try{localStorage.setItem(STORAGE,JSON.stringify(plans));$('planningSaveStatus').textContent='Alterações salvas automaticamente';}catch{$('planningSaveStatus').textContent='Não foi possível salvar no dispositivo';}}
   function readForm(){const obj={};for(const field of fields){const el=form.elements.namedItem(field);obj[field]=field==='segment'?segmentValues().join(' • '):(field==='includeCalendar'||field==='includeBirthdays')?Boolean(el?.checked):el?.value||'';}return obj}
-  function fillForm(month){const obj=initMonth(month);for(const field of fields){const el=form.elements.namedItem(field);if(field==='segment')setSegments(obj.segment);else if(el)(field==='includeCalendar'||field==='includeBirthdays')?el.checked=obj[field]!==false:el.value=obj[field]||''}current=month;$('planMonth').value=String(month);renderSummary()}
+  function fillForm(month){const obj=initMonth(month);for(const field of fields){const el=form.elements.namedItem(field);if(field==='segment')setSegments(obj.segment);else if(el){if(field==='includeBirthdays')el.checked=true;else if(field==='birthdays')el.value=obj.birthdays===sample.birthdays?'':obj.birthdays||'';else if(field==='includeCalendar')el.checked=obj[field]!==false;else el.value=obj[field]||''}}current=month;$('planMonth').value=String(month);renderSummary()}
   function renderSummary(){
     let panel=$('planStageSummary');
     if(!panel){panel=document.createElement('div');panel.id='planStageSummary';panel.className='plan-stage-summary';form.querySelector('.studio-two')?.insertAdjacentElement('afterend',panel);}

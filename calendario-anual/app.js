@@ -77,8 +77,9 @@
   }
   const filesFor = month => allFiles.filter(item => item.month === month);
   const eventsFor = month => (window.CoraYears?.filterVisible(events)||events).filter(item => Number(item.date?.slice(5,7)) - 1 === month).sort((a,b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
+  const birthdaysFor=month=>window.CoraCalendarBirthdays?.monthly?.(window.CoraCalendarBirthdays.local(),month)||[];
   function render() {
-    renderNav(); renderCalendar(); renderEvents(); renderFiles(); renderStats();
+    renderNav(); renderCalendar(); renderEvents(); renderBirthdays(); renderFiles(); renderStats();
     $('#currentMonthTitle').innerHTML = `${MONTHS[selectedMonth]} <small>${YEAR}</small>`;
     $('#filesMonthTitle').textContent = MONTHS[selectedMonth];
     $('#todayMonth').textContent = `${MONTHS[selectedMonth]} de ${YEAR}`;
@@ -87,13 +88,20 @@
     window.dispatchEvent(new CustomEvent('cora-month-changed',{detail:{month:selectedMonth,year:YEAR}}));
   }
   function renderNav() {
-    $('#monthNav').innerHTML = MONTHS.map((name,i) => `<button type="button" data-month="${i}" class="${selectedMonth===i?'active':''}" aria-current="${selectedMonth===i?'date':'false'}"><span>${name}</span>${eventsFor(i).length+filesFor(i).length?`<span class="count">${eventsFor(i).length+filesFor(i).length}</span>`:''}</button>`).join('');
+    $('#monthNav').innerHTML = MONTHS.map((name,i) => `<button type="button" data-month="${i}" class="${selectedMonth===i?'active':''}" aria-current="${selectedMonth===i?'date':'false'}"><span>${name}</span>${eventsFor(i).length+filesFor(i).length+birthdaysFor(i).length?`<span class="count">${eventsFor(i).length+filesFor(i).length+birthdaysFor(i).length}</span>`:''}</button>`).join('');
     $('#monthNav').querySelectorAll('[data-month]').forEach(button => button.addEventListener('click', () => {selectedMonth = Number(button.dataset.month);render();}));
   }
   function renderStats() {
     $('#statEvents').textContent = (window.CoraYears?.filterVisible(events)||events).length;
     $('#statFiles').textContent = allFiles.length;
     $('#statCurrent').textContent = eventsFor(selectedMonth).length;
+  }
+  function renderBirthdays(){
+    const area=$('#monthlyBirthdayList'),heading=$('#monthBirthdayHeading');
+    if(!area)return;
+    if(heading)heading.textContent='Aniversariantes de '+MONTHS[selectedMonth]+' · '+YEAR;
+    const list=birthdaysFor(selectedMonth);
+    area.innerHTML=window.CoraCalendarBirthdays?.listHTML?.(list)||'<p>Nenhum aniversariante registrado.</p>';
   }
   function renderCalendar() {
     const startDay = new Date(YEAR, selectedMonth,1).getDay();
@@ -108,7 +116,9 @@
       const list = (window.CoraYears?.filterVisible(events)||events).filter(item=>item.date===date);
       const isToday = today.getFullYear()===YEAR && today.getMonth()===selectedMonth && today.getDate()===day;
       const stage=window.CoraStages?.get?.(YEAR)?.find(st=>st.start===date||st.end===date);
-      html += `<button type="button" class="day ${isToday?'today':''} ${list.length?'has-event':''} ${stage?'has-stage-boundary':''}" data-date="${date}" title="${list.length?escapeHtml(list.map(item=>item.title).join(' • ')):'Adicionar evento em '+day+'/'+(selectedMonth+1)+'/'+YEAR}" aria-label="${day} de ${MONTHS[selectedMonth]}: ${list.length} evento(s)"><span class="date-num">${day}</span>${stage?`<span class="stage-mark">${stage.start===date?'Início':'Fim'} da ${stage.number}ª etapa</span>`:''}${list.length?`<span class="event-markers" aria-hidden="true">${list.slice(0,3).map(item=>`<i class="event-marker ${item.type==='Reunião'?'marker-meeting':item.type==='Avaliação'?'marker-exam':item.type==='Feriado'?'marker-holiday':'marker-general'}"></i>`).join('')}</span><span class="event-quantity">${list.length} ${list.length===1?'evento':'eventos'}</span>`:''}</button>`;
+      const birthdayPeople=birthdaysFor(selectedMonth).filter(b=>b.day===day);
+      const birthdayLabel=birthdayPeople.map(b=>b.name).join(' • ');
+      html += `<button type="button" class="day ${isToday?'today':''} ${list.length?'has-event':''} ${stage?'has-stage-boundary':''} ${birthdayPeople.length?'has-birthday':''}" data-date="${date}" title="${escapeHtml([list.map(item=>item.title).join(' • '),birthdayLabel?'Aniversariantes: '+birthdayLabel:''].filter(Boolean).join(' • ')||'Adicionar evento em '+day+'/'+(selectedMonth+1)+'/'+YEAR)}" aria-label="${day} de ${MONTHS[selectedMonth]}: ${list.length} evento(s)${birthdayLabel?' · Aniversariantes: '+escapeHtml(birthdayLabel):''}"><span class="date-num">${day}</span>${birthdayPeople.length?'<span class="cora-birthday-chip" aria-hidden="true">Aniv. '+birthdayPeople.length+'</span>':''}${stage?`<span class="stage-mark">${stage.start===date?'Início':'Fim'} da ${stage.number}ª etapa</span>`:''}${list.length?`<span class="event-markers" aria-hidden="true">${list.slice(0,3).map(item=>`<i class="event-marker ${item.type==='Reunião'?'marker-meeting':item.type==='Avaliação'?'marker-exam':item.type==='Feriado'?'marker-holiday':'marker-general'}"></i>`).join('')}</span><span class="event-quantity">${list.length} ${list.length===1?'evento':'eventos'}</span>`:''}</button>`;
     }
     $('#calendar').innerHTML = html + '</div>';
     $('#calendar').querySelectorAll('[data-date]').forEach(button => button.addEventListener('click',() => {const date=button.dataset.date;if(eventsFor(selectedMonth).some(item=>item.date===date)&&typeof window.coraOpenDayEvents==='function')window.coraOpenDayEvents(date);else openEventModal(date);}));
@@ -312,6 +322,11 @@
       g.font='500 14px Arial,sans-serif';
       text(g,ellipsis(g,daily[0].notes,step-23),x+10,lineTop+visible*38+15,14,'#61768b');
     }
+    const birthdayPeople=birthdaysFor(month).filter(p=>p.day===day);
+    if(birthdayPeople.length){
+      rounded(g,x+step-70,y+6,58,27,6,'#f8df9b');
+      text(g,'ANIV. '+birthdayPeople.length,x+step-64,y+25,13,'#6e4c05','800');
+    }
     if(daily.length>visible)text(g,`+ ${daily.length-visible} atividade(s)`,x+9,y+cellH-9,14,'#60788c','700');
   }
   rounded(g,68,987,PAGE_W-136,130,6,'#f4f8fc');
@@ -331,6 +346,18 @@
   footerCanvas(g);
   return c;
 }
+  function birthdayCanvas(month){
+    const list=birthdaysFor(month),[c,g]=headerCanvas('Aniversariantes de '+MONTHS[month],
+      'Datas recorrentes da equipe · '+YEAR+' · '+list.length+' colaborador(es)');
+    if(!list.length){
+      text(g,'Nenhum aniversariante registrado neste mês.',85,338,28,GREY,'600');
+    }else{
+      window.CoraCalendarBirthdays.drawBlock(g,list,{x:85,y:250,width:PAGE_W-170,
+       title:'ANIVERSARIANTES · '+MONTHS[month].toUpperCase(),font:24,rowHeight:44,columns:2,maxRows:14});
+    }
+    footerCanvas(g,'ANIVERSARIANTES · '+MONTHS[month].toUpperCase());
+    return c;
+  }
   // Compactação por mês: duas colunas, mantendo a leitura e sem folhas quase vazias.
   const LISTING_ROWS=18, LISTING_PER_PAGE=LISTING_ROWS*2;
   function listingCanvas(month,kind,items,part,total){
@@ -408,6 +435,7 @@
       const problems=[];let attachedOriginals=0;
       for(let month=0;month<12;month++){
         await attachCanvas(pdf,calendarCanvas(month));
+        if(birthdaysFor(month).length)await attachCanvas(pdf,birthdayCanvas(month));
         const projects=window.CoraYears?.getProjects?.(YEAR)?.[month]||[];
         const extraProjects=projects.slice(6);
         for(let part=0,total=Math.ceil(extraProjects.length/LISTING_PER_PAGE);part<total;part++)
@@ -521,6 +549,20 @@
     $('#restoreBtn').addEventListener('click',()=>$('#restorePicker').click());
     $('#restorePicker').addEventListener('change',async event=>{if(event.target.files[0])await restoreBackup(event.target.files[0]);event.target.value='';});
     $('#exportBtn').addEventListener('click',()=>{if(window.CoraYears?.exportMonthlyPDF)return window.CoraYears.exportMonthlyPDF();return exportPDF();});
+    $('#downloadMonthBirthdayPDF')?.addEventListener('click',async()=>{
+      const button=$('#downloadMonthBirthdayPDF');
+      if(!button||button.disabled)return;
+      button.disabled=true;
+      try{
+       const lib=await getPDFLib(),pdf=await lib.PDFDocument.create(),m=selectedMonth;
+       pdf.setTitle('Calendário '+MONTHS[m]+' '+YEAR+' com aniversariantes');
+       await attachCanvas(pdf,calendarCanvas(m));
+       if(birthdaysFor(m).length)await attachCanvas(pdf,birthdayCanvas(m));
+       downloadBlob(new Blob([await pdf.save()],{type:'application/pdf'}),'Calendario_'+MONTHS[m]+'_Cora_'+YEAR+'.pdf');
+       notify('Calendário do mês baixado com os aniversariantes.');
+      }catch(e){console.error(e);notify('Não foi possível baixar o calendário mensal: '+e.message)}
+      finally{button.disabled=false}
+    });
     window.addEventListener('cora-restore-official-request',()=>{
       try{localStorage.removeItem(OFFICIAL_REMOVED_KEY);}catch{}
       const ids=new Set(events.map(item=>item.id));let restored=0;
@@ -585,6 +627,7 @@
     bind();
     $('#eventDate').min=`${YEAR}-01-01`;$('#eventDate').max=`${YEAR}-12-31`;
     window.addEventListener('cora-year-changed',e=>switchYear(e.detail.year));
+    window.addEventListener('cora-birthdays-changed',()=>{renderCalendar();renderBirthdays();});
     window.addEventListener('cora-audience-changed',()=>render());
     window.addEventListener('cora-projects-changed',e=>{if(Number(e.detail?.year)===YEAR)render();});
     window.addEventListener('cora-stages-updated',e=>{if(Number(e.detail?.year)===YEAR)render();});

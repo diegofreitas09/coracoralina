@@ -32,6 +32,7 @@
     $('officialMonthImage').hidden=true;
     const projects=source.projects?.[month]||[];
     $('officialProjectList').innerHTML=projects.length?projects.map(item=>`<li>${String(item).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</li>`).join(''):'<li>Conferir projetos no documento original.</li>';
+    const area=$('officialBirthdayMonth');if(area)area.innerHTML=window.CoraCalendarBirthdays?.listHTML?.(window.CoraCalendarBirthdays.monthly(window.CoraCalendarBirthdays.local(),month))||'<p>Sem aniversariantes.</p>';
     $('officialEventCount').textContent=(source.events||[]).filter(item=>item.date.slice(5,7)===String(month+1).padStart(2,'0')).length;
     try{
       const uri=await loadPage(month+2);
@@ -52,12 +53,12 @@
       for(let page=1;page<=14;page++){
         btn.textContent=`Preparando ${page}/14...`;
         const uri=await loadPage(page);
-        sourcePages.push({width:1180,height:664,toDataURL(){return uri}});
+        sourcePages.push(await window.CoraCalendarBirthdays.officialPage(uri,page,window.CoraCalendarBirthdays.local()));
       }
       if(!window.CoraPDF?.fromCanvases)throw Error('Exportação PDF não disponível');
-      const pdf=window.CoraPDF.fromCanvases(sourcePages,{pageWidth:1180,pageHeight:664,title:'Calendario Anual Oficial 2026 - Colegio Cora Coralina'});
+      const pdf=window.CoraPDF.fromCanvases(sourcePages,{pageWidth:1180,pageHeight:770,title:'Calendario Anual Oficial 2026 com aniversariantes - Colegio Cora Coralina'});
       const url=URL.createObjectURL(pdf),a=document.createElement('a');a.href=url;a.download='Calendario_Anual_Oficial_Cora_Coralina_2026.pdf';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);
-      alertUser('Calendário oficial de 2026: 14 páginas prontas para baixar.');
+      alertUser('Calendário oficial de 2026: 14 páginas com aniversariantes prontas para baixar.');
     }catch(error){console.error(error);alertUser('Não foi possível gerar o PDF oficial. Verifique a conexão e tente novamente.');}
     finally{btn.disabled=false;btn.textContent=original;}
   }
