@@ -97,7 +97,7 @@
    '<label class="cg-btn primary cg-file-button">Capturar folha <input id="cgPhoto" type="file" accept="image/*" capture="environment" hidden></label>'+
    '<label class="cg-btn cg-file-button">Enviar imagem <input id="cgUpload" type="file" accept="image/*" hidden></label></div>'+
    '<div class="cg-panel"><div class="cg-photowrap">'+(photoUrl?'<img class="cg-photo" src="'+safe(photoUrl)+'" alt="Prévia da folha capturada">':'<div class="cg-empty cg-photo-placeholder"><strong>Fotografe a folha inteira</strong><p>Pinte a área circular com caneta azul ou preta. Use a folha padronizada com os quatro quadrados pretos nos cantos. Outros modelos exigem correção manual.</p></div>')+'</div>'+
-   (photoUrl?'<div class="cg-toolbar">'+button('scan','Ler marcações automaticamente','primary')+button('ocr','Ler cabeçalho (OCR)')+'</div>':'')+
+   (photoUrl?'<div class="cg-toolbar cg-photo-actions">'+button('scan','Ler marcações automaticamente','primary')+button('ocr','Ler cabeçalho (OCR)')+button('remove-photo','Remover imagem','danger')+'</div>':'')+
    '<p id="cgScanStatus" class="cg-note" role="status">'+safe(scanStatus||'Pinte a região circular inteira com caneta azul ou preta. Riscos, marcações duplas e bolhas incompletas ficam para revisão.')+'</p></div>'+
    '<form id="cgResultForm" class="cg-panel cg-form"><div class="cg-subhead"><h3>Identificação do aluno</h3><small>Confirme os dados capturados. O nome manuscrito pode precisar de ajuste.</small></div>'+
    '<div class="cg-form-grid"><label>Nome do aluno<input name="name" required maxlength="130" value="'+safe(r.name)+'" placeholder="Nome completo"></label>'+
@@ -280,6 +280,15 @@
    notify('✓ Leitura completa! Todos os campos foram conferidos.');
   }
   else if(action==='clear-result'){if(confirm('Limpar todas as respostas desta captura?')){result.answers.fill('?');updatePreview()}}
+  else if(action==='remove-photo'){
+   if(busy){notify('A leitura está em andamento. Conclua antes de remover a imagem.');return}
+   syncResultForm();
+   confirmedSignature='';
+   resetPhoto();
+   scanStatus='Imagem removida. Nome, número, data e respostas foram mantidos para conferência. Para zerar as alternativas, toque em “Limpar respostas”.';
+   draw();
+   notify('Imagem removida. Você pode capturar outra folha.');
+  }
   else if(action==='scan')void scanPhoto();
   else if(action==='ocr')void scanHeader();
   else if(action==='delete-test'&&confirm('Excluir a avaliação e todas as correções da sua conta?')){void requestSave('delete-test',{testId:t.id}).then(ok=>{if(ok){selected='';changeView('list')}})}
