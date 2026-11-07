@@ -1,3 +1,4 @@
+import {gradebookAction} from './lib/cora-gradebook.mjs';
 // Access-controlled publication API for the Cora Coralina calendar.
 // Passwords and session keys are set in Netlify project environment variables, never in Git.
 import { createHmac, createHash, timingSafeEqual, randomBytes, scryptSync } from 'node:crypto';
@@ -225,6 +226,16 @@ export default async function handler(request,context){
   if(result.error)return answer({error:result.error},result.status||400);
   await queueMirror(context);
   return answer(result);
+ }
+ if(action==='gradebook'&&(request.method==='GET'||request.method==='POST')){
+  if(role!=='equipe'||!member)return answer({error:'Entre na conta individual da Equipe para usar o corretor.'},403);
+  try{
+   const result=await gradebookAction(member,request);
+   return result.error?answer({error:result.error},result.status||400):answer(result);
+  }catch(error){
+   console.error('Gradebook failure',error);
+   return answer({error:'Não foi possível acessar o corretor de gabaritos.'},503);
+  }
  }
  if(action==='team-stats'&&request.method==='GET'){
   // Somente agregados para docentes autenticados; nenhum nome, e-mail ou histórico individual.
