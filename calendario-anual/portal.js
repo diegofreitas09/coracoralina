@@ -98,7 +98,7 @@
     stages:window.CoraStages?.get?.(targetYear)||[]
    });
    const n=report.counts;
-   status.textContent=targetYear+' · '+n.synchronized+'/12 sincronizados · '+n.pending+' em revisão · '+n.stale+' com alterações · '+n.unpublished+' sem publicação';
+   status.textContent=targetYear+' · '+n.synchronized+' meses com atividades sincronizadas · '+n.empty+' sem atividades pedagógicas · '+n.pending+' em revisão · '+n.stale+' com alterações · '+n.unpublished+' sem publicação';
    area.innerHTML=report.months.map(m=>{
     const className=m.status==='Em revisão'?'is-review':m.status==='Atualização pendente'?'is-stale':m.status==='Não publicado'?'is-unpublished':'';
     return '<button type="button" class="cp-sync-month '+className+'" data-cp-sync-month="'+m.month+'">'+

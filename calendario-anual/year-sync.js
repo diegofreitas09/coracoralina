@@ -27,7 +27,9 @@
       (Number(String(st.start||'').slice(5,7))===i+1||Number(String(st.end||'').slice(5,7))===i+1)).length;
    const changed=hasPublished&&(
     !equalEvents(localReady,publicEvents)||projectKey(localP)!==projectKey(publishedP)||!sameBirthdays);
-   const status=!hasPublished?'Não publicado':pending.length||stagesPending?'Em revisão':changed?'Atualização pendente':'Sincronizado';
+   const noAcademicActivities=!localReady.length&&!publicEvents.length&&!localP.length&&!publishedP.length;
+   const status=!hasPublished?'Não publicado':pending.length||stagesPending?'Em revisão':
+    changed?'Atualização pendente':noAcademicActivities?'Sem atividades pedagógicas':'Sincronizado';
    return {name,month:i,ready:localReady.length,published:publicEvents.length,
     pending:pending.length,projects:localP.length,publishedProjects:publishedP.length,
     birthdays:localB.length,publishedBirthdays:publishedB.length,stagesPending,changed,status};
@@ -35,6 +37,7 @@
   return {year:Number(year),hasPublished,updatedAt:publication?.updatedAt||null,
    months:monthsReport,counts:{
     synchronized:monthsReport.filter(m=>m.status==='Sincronizado').length,
+    empty:monthsReport.filter(m=>m.status==='Sem atividades pedagógicas').length,
     pending:monthsReport.filter(m=>m.status==='Em revisão').length,
     stale:monthsReport.filter(m=>m.status==='Atualização pendente').length,
     unpublished:monthsReport.filter(m=>m.status==='Não publicado').length
