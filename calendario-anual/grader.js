@@ -6,7 +6,7 @@
  const $=(s,root=document)=>root.querySelector(s);
  const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const uid=()=>globalThis.crypto?.randomUUID?.()||'cg-'+Date.now()+'-'+Math.random().toString(36).slice(2,11);
- const today=()=>new Date().toLocaleDateString('en-CA');
+ const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
  const letters=['A','B','C','D','E'];
  const num=v=>Number(v)||0;
  let api,notify,container,items=[],loaded=false,error='',loading=false,selected='',view='list',draft=null,result=null;
