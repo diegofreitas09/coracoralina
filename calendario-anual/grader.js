@@ -170,7 +170,7 @@
   const score=(correct/t.questionCount*t.maxScore).toLocaleString('pt-BR',{maximumFractionDigits:2});
   const p=$('#cgScorePreview',container),c=$('#cgReviewedCount',container);
   if(c)c.textContent=(t.questionCount-pending)+' / '+t.questionCount+' conferidas';
-  if(p)p.textContent=pending?pending+' questão(ões) ainda precisam de revisão. Acertos confirmados: '+correct+'.':'Resultado conferido: '+correct+' acertos · Nota '+score+' / '+t.maxScore+'.';
+  if(p)p.textContent=pending?pending+' questão(ões) ainda precisam de revisão. Acertos confirmados: '+correct+'.':'Prévia do resultado: '+correct+' acertos · Nota '+score+' / '+t.maxScore+'.';
   syncResultForm();
   const status=verificationState(),box=$('#cgVerification',container),confirm=$('[data-cg="confirm-reading"]',container),save=$('#cgSaveCorrection',container);
   if(confirm)confirm.disabled=!status.ready;
