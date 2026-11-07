@@ -727,6 +727,14 @@
   if(tab==='correcao'&&!showBell&&$('#coraGrader')?.querySelector('#cgTestForm, #cgResultForm'))return;
   const events=filteredEvents(),notes=activeNotices(),assess=events.filter(e=>isAssessment(e)&&!isSecond(e)),alertList=upcoming(),unread=alertList.filter(a=>a.unread).length;
   const badge=$('#cpBellCount');if(badge){badge.style.display=unread?'block':'none';badge.textContent=unread>99?'99+':String(unread);badge.setAttribute('aria-label',unread+' alertas não lidos')}const bell=$('#cpBell');if(bell){bell.classList.toggle('has-unread',unread>0);bell.setAttribute('aria-label',unread?unread+' alertas novos. Abrir notificações':'Abrir notificações')}
+  const annualSource={year,month,events,stages:Array.isArray(data?.stages)?data.stages:[],
+   birthdays:publishedBirthdays(),projects:Array.isArray(data?.projects)?data.projects:[]};
+  const sameYearView=window.CoraTeacherCalendar;
+  const fullYearSummary=()=>sameYearView?.yearSummary?.(annualSource,{selectedMonth:month})||'';
+  const compactYearSummary=()=>sameYearView?.yearSummary?.(annualSource,{selectedMonth:month,compact:true})||'';
+  const selectedMonthGrid=(assessmentOnly=false,pdf=false)=>sameYearView?.monthGrid?.(
+   {...annualSource,events:assessmentOnly?assess:events,
+    birthdays:assessmentOnly?[]:annualSource.birthdays,projects:assessmentOnly?[]:annualSource.projects},{pdf})||'';
   const sections=[['resumo','Visão Geral'],['calendario','Calendário '+year],['etapas','Etapas letivas'],['avaliacoes','Avaliações e Simulados'],['entregas','Prazos de entrega'],['aniversarios','🎂 Aniversariantes'],['avisos','Avisos'],['equipe','Equipe em números'],['correcao','Corretor de gabaritos'],['pdf','PDF Anual']];
   const tabs=`<div class="cp-tabs">${sections.map(([id,label])=>`<button class="${tab===id?'active':''}" data-cp-tab="${id}">${label}</button>`).join('')}</div>`;
   const alertPrompt=!showBell&&unread?'<button type="button" id="cpUnreadPrompt" class="cp-unread-banner">🔔 '+unread+' alerta(s) não lido(s) · Toque para ver os recados da Gestão</button>':'';
@@ -811,7 +819,7 @@
    const birthdayList=publishedBirthdays().filter(p=>Number(p.month)===thisMonth);
    const nextMonth=thisMonth===12?1:thisMonth+1;
    const nextBirthdays=publishedBirthdays().filter(p=>Number(p.month)===nextMonth);
-   content=`<div class="cp-main-heading"><h2>Atividades e próximos compromissos</h2></div><div class="cp-list">${future.length?future.map(eventHtml).join(''):'<p class="cp-muted">Nenhum evento futuro publicado para este ano.</p>'}</div>
+   content=fullYearSummary()+`<div class="cp-main-heading"><h2>Atividades e próximos compromissos</h2></div><div class="cp-list">${future.length?future.map(eventHtml).join(''):'<p class="cp-muted">Nenhum evento futuro publicado para este ano.</p>'}</div>
    <div class="cp-birthday-teaser"><div class="cp-main-heading"><h2>🎂 Aniversariantes de ${MONTHS[thisMonth-1]}</h2><button class="cp-btn soft" id="cpSeeBirthdays">Ver todos os meses</button></div>
    <div class="cp-list">${birthdayList.length?birthdayList.map(birthdayEntry).join(''):'<p class="cp-muted">Nenhum aniversariante publicado para este mês.</p>'}</div><div class="cp-birthday-next"><strong>Próximo mês · ${MONTHS[nextMonth-1]}</strong><div class="cp-birthday-preview">${nextBirthdays.length?nextBirthdays.map(p=>`<span>${safe(String(p.day).padStart(2,'0'))}/${safe(String(p.month).padStart(2,'0'))} · ${safe(p.name)}</span>`).join(''):'<span>Nenhum aniversariante cadastrado</span>'}</div></div></div>
    <h2 style="color:#12375e;margin-top:28px">Comunicados recentes</h2>${notes.slice(0,3).map(noticeHtml).join('')||'<p class="cp-muted">Sem avisos recentes.</p>'}`;
@@ -819,16 +827,7 @@
    const arr=(tab==='avaliacoes'?assess:events).filter(e=>Number(e.date.slice(5,7))===month+1);
    const birthdays=tab==='calendario'?publishedBirthdays().filter(p=>Number(p.month)===month+1):[];
    const projectsMonth=tab==='calendario'&&Array.isArray(data?.projects?.[month])?data.projects[month]:[];
-   const yearOverview=tab==='calendario'
-    ?'<details class="cp-team-year-overview" open><summary>Visão anual de '+year+' · 12 meses</summary>'+
-      '<div class="cp-sync-year-grid">'+MONTHS.map((name,i)=>{
-       const count=events.filter(e=>Number(e.date.slice(5,7))===i+1).length;
-       const projects=Array.isArray(data?.projects?.[i])?data.projects[i].length:0;
-       const birthdayCount=publishedBirthdays().filter(p=>Number(p.month)===i+1).length;
-       return '<button type="button" data-cp-month="'+i+'" class="cp-sync-month '+(month===i?'is-active':'')+'">'+
-        '<strong>'+safe(name)+'</strong><small>'+count+' atividade(s) publicadas</small>'+
-        '<small>'+projects+' projeto(s) · '+birthdayCount+' aniversário(s)</small></button>';
-      }).join('')+'</div></details>':'';
+   const yearOverview=compactYearSummary();
 
    const annualBirthdays=tab==='calendario'
      ?'<details class="cp-birthday-calendar-list"><summary><strong>Ver os aniversariantes do ano inteiro</strong></summary><div class="cp-annual-birthday-grid">'+
@@ -838,7 +837,9 @@
           (window.CoraCalendarBirthdays?.listHTML?.(people)||'<p>Sem registros</p>')+'</article>';
        }).join('')+'</div></details>':'';
    content=`<div class="cp-main-heading"><h2>${tab==='avaliacoes'?'Avaliações, simulados e sondagens':'Calendário escolar'}</h2><select id="cpMonthPicker" aria-label="Mês do calendário">${MONTHS.map((m,i)=>`<option value="${i}" ${month===i?'selected':''}>${m} de ${year}</option>`).join('')}</select></div>
-   <div class="cp-list">${arr.length?arr.map(eventHtml).join(''):'<p class="cp-muted">Nenhuma atividade aprovada e publicada neste mês. Os projetos e aniversariantes podem aparecer abaixo.</p>'}</div>
+   ${selectedMonthGrid(tab==='avaliacoes')}
+   <div class="cp-main-heading"><h3>${tab==='avaliacoes'?'Avaliações publicadas no mês':'Compromissos publicados no mês'}</h3></div>
+   <div class="cp-list">${arr.length?arr.map(eventHtml).join(''):'<p class="cp-muted">Nenhuma atividade aprovada e publicada neste mês. O calendário, os projetos e os aniversariantes continuam disponíveis.</p>'}</div>
    ${tab==='calendario'?'<section class="cp-birthday-calendar-list"><h3>Projetos organizados em '+safe(MONTHS[month])+'</h3>'+
      (projectsMonth.length?'<div class="cp-list">'+projectsMonth.map(p=>'<article class="cp-list-entry">'+safe(p)+'</article>').join('')+'</div>':'<p class="cp-muted">Nenhum projeto publicado para este mês.</p>')+'</section>':''}
    ${tab==='calendario'?'<section class="cp-birthday-calendar-list"><h3>Aniversariantes de '+safe(MONTHS[month])+'</h3>'+
@@ -871,7 +872,11 @@
        '<button type="button" class="cp-delivery-action is-missing" data-cp-delivery-status="nao_entregou" data-cp-delivery-stage="'+stage+'" '+(!identified?'disabled':'')+' aria-pressed="'+(value==='nao_entregou')+'">Não entregou</button></div>'+
        '<details class="cp-delivery-contact"><summary>Ver e-mails da coordenação</summary><div>Ensino Fundamental: <a href="mailto:'+fundamental+'">'+fundamental+'</a><br>Ensino Médio: <a href="mailto:'+medio+'">'+medio+'</a></div></details>'+
        '</article>';
-    }).join(''):'<p class="cp-muted">Nenhuma entrega de avaliações publicada para '+year+'.</p>';
+    }).join(''):[1,2,3,4].map(n=>
+      '<article class="cp-delivery-stage"><div class="cp-delivery-stage-top"><div class="cp-delivery-stage-step"><span>'+String(n).padStart(2,'0')+'</span><div><small>'+names[n-1]+' etapa</small><strong>'+n+'ª etapa · '+year+'</strong></div></div>'+
+      '<span class="cp-delivery-time">A definir pela Gestão</span></div>'+
+      '<p class="cp-muted">Nenhum prazo de entrega aprovado e publicado para esta etapa. O registro do professor será habilitado quando houver uma data confirmada.</p></article>'
+    ).join('');
     content='<div class="cp-main-heading"><h2>Entregas pedagógicas · '+year+'</h2></div>'+
      '<p class="cp-muted">Acompanhe os prazos por etapa. A marcação é uma declaração pessoal, não confirma o recebimento do arquivo pela coordenação.</p>'+
      identityHtml+'<p class="cp-delivery-feedback" id="cpDeliveryFeedback" role="status" aria-live="polite"></p>'+
@@ -895,7 +900,12 @@
     <div class="cp-list">${names.length?names.map(birthdayEntry).join(''):'<p class="cp-muted">Nenhum aniversariante informado neste mês.</p>'}</div></div>`;
   }else if(tab==='avisos')content=`<div class="cp-main-heading"><h2>Avisos da Gestão</h2></div>${notes.length?notes.map(noticeHtml).join(''):'<p class="cp-muted">Ainda não há avisos para a equipe.</p>'}`;
   else if(year===2026) content=`<div class="cp-main-heading"><h2>Calendário anual oficial 2026</h2><select id="cpMonthPicker" aria-label="Mês do PDF">${MONTHS.map((m,i)=>`<option value="${i}" ${month===i?'selected':''}>${m} de ${year}</option>`).join('')}</select></div><div class="cp-pdf-sample"><div class="cp-paper"><img class="cp-pdf-image" id="cpPdfMonth" alt="Página do calendário oficial do mês selecionado"><p class="cp-muted">Visualização do documento institucional; conteúdo somente para consulta.</p></div><div class="cp-paper"><h3>Calendário oficial para download</h3><p class="cp-muted">Arquivo com capa, 12 meses e anotações, em formato PDF. Selecione o mês para visualizar a página correspondente.</p><button class="cp-btn gold" id="cpDownloadOfficial">↓ Baixar calendário completo (PDF)</button><p class="cp-status" id="cpPdfProgress"></p></div></div>`;
-  else content=`<div class="cp-main-heading"><h2>Calendário anual ${year}</h2></div><div class="cp-paper"><h3>Documento publicado pela Gestão</h3><p>Inclui os 12 meses de ${year}, com atividades, etapas e projetos publicados.</p><button class="cp-btn gold" id="cpDownloadPublished">↓ Baixar PDF anual ${year}</button><p class="cp-status" id="cpPdfProgress"></p></div>`;
+  else content=`<div class="cp-main-heading"><h2>Calendário anual ${year}</h2><select id="cpMonthPicker" aria-label="Mês da prévia do calendário">${MONTHS.map((m,i)=>`<option value="${i}" ${month===i?'selected':''}>${m} de ${year}</option>`).join('')}</select></div>
+   <div class="cp-paper"><h3>Prévia mensal · ${MONTHS[month]} de ${year}</h3><p class="cp-muted">Modelo institucional organizado com atividades, etapas, projetos e aniversariantes publicados pela Gestão.</p>
+   ${selectedMonthGrid(false,true)}
+   <div class="cg-toolbar"><button class="cp-btn gold" id="cpDownloadMonth" type="button">↓ Baixar este mês (PDF)</button>
+    <button class="cp-btn gold" id="cpDownloadPublished" type="button">↓ Baixar os 12 meses (PDF)</button></div>
+   <p class="cp-status" id="cpPdfProgress"></p></div>${compactYearSummary()}`;
 
   here.innerHTML=`${flowHeader}${showBell?'':`<div class="cp-overview"><div class="cp-metric"><small>Atividades publicadas</small><strong>${events.length}</strong></div><div class="cp-metric"><small>Avaliações e simulados</small><strong>${assess.length}</strong></div><div class="cp-metric"><small>Avisos disponíveis</small><strong>${notes.length}</strong></div></div>${tabs}`}${alertPrompt}${content}<p class="cp-updated">Última publicação da Gestão: ${data?new Date(data.updatedAt).toLocaleString('pt-BR'):'ainda não publicada'} · Atualização automática enquanto o aplicativo estiver aberto.</p>`;
   if(tab==='correcao'&&!showBell)window.CoraGrader?.mount({root:here,callApi:api,toast,profile:teacherProfile});
@@ -921,6 +931,10 @@
   $('#cpMonthPicker')?.addEventListener('change',e=>{month=Number(e.target.value);drawTeam()});
   here.querySelectorAll('[data-cp-month]').forEach(button=>button.addEventListener('click',()=>{
    month=Number(button.dataset.cpMonth)||0;drawTeam();
+  }));
+  here.querySelectorAll('[data-cp-open-month]').forEach(button=>button.addEventListener('click',()=>{
+   month=Number(button.dataset.cpOpenMonth)||0;
+   tab='calendario';showBell=false;drawTeam();
   }));
   $('#cpStagePicker')?.addEventListener('change',e=>{selectedStage=Number(e.target.value)||0;drawTeam()});
   $('#cpBackFromBell')?.addEventListener('click',()=>{showBell=false;drawTeam();});
