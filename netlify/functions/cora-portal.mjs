@@ -19,6 +19,26 @@ const stagesFor=(a,y)=>[1,2,3,4].map(n=>{const s=(Array.isArray(a)?a:[]).find(x=
 
 // Aniversariantes de novembro e dezembro confirmados no planejamento institucional; somente dia/mês.
 const DEFAULT_BIRTHDAYS=[{"id":"cora-nov-nadja","name":"Nadja","role":"Professora","day":1,"month":11},{"id":"cora-nov-emanuel","name":"Prof. Emanuel","role":"Professor","day":10,"month":11},{"id":"cora-nov-ana-paula","name":"Ana Paula","role":"","day":10,"month":11},{"id":"cora-nov-aparecida","name":"Aparecida","role":"","day":16,"month":11},{"id":"cora-nov-mikael","name":"Mikael","role":"","day":16,"month":11},{"id":"cora-nov-mendonca","name":"Mendonça","role":"","day":21,"month":11},{"id":"cora-nov-ruth","name":"Ruth","role":"","day":25,"month":11},{"id":"cora-nov-john","name":"John","role":"","day":26,"month":11},{"id":"cora-dec-1","name":"Diego","role":"","day":9,"month":12},{"id":"cora-dec-2","name":"Breno","role":"","day":11,"month":12},{"id":"cora-dec-3","name":"Renan","role":"","day":24,"month":12}];
+// Cadastro institucional confirmado pela coordenação em novembro de 2026.
+// Aniversariantes são recorrentes: publicar somente nome, dia e mês.
+// Não incluir e-mail nem ano de nascimento no calendário compartilhado.
+const VERIFIED_STAFF_BIRTHDAYS=[
+ {id:'cora-staff-herculano-feitosa',name:'Herculano Feitosa de Souza',day:7,month:9,role:''},
+ {id:'cora-dec-2',name:'Alysson Breno Bezerra da Silva',day:11,month:12,role:''},
+ {id:'cora-nov-john',name:'Jonseli Marques dos Santos Filho',day:26,month:11,role:''},
+ {id:'cora-staff-alana-sales',name:'Alana Sales Neco',day:12,month:7,role:''},
+ {id:'cora-dec-3',name:'Renan Viana Almeida Paixão',day:24,month:12,role:''},
+ {id:'cora-staff-gleiciane-felix',name:'Gleiciane Felix Pereira Silva',day:11,month:8,role:''},
+ {id:'cora-staff-marcia-cristina',name:'Márcia Cristina de Santiago Matos',day:24,month:1,role:''},
+ {id:'cora-staff-julia-barbosa',name:'Júlia Barbosa de Alencar Monteiro',day:14,month:3,role:''},
+ {id:'cora-staff-charles-andrade',name:'Charles Andrade Lucas',day:6,month:7,role:''},
+ {id:'cora-staff-maria-lucivania',name:'Maria Lucivânia da Rocha',day:30,month:6,role:''}
+];
+const VERIFIED_BIRTHDAY_ALIASES={
+ 'cora-nov-john':['John'],
+ 'cora-dec-2':['Breno'],
+ 'cora-dec-3':['Renan']
+};
 const HEADERS={'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'};
 const answer=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{...HEADERS,...extra}});
 const vars=()=>({gestao:process.env.CORA_GESTAO_PASSWORD,equipe:process.env.CORA_EQUIPE_PASSWORD,secret:process.env.CORA_SESSION_SECRET});
@@ -81,15 +101,36 @@ const cleanNotice=e=>({id:str(e.id,120),title:str(e.title,130),body:str(e.body,1
 const cleanBirthday=b=>({id:str(b.id,140),name:str(b.name,100),role:str(b.role,85),day:Number(b.day),month:Number(b.month)});
 const validBirthday=b=>b.id&&b.name&&Number.isInteger(b.month)&&b.month>=1&&b.month<=12&&Number.isInteger(b.day)&&b.day>=1&&b.day<=new Date(Date.UTC(2024,b.month,0)).getUTCDate();
 // Migração versionada para respeitar alterações posteriores da Gestão.
-const BIRTHDAY_SEED_VERSION=2;
+const BIRTHDAY_SEED_VERSION=3;
+const normalBirthdayName=v=>str(v,100).normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toLowerCase();
+function sameBirthdayPerson(saved,item){
+ if(String(saved.id||'')===item.id)return true;
+ if(Number(saved.day)!==item.day||Number(saved.month)!==item.month)return false;
+ const actual=normalBirthdayName(saved.name),target=normalBirthdayName(item.name);
+ return actual===target||(VERIFIED_BIRTHDAY_ALIASES[item.id]||[]).some(alias=>actual===normalBirthdayName(alias));
+}
 function migrateBirthdays(state){
  if(Number(state?.birthdaySeedVersion||0)>=BIRTHDAY_SEED_VERSION)return state;
  const draft=state||{year:YEAR,updatedAt:new Date().toISOString(),events:[],notices:[],config:{defaultLeadDays:3}};
  const existing=Array.isArray(draft.birthdays)?draft.birthdays:DEFAULT_BIRTHDAYS.filter(x=>x.month===11);
  const birthdays=[...existing];
- const same=(a,b)=>a.day===b.day&&a.month===b.month&&str(a.name,100).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase()===str(b.name,100).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
- for(const item of DEFAULT_BIRTHDAYS.filter(x=>x.month===12))if(!birthdays.some(x=>same(x,item)))birthdays.push(item);
- birthdays.sort((a,b)=>a.month-b.month||a.day-b.day||a.name.localeCompare(b.name,'pt-BR'));
+ // Respeita o lote legado (dezembro de 2026) sem duplicar registros já adicionados.
+ if(Number(draft.birthdaySeedVersion||0)<2){
+  for(const item of DEFAULT_BIRTHDAYS.filter(x=>x.month===12)){
+   if(!birthdays.some(p=>sameBirthdayPerson(p,item)))birthdays.push({...item});
+  }
+ }
+ for(const item of VERIFIED_STAFF_BIRTHDAYS){
+  const matches=birthdays.map((p,i)=>sameBirthdayPerson(p,item)?i:-1).filter(i=>i>=0);
+  if(!matches.length){birthdays.push({...item});continue}
+  // Prioriza o cadastro completo, preserva ID/role antigos e evita a duplicação de apelidos.
+  const full=matches.find(i=>normalBirthdayName(birthdays[i].name)===normalBirthdayName(item.name));
+  const keep=full??matches[0];
+  const old=birthdays[keep];
+  birthdays[keep]={...old,name:item.name,day:item.day,month:item.month};
+  for(const i of matches.filter(i=>i!==keep).sort((a,b)=>b-a))birthdays.splice(i,1);
+ }
+ birthdays.sort((a,b)=>Number(a.month)-Number(b.month)||Number(a.day)-Number(b.day)||String(a.name).localeCompare(String(b.name),'pt-BR'));
  return {...draft,birthdays,birthdaySeedVersion:BIRTHDAY_SEED_VERSION};
 }
 
@@ -279,9 +320,9 @@ export default async function handler(request,context){
   const yearsStored=await store.get('published-years',{type:'json',consistency:'strong'});
   const availableYears=Array.from(new Set([2026,...(Array.isArray(yearsStored)?yearsStored:[]).filter(schoolYear)])).sort((a,b)=>a-b);
   let state=await store.get(publishedKey(year),{type:'json',consistency:'strong'});
-  if(year===2026&&Number(state?.birthdaySeedVersion||0)<BIRTHDAY_SEED_VERSION){
+  if((year===2026||state)&&Number(state?.birthdaySeedVersion||0)<BIRTHDAY_SEED_VERSION){
     state=migrateBirthdays(state);
-    await store.setJSON(publishedKey(2026),state);
+    await store.setJSON(publishedKey(year),state);
   }
   if(state&&!Array.isArray(state.stages))state={...state,stages:year===2026?STAGES_2026:stagesFor([],year)};
   // Repara publicações antigas em tempo de leitura sem mexer em comunicados ou em anos posteriores.
@@ -310,7 +351,8 @@ export default async function handler(request,context){
       !incomingEvents.some(n=>n.id===e.id))]})?.events||incomingEvents:incomingEvents;
   const legacy=year===2026?previous:await store.get(publishedKey(2026),{type:'json',consistency:'strong'});
   const baseBirthdays=input.birthdays===undefined?(Array.isArray(legacy?.birthdays)?legacy.birthdays:DEFAULT_BIRTHDAYS):input.birthdays.map(cleanBirthday).filter(validBirthday);
-  const migrated=migrateBirthdays({...legacy,birthdays:baseBirthdays});
+  // Um novo ano inicia sua própria versão da lista, sem bloquear importações de 2027+.
+  const migrated=migrateBirthdays({...legacy,birthdays:baseBirthdays,birthdaySeedVersion:Number(previous?.birthdaySeedVersion||0)});
   const birthdays=migrated.birthdays.filter((b,i,a)=>a.findIndex(p=>p.id===b.id)===i).sort((a,b)=>a.month-b.month||a.day-b.day||a.name.localeCompare(b.name,'pt-BR'));
   const projects=Array.from({length:12},(_,i)=>(Array.isArray(input.projects?.[i])?input.projects[i]:previous?.projects?.[i]||[])
     .slice(0,80).map(x=>str(x,170)).filter(Boolean));
