@@ -10,7 +10,7 @@
  const letters=['A','B','C','D','E'];
  const num=v=>Number(v)||0;
  let api,notify,container,items=[],loaded=false,error='',loading=false,selected='',view='list',draft=null,result=null;
- let photoUrl='',photoFile=null,scanStatus='',busy=false,teacher='',identity='',revision=0;
+ let photoUrl='',photoFile=null,scanStatus='',busy=false,teacher='',identity='',revision=0,confirmedSignature='';
  const selectedTest=()=>items.find(t=>t.id===selected);
  const emptyDraft=()=>({id:uid(),title:'',subject:'',grade:'',className:'',date:today(),questionCount:10,options:5,maxScore:10,key:Array(10).fill('')});
  function resetPhoto(){if(photoUrl)URL.revokeObjectURL(photoUrl);photoUrl='';photoFile=null;scanStatus=''}
@@ -18,13 +18,13 @@
   revision++;
   resetPhoto();
   items=[];loaded=false;error='';loading=false;busy=false;selected='';view='list';draft=null;result=null;
-  identity='';teacher='';container=null;
+  identity='';teacher='';container=null;confirmedSignature='';
  }
  function setResult(record){
   const t=selectedTest();if(!t)return;
   result={id:record?.id||uid(),name:record?.name||'',number:record?.number||'',date:record?.date||t.date,
    answers:record?.answers?.slice()||Array(t.questionCount).fill('?')};
-  resetPhoto();
+  resetPhoto();confirmedSignature='';
  }
  function scoreOf(t,r){return String(num(r.score).toLocaleString('pt-BR',{maximumFractionDigits:2}))+' / '+String(t.maxScore).replace('.',',')}
  function button(id,label,cl=''){return '<button type="button" class="cg-btn '+cl+'" data-cg="'+id+'">'+label+'</button>'}
@@ -110,9 +110,59 @@
    '<div class="cg-note">Escolha a letra marcada, “Em branco” quando não houver marcação ou “Revisar” quando a captura estiver duvidosa. Questões em revisão impedem o fechamento.</div>'+
    '<div id="cgResultGrid">'+answersEditor(r.answers,t.questionCount,t.options,'result')+'</div>'+
    '<div class="cg-review-bar" id="cgScorePreview"></div>'+
-   '<div class="cg-toolbar"><button type="submit" class="cg-btn primary">Conferir e salvar correção</button>'+button('clear-result','Limpar respostas')+'</div></form>';
+   '<div id="cgVerification" class="cg-verification" role="status" aria-live="polite"></div>'+
+   '<div class="cg-toolbar">'+button('confirm-reading','✓ Confirmar leitura completa','primary')+'<button id="cgSaveCorrection" type="submit" class="cg-btn primary" disabled>Salvar correção</button>'+button('clear-result','Limpar respostas')+'</div></form>';
   $('#cgResultGrid',container).querySelectorAll('select').forEach(x=>x.value=r.answers[Number(x.dataset.index)]||'?');
   updatePreview();
+ }
+
+ function syncResultForm(){
+  const form=container&&$('#cgResultForm',container);
+  if(!form||!result)return;
+  result.name=String(form.elements.name.value||'').trim();
+  result.number=String(form.elements.number.value||'').trim();
+  result.date=String(form.elements.date.value||'');
+ }
+ // Não é uma confirmação automática do OCR: depende da conferência explícita do docente.
+ function verificationState(){
+  const t=selectedTest(),r=result;
+  if(!t||!r)return {missing:['Avaliação'],pending:0,signature:''};
+  const missing=[];
+  if(!String(r.name||'').trim())missing.push('nome do aluno');
+  if(!String(r.number||'').trim())missing.push('número/chamada');
+  const date=String(r.date||'');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(Date.parse(date)))missing.push('data da prova');
+  if(!String(t.grade||'').trim())missing.push('série');
+  if(!String(t.subject||'').trim())missing.push('disciplina');
+  const answers=Array.isArray(r.answers)?r.answers:[];
+  const allowed=['A','B','C','D','E'].slice(0,t.options);
+  const pending=Array.from({length:t.questionCount},(_,i)=>answers[i]).filter(a=>!allowed.includes(a)&&a!=='-').length;
+  if(pending)missing.push(pending+' questão(ões) para revisar');
+  const signature=JSON.stringify([t.id,r.id,String(r.name||'').trim(),String(r.number||'').trim(),date,t.grade,t.subject,t.title,answers]);
+  return {missing,pending,signature,ready:missing.length===0,confirmed:missing.length===0&&confirmedSignature===signature};
+ }
+ function announceReadingComplete(){
+  // APIs opcionais: sem vibração/áudio o aviso visual permanece funcional.
+  try{navigator.vibrate?.([120,70,120])}catch{}
+  let spoken=false;
+  try{
+   if('speechSynthesis' in window&&typeof window.SpeechSynthesisUtterance==='function'){
+    const u=new window.SpeechSynthesisUtterance('Leitura completa. Todos os campos foram conferidos. Pode salvar a correção.');
+    u.lang='pt-BR';u.rate=1;u.volume=0.95;
+    window.speechSynthesis.cancel();window.speechSynthesis.speak(u);spoken=true;
+   }
+  }catch{}
+  if(!spoken){
+   try{
+    const Audio=window.AudioContext||window.webkitAudioContext;
+    if(!Audio)return;
+    const context=new Audio(),osc=context.createOscillator(),gain=context.createGain();
+    osc.type='sine';osc.frequency.value=850;gain.gain.value=0.045;
+    osc.connect(gain);gain.connect(context.destination);
+    osc.start();osc.stop(context.currentTime+.18);
+    osc.onended=()=>{void context.close().catch(()=>{})};
+   }catch{}
+  }
  }
  function updatePreview(){
   const t=selectedTest();if(!t||!result||view!=='capture')return;
@@ -120,7 +170,18 @@
   const score=(correct/t.questionCount*t.maxScore).toLocaleString('pt-BR',{maximumFractionDigits:2});
   const p=$('#cgScorePreview',container),c=$('#cgReviewedCount',container);
   if(c)c.textContent=(t.questionCount-pending)+' / '+t.questionCount+' conferidas';
-  if(p)p.textContent=pending?pending+' questão(ões) ainda precisam de revisão. Acertos confirmados: '+correct+'.':'Resultado conferido: '+correct+' acertos · Nota '+score+' / '+t.maxScore+'.';
+  if(p)p.textContent=pending?pending+' questão(ões) ainda precisam de revisão. Acertos confirmados: '+correct+'.':'Prévia do resultado: '+correct+' acertos · Nota '+score+' / '+t.maxScore+'.';
+  syncResultForm();
+  const status=verificationState(),box=$('#cgVerification',container),confirm=$('[data-cg="confirm-reading"]',container),save=$('#cgSaveCorrection',container);
+  if(confirm)confirm.disabled=!status.ready;
+  if(save)save.disabled=!status.confirmed;
+  if(box){
+   box.className='cg-verification '+(status.confirmed?'is-confirmed':status.ready?'is-ready':'is-pending');
+   box.textContent=status.confirmed
+    ?'✓ Leitura de todos os campos confirmada: nome, número, data, série, disciplina e '+t.questionCount+' respostas. Celular sinalizado. Correção liberada para salvar.'
+    :status.ready?'Todos os campos estão preenchidos. Confira os dados e toque em “Confirmar leitura completa” para receber o sinal no celular.'
+     :'Conferência pendente — falta verificar: '+status.missing.join(', ')+'.';
+  }
  }
  async function requestSave(operation,payload){
   const current=revision;
@@ -210,7 +271,15 @@
   else if(action==='csv')downloadCSV('correcao-'+t.title.replace(/[^a-z0-9]+/gi,'-')+'.csv',reportRows(t));
   else if(action==='print')reportPrint(t);
   else if(action==='review'){setResult(t.results.find(r=>r.id===id));changeView('capture')}
-  else if(action==='clear-result'){if(confirm('Limpar todas as respostas desta captura?')){result.answers.fill('?');draw()}}
+  else if(action==='confirm-reading'){
+   syncResultForm();
+   const status=verificationState();
+   if(!status.ready){updatePreview();notify('Há campos pendentes. Confira todos antes de confirmar.');return}
+   confirmedSignature=status.signature;
+   updatePreview();announceReadingComplete();
+   notify('✓ Leitura completa! Todos os campos foram conferidos.');
+  }
+  else if(action==='clear-result'){if(confirm('Limpar todas as respostas desta captura?')){result.answers.fill('?');updatePreview()}}
   else if(action==='scan')void scanPhoto();
   else if(action==='ocr')void scanHeader();
   else if(action==='delete-test'&&confirm('Excluir a avaliação e todas as correções da sua conta?')){void requestSave('delete-test',{testId:t.id}).then(ok=>{if(ok){selected='';changeView('list')}})}
@@ -218,10 +287,11 @@
  }
  function onChange(event){
   const x=event.target;
+  if(view==='capture'&&x.matches('[name="name"],[name="number"],[name="date"]')){confirmedSignature='';updatePreview()}
   if(x.matches('[data-cg-answer]')){
    const i=Number(x.dataset.index);
    if(x.dataset.cgAnswer==='key'&&draft)draft.key[i]=x.value==='?'?'':x.value;
-   if(x.dataset.cgAnswer==='result'&&result){result.answers[i]=x.value;updatePreview()}
+   if(x.dataset.cgAnswer==='result'&&result){result.answers[i]=x.value;confirmedSignature='';updatePreview()}
   }
   if(x.matches('[name="questionCount"],[name="options"]')&&draft){
    const form=$('#cgTestForm',container);const n=Math.max(1,Math.min(60,Number(form.elements.questionCount.value)||10));
@@ -230,6 +300,7 @@
    $('#cgKeyGrid',container).querySelectorAll('select').forEach(x=>x.value=draft.key[Number(x.dataset.index)]||'?');
   }
   if((x.id==='cgPhoto'||x.id==='cgUpload')&&x.files?.[0]){
+   syncResultForm();confirmedSignature='';
    if(photoUrl)URL.revokeObjectURL(photoUrl);photoFile=x.files[0];photoUrl=URL.createObjectURL(photoFile);
    scanStatus='Imagem recebida. Clique em “Ler marcações automaticamente” e confira as respostas.';draw();
   }
@@ -245,10 +316,14 @@
    const ok=await requestSave('save-test',{test:draft});if(ok){selected=draft.id;draft=null;changeView('test')}
   }else{
    const t=selectedTest(),f=event.target.elements;
-   result.name=f.name.value.trim();result.number=f.number.value.trim();result.date=f.date.value;
-   if(!result.name){notify('Informe o nome do aluno.');return}
-   if(result.answers.some(a=>a==='?')){notify('Revise todas as questões pendentes antes de salvar a nota.');return}
-   const ok=await requestSave('save-result',{testId:t.id,result});if(ok){result=null;resetPhoto();changeView('test')}
+   syncResultForm();
+   const status=verificationState();
+   if(!status.ready||!status.confirmed){
+    updatePreview();
+    notify(status.ready?'Confirme a leitura completa antes de salvar.':'Confira todos os campos pendentes antes de salvar.');
+    return;
+   }
+   const ok=await requestSave('save-result',{testId:t.id,result});if(ok){result=null;confirmedSignature='';resetPhoto();changeView('test')}
   }
  }
  function setStatus(message){scanStatus=message;const p=$('#cgScanStatus',container);if(p)p.textContent=message}
@@ -343,7 +418,7 @@
   return read;
  }
  async function scanPhoto(){
-  if(busy)return;busy=true;setStatus('Analisando a posição das marcações na foto...');
+  if(busy)return;syncResultForm();confirmedSignature='';busy=true;setStatus('Analisando a posição das marcações na foto...');
   try{
    const c=await loadPhoto(),ctx=c.getContext('2d',{willReadFrequently:true}),data=ctx.getImageData(0,0,c.width,c.height);
    const marks=locateMarks(data,c.width,c.height),answers=scanMarks(data,marks,c.width,c.height,selectedTest());
@@ -353,7 +428,7 @@
   finally{busy=false}
  }
  async function scanHeader(){
-  if(busy)return;busy=true;setStatus('Lendo o cabeçalho no próprio aparelho...');
+  if(busy)return;syncResultForm();confirmedSignature='';busy=true;setStatus('Lendo o cabeçalho no próprio aparelho...');
   try{
    if(!window.Tesseract){
     const script=document.createElement('script');script.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
@@ -379,7 +454,7 @@
   if(next)identity=next;
   api=callApi;notify=toast;teacher=profile?.name||'Professor';container=$('#coraGrader',root);
   if(!container)return;
-  container.onclick=onClick;container.onchange=onChange;container.onsubmit=e=>{void onSubmit(e)};
+  container.onclick=onClick;container.onchange=onChange;container.oninput=e=>{if(view==='capture'&&e.target.matches('[name="name"],[name="number"],[name="date"]')){confirmedSignature='';updatePreview()}};container.onsubmit=e=>{void onSubmit(e)};
   if(!loaded){void refresh()}else draw();
  }
  window.CoraGrader={mount,reset,placeholder:()=>'<div id="coraGrader" class="cora-grader"><div class="cg-panel"><p>Carregando corretor de gabaritos...</p></div></div>'};
