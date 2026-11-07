@@ -244,6 +244,7 @@
     if(status&&x.publication)status.textContent='Última publicação: '+new Date(x.publication.updatedAt).toLocaleString('pt-BR');
     // Somente a Gestão incorpora a lista institucional ao cadastro local.
     window.CoraBirthdays?.importBaseline?.(x.publication?.birthdays||[]);
+    window.CoraBirthdays?.importConfirmedStaff?.(x.publication?.birthdays||[]);
   }).catch(()=>{});
 
  }
@@ -378,6 +379,7 @@
    // Evita que uma primeira publicação apague o cadastro institucional anterior.
    const previous=await api('state',undefined,'year='+year);
    window.CoraBirthdays?.importBaseline?.(previous.publication?.birthdays||[]);
+   window.CoraBirthdays?.importConfirmedStaff?.(previous.publication?.birthdays||[]);
    const birthdays=window.CoraBirthdays?.all?.()||previous.publication?.birthdays||[];
    const stages=(window.CoraStages?.get?.(year)||[]).map(s=>s.needsReview?{number:s.number,start:'',end:''}:s);const projects=window.CoraYears?.getProjects?.(year)||[];
    const res=await api('publish',{year,events,notices:managerNotices,birthdays,stages,projects,config:{defaultLeadDays:leadDays}});
