@@ -752,7 +752,19 @@
    <h2 style="color:#12375e;margin-top:28px">Comunicados recentes</h2>${notes.slice(0,3).map(noticeHtml).join('')||'<p class="cp-muted">Sem avisos recentes.</p>'}`;
   }else if(tab==='calendario'||tab==='avaliacoes'){
    const arr=(tab==='avaliacoes'?assess:events).filter(e=>Number(e.date.slice(5,7))===month+1);
-   content=`<div class="cp-main-heading"><h2>${tab==='avaliacoes'?'Avaliações, simulados e sondagens':'Calendário escolar'}</h2><select id="cpMonthPicker" aria-label="Mês do calendário">${MONTHS.map((m,i)=>`<option value="${i}" ${month===i?'selected':''}>${m} de ${year}</option>`).join('')}</select></div><div class="cp-list">${arr.length?arr.map(eventHtml).join(''):'<p class="cp-muted">Nenhuma atividade publicada neste mês.</p>'}</div>`;
+   const birthdays=tab==='calendario'?publishedBirthdays().filter(p=>Number(p.month)===month+1):[];
+   const annualBirthdays=tab==='calendario'
+     ?'<details class="cp-birthday-calendar-list"><summary><strong>Ver os aniversariantes do ano inteiro</strong></summary><div class="cp-annual-birthday-grid">'+
+       MONTHS.map((name,i)=>{
+        const people=publishedBirthdays().filter(p=>Number(p.month)===i+1);
+        return '<article class="cp-annual-birthday-card"><strong>'+safe(name)+'</strong>'+
+          (window.CoraCalendarBirthdays?.listHTML?.(people)||'<p>Sem registros</p>')+'</article>';
+       }).join('')+'</div></details>':'';
+   content=`<div class="cp-main-heading"><h2>${tab==='avaliacoes'?'Avaliações, simulados e sondagens':'Calendário escolar'}</h2><select id="cpMonthPicker" aria-label="Mês do calendário">${MONTHS.map((m,i)=>`<option value="${i}" ${month===i?'selected':''}>${m} de ${year}</option>`).join('')}</select></div>
+   <div class="cp-list">${arr.length?arr.map(eventHtml).join(''):'<p class="cp-muted">Nenhuma atividade publicada neste mês.</p>'}</div>
+   ${tab==='calendario'?'<section class="cp-birthday-calendar-list"><h3>Aniversariantes de '+safe(MONTHS[month])+'</h3>'+
+     (window.CoraCalendarBirthdays?.listHTML?.(birthdays)||'<p>Sem aniversariantes</p>')+'</section>'+
+     '<div class="cg-toolbar"><button class="cp-btn gold" id="cpDownloadMonth" type="button">↓ Baixar calendário de '+safe(MONTHS[month])+' (PDF)</button></div>':''}${annualBirthdays}`;
   }else if(tab==='entregas'){
     const rows=events.filter(e=>e.assessmentDelivery).sort((a,b)=>Number(a.stageNumber)-Number(b.stageNumber));
     const contents=events.filter(e=>e.type==='Entrega de conteúdo').sort((a,b)=>a.date.localeCompare(b.date));
@@ -839,16 +851,18 @@
   }));
   $('#cpMarkRead')?.addEventListener('click',()=>{let arr=[];try{arr=JSON.parse(localStorage.getItem('cora_team_seen_alerts_'+year)||'[]')}catch{}const seen=new Set(Array.isArray(arr)?arr:[]);upcoming().forEach(a=>seen.add(a.id));localStorage.setItem('cora_team_seen_alerts_'+year,JSON.stringify([...seen]));drawTeam()});
   $('#cpSeeBirthdays')?.addEventListener('click',()=>{tab='aniversarios';month=new Date().getMonth();showBell=false;drawTeam();});
-  $('#cpDownloadOfficial')?.addEventListener('click',downloadPdf);
-  $('#cpDownloadPublished')?.addEventListener('click',downloadPublishedPdf);
+  $('#cpDownloadOfficial')?.addEventListener('click',()=>downloadPdf(null));
+  $('#cpDownloadPublished')?.addEventListener('click',()=>downloadPublishedPdf(null));
+  $('#cpDownloadMonth')?.addEventListener('click',()=>year===2026?downloadPdf(month):downloadPublishedPdf(month));
   if(tab==='pdf'&&year===2026&&!showBell&&data)loadPage(month+2).then(url=>{const x=$('#cpPdfMonth');if(x)x.src=url}).catch(()=>toast('Imagem indisponível neste momento.'));
  }
  const loaded={};function loadPage(page){if(window.CORA_OFFICIAL_PAGE_DATA?.[page])return Promise.resolve(window.CORA_OFFICIAL_PAGE_DATA[page]);if(loaded[page])return loaded[page];loaded[page]=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=`./official-page-${String(page).padStart(2,'0')}.js`;s.onload=()=>window.CORA_OFFICIAL_PAGE_DATA?.[page]?resolve(window.CORA_OFFICIAL_PAGE_DATA[page]):reject(new Error('Página ausente'));s.onerror=reject;document.head.append(s)});return loaded[page]}
 
- async function downloadPublishedPdf(){
-  const btn=$('#cpDownloadPublished'),status=$('#cpPdfProgress');if(btn)btn.disabled=true;
+ async function downloadPublishedPdf(monthOnly=null){
+  const single=Number.isInteger(monthOnly)&&monthOnly>=0&&monthOnly<12;
+  const btn=$(single?'#cpDownloadMonth':'#cpDownloadPublished'),status=$('#cpPdfProgress');if(btn)btn.disabled=true;
   try{
-   const W=1684,H=1190,stageList=Array.isArray(data?.stages)?data.stages:[],all=filteredEvents();
+   const W=1684,H=1350,stageList=Array.isArray(data?.stages)?data.stages:[],all=filteredEvents();
    const logo=window.CORA_SCHOOL_LOGO||window.CORA_STUDIO_ASSETS?.logo||'';
    const image=logo?await new Promise(resolve=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>resolve(null);i.src=logo}):null;
    const paintText=(g,v,x,y,size=25,color='#163759',bold=true)=>{
@@ -867,6 +881,7 @@
      days.forEach((name,j)=>{g.fillStyle='#1e6696';g.fillRect(x+j*cw+1,174,cw-2,44);paintText(g,name,x+j*cw+14,203,22,'#fff')});
      const start=new Date(year,month,1).getDay(),last=new Date(year,month+1,0).getDate();
      const events=all.filter(e=>Number(e.date.slice(5,7))===month+1);
+     const birthdayPeople=publishedBirthdays().filter(p=>Number(p.month)===month+1);
      const marks=stageList.filter(st=>st.start?.startsWith(year+'-'+String(month+1).padStart(2,'0'))||st.end?.startsWith(year+'-'+String(month+1).padStart(2,'0')));
      for(let ix=0;ix<rows*7;ix++){
        const col=ix%7,row=Math.floor(ix/7),day=ix-start+1,cx=x+col*cw,cy=top+row*ch;
@@ -878,6 +893,11 @@
        const dayEvents=events.filter(a=>a.date===iso);
        dayEvents.slice(0,3).forEach((e,i)=>{const y=cy+55+i*23;g.fillStyle='#dcecfb';g.fillRect(cx+6,y-18,cw-12,22);paintText(g,ellipsis(g,e.title,cw-22),cx+10,y,15,'#204f7d')});
        if(dayEvents.length>3)paintText(g,'+'+(dayEvents.length-3)+' atividades',cx+8,cy+118,13,'#5e7389');
+       const born=birthdayPeople.filter(p=>Number(p.day)===day);
+       if(born.length){
+        g.fillStyle='#ffebae';g.fillRect(cx+cw-84,cy+6,78,26);
+        paintText(g,'ANIV. '+born.length,cx+cw-78,cy+25,14,'#76550f');
+       }
        const stage=marks.find(st=>st.start===iso||st.end===iso);
        if(stage)paintText(g,(stage.start===iso?'INÍCIO ':'FIM ')+stage.number+'ª',cx+73,cy+28,14,'#ad5500');
      }
@@ -886,20 +906,43 @@
      const projects=Array.isArray(data?.projects?.[month])?data.projects[month]:[];
      projects.slice(0,8).forEach((v,i)=>paintText(g,ellipsis(g,v,700),85+(i%2)*760,1050+Math.floor(i/2)*21,17,'#123b64'));
      if(!projects.length)paintText(g,'Nenhum projeto publicado.',84,1054,18,'#73869b');
-     paintText(g,'PDF SOLUÇÃO EDUCACIONAL · COLÉGIO CORA CORALINA',68,1156,18,'#567089');
+     window.CoraCalendarBirthdays?.drawBlock?.(g,birthdayPeople,{x:65,y:1124,width:W-130,
+       title:'ANIVERSARIANTES DE '+MONTHS[month].toUpperCase(),font:18,rowHeight:25,columns:3,maxRows:4});
+     paintText(g,'PDF SOLUÇÃO EDUCACIONAL · COLÉGIO CORA CORALINA',68,1316,18,'#567089');
      return c;
    };
    const canvases=[];
-   for(let m=0;m<12;m++){if(status)status.textContent='Preparando '+MONTHS[m]+'...';canvases.push(make(m))}
-   const file=window.CoraPDF.fromCanvases(canvases,{pageWidth:1180,pageHeight:834,title:'Calendário Cora Coralina '+year});
-   const url=URL.createObjectURL(file),anchor=document.createElement('a');anchor.href=url;anchor.download='Calendario_Cora_Coralina_'+year+'.pdf';
+   const months=single?[monthOnly]:Array.from({length:12},(_,i)=>i);
+   for(const m of months){if(status)status.textContent='Preparando '+MONTHS[m]+'...';canvases.push(make(m))}
+   const file=window.CoraPDF.fromCanvases(canvases,{pageWidth:1180,pageHeight:946,title:'Calendário Cora Coralina '+year});
+   const url=URL.createObjectURL(file),anchor=document.createElement('a');anchor.href=url;
+   anchor.download=single?'Calendario_Cora_Coralina_'+year+'_'+MONTHS[monthOnly]+'.pdf':'Calendario_Cora_Coralina_'+year+'.pdf';
    document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
-   if(status)status.textContent='PDF anual preparado com 12 meses.';
+   if(status)status.textContent=single?'PDF mensal preparado com aniversariantes.':'PDF anual preparado com 12 meses e aniversariantes.';
   }catch(e){if(status)status.textContent='Falha ao gerar PDF: '+e.message}
   finally{if(btn)btn.disabled=false;}
  }
 
- async function downloadPdf(){const btn=$('#cpDownloadOfficial'),status=$('#cpPdfProgress');if(btn)btn.disabled=true;try{const pages=[];for(let i=1;i<=14;i++){if(status)status.textContent=`Preparando página ${i}/14...`;const uri=await loadPage(i);pages.push({width:1180,height:664,toDataURL(){return uri}});}const file=window.CoraPDF.fromCanvases(pages,{pageWidth:1180,pageHeight:664,title:'Calendário Cora Coralina 2026'});const url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download='Calendario_Oficial_Cora_Coralina_2026.pdf';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);if(status)status.textContent='PDF preparado.'}catch(e){if(status)status.textContent='Não foi possível preparar o PDF. Tente novamente.'}finally{if(btn)btn.disabled=false}}
+ async function downloadPdf(monthOnly=null){
+  const single=Number.isInteger(monthOnly)&&monthOnly>=0&&monthOnly<12;
+  const btn=$(single?'#cpDownloadMonth':'#cpDownloadOfficial'),status=$('#cpPdfProgress');
+  if(btn)btn.disabled=true;
+  try{
+   const pages=[],monthPages=single?[monthOnly+2]:Array.from({length:14},(_,i)=>i+1);
+   for(const page of monthPages){
+    if(status)status.textContent='Preparando página '+page+'...';
+    const uri=await loadPage(page);
+    pages.push(await window.CoraCalendarBirthdays.officialPage(uri,page,publishedBirthdays()));
+   }
+   const file=window.CoraPDF.fromCanvases(pages,{pageWidth:1180,pageHeight:770,
+     title:'Calendário Cora Coralina 2026 com aniversariantes'});
+   const url=URL.createObjectURL(file),anchor=document.createElement('a');
+   anchor.href=url;anchor.download=single?'Calendario_Cora_Coralina_2026_'+MONTHS[monthOnly]+'.pdf':'Calendario_Oficial_Cora_Coralina_2026.pdf';
+   document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+   if(status)status.textContent=single?'PDF mensal com aniversariantes preparado.':'PDF anual com aniversariantes preparado.';
+  }catch(e){console.error(e);if(status)status.textContent='Não foi possível preparar o PDF.';else toast('Não foi possível preparar o PDF: '+e.message)}
+  finally{if(btn)btn.disabled=false}
+ }
  function unavailable(error){
   document.body.classList.add('portal-locked');
   document.body.classList.remove('portal-loading');
