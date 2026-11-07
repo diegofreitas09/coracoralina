@@ -88,7 +88,7 @@
     window.dispatchEvent(new CustomEvent('cora-month-changed',{detail:{month:selectedMonth,year:YEAR}}));
   }
   function renderNav() {
-    $('#monthNav').innerHTML = MONTHS.map((name,i) => `<button type="button" data-month="${i}" class="${selectedMonth===i?'active':''}" aria-current="${selectedMonth===i?'date':'false'}"><span>${name}</span>${eventsFor(i).length+filesFor(i).length?`<span class="count">${eventsFor(i).length+filesFor(i).length}</span>`:''}</button>`).join('');
+    $('#monthNav').innerHTML = MONTHS.map((name,i) => `<button type="button" data-month="${i}" class="${selectedMonth===i?'active':''}" aria-current="${selectedMonth===i?'date':'false'}"><span>${name}</span>${eventsFor(i).length+filesFor(i).length+birthdaysFor(i).length?`<span class="count">${eventsFor(i).length+filesFor(i).length+birthdaysFor(i).length}</span>`:''}</button>`).join('');
     $('#monthNav').querySelectorAll('[data-month]').forEach(button => button.addEventListener('click', () => {selectedMonth = Number(button.dataset.month);render();}));
   }
   function renderStats() {
