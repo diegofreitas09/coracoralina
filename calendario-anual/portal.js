@@ -754,15 +754,6 @@
   const todayISO=dateStr(new Date());
   const currentStage=stageList.find(st=>st.start&&st.end&&todayISO>=st.start&&todayISO<=st.end);
   const closestStage=currentStage||stageList.find(st=>st.start&&st.start>todayISO)||stageList.find(st=>st.start);
-  const flowStages=[1,2,3,4].map(n=>{
-   const st=stageList.find(x=>Number(x.number)===n)||{};
-   const active=st.start&&st.end&&todayISO>=st.start&&todayISO<=st.end;
-   return '<button type="button" class="cp-flow-stage '+(active?'active':'')+'" data-cp-stage="'+n+'">'+
-    '<span class="cp-flow-stage-num">0'+n+'</span><strong>'+n+'ª etapa</strong>'+
-    '<span class="cp-flow-stage-date"><small>Início</small>'+fmtStage(st.start)+'</span>'+
-    '<span class="cp-flow-stage-date"><small>Fim</small>'+fmtStage(st.end)+'</span>'+
-    (active?'<em>Em andamento</em>':'')+'</button>';
-  }).join('');
   const quickLinks=[['calendario','calendar','Calendário','Atividades e projetos'],['avaliacoes','check','Avaliações','Provas e simulados'],
     ['entregas','clock','Entregas','Prazos e e-mails'],['avisos','message','Comunicados','Orientações da Gestão'],['equipe','people','Equipe em números','Professores e acessos'],['correcao','check','Corretor de gabaritos','Captura e notas da turma'],['pdf','pdf','PDF anual','Documento completo']].map(item=>
     '<button type="button" class="cp-flow-link" data-cp-tab="'+item[0]+'"><span class="cp-flow-icon">'+cpTeamTileIcon(item[1])+'</span>'+
@@ -808,13 +799,11 @@
    '<div class="cp-flow-feature"><small>ETAPAS DO ANO · '+year+'</small><strong>'+(closestStage?closestStage.number+'ª etapa':'Períodos letivos')+'</strong>'+
    '<span>'+(closestStage?fmtStage(closestStage.start)+' até '+fmtStage(closestStage.end):'A definir pela Gestão')+'</span>'+
    '<button type="button" data-cp-tab="etapas">Consultar etapas ›</button></div></section>'+
+   fullYearSummary()+
    '<div class="cp-quick-header"><h3>Acesso rápido</h3><small>Ferramentas do ano letivo</small></div>'+
    '<div class="cp-flow-links">'+quickLinks+'</div>'+
    preview+
-   teacherTools+
-   '<section class="cp-flow-stage-section"><div class="cp-flow-stage-title"><div><small>PLANEJAMENTO · '+year+'</small>'+
-   '<h3>Início e fim das etapas</h3></div><span>Consulte antes de planejar avaliações</span></div>'+
-   '<div class="cp-flow-stage-grid">'+flowStages+'</div></section>';
+   teacherTools;
   let content='';
   if(tab==='correcao'&&!showBell){
    content=window.CoraGrader?.placeholder()||'<p>Corretor indisponível. Recarregue o aplicativo.</p>';
@@ -824,15 +813,12 @@
   }else if(!data){content='<div class="cp-paper"><h2>Nenhuma publicação disponível</h2><p class="cp-muted">A Gestão ainda não publicou o calendário e os comunicados para a equipe. O conteúdo ficará disponível aqui após a primeira publicação.</p></div>'}
   else if(showBell){content=`<div class="cp-bell-panel"><div class="cp-main-heading"><div class="cp-alert-heading-left"><button type="button" class="cp-btn soft cp-back-alert" id="cpBackFromBell" aria-label="Voltar à Equipe Pedagógica">← Voltar</button><h2>🔔 Central de alertas</h2></div><button class="cp-btn soft" id="cpMarkRead">Marcar como lidos</button></div>${alertList.length?alertList.map(a=>`<article class="cp-alert-entry ${a.unread?'unread':''}"><time>${safe(String(a.date||'').slice(0,10))}</time><div><small>${a.kind==='notice'?'Comunicado da Gestão':a.kind==='reminder'?'Lembrete programado':'Evento próximo'}</small><strong>${safe(a.title)}</strong><p>${safe(a.desc||'')}</p>${a.unread?'<span class="cp-tag cp-tag-new">Novo · não lido</span>':''}</div><button class="cp-btn soft" type="button" data-cp-read="${safe(a.id)}">✓ Lido</button></article>`).join(''):'<p class="cp-muted">Nenhuma atividade ou aviso exige atenção no período configurado.</p>'}</div>`;}
   else if(tab==='resumo'){
-   const now=new Date(),today=dateStr(now);
-   const firstRelevantDay=year===now.getFullYear()?today:year>now.getFullYear()?year+'-01-01':year+'-12-31';
-   const future=events.filter(e=>e.date>=firstRelevantDay).slice(0,9);
+   const now=new Date();
    const thisMonth=year===now.getFullYear()?now.getMonth()+1:month+1;
    const birthdayList=publishedBirthdays().filter(p=>Number(p.month)===thisMonth);
    const nextMonth=thisMonth===12?1:thisMonth+1;
    const nextBirthdays=publishedBirthdays().filter(p=>Number(p.month)===nextMonth);
-   content=fullYearSummary()+`<div class="cp-main-heading"><h2>Atividades e próximos compromissos</h2></div><div class="cp-list">${future.length?future.map(eventHtml).join(''):'<p class="cp-muted">Nenhum evento futuro publicado para este ano.</p>'}</div>
-   <div class="cp-birthday-teaser"><div class="cp-main-heading"><h2>🎂 Aniversariantes de ${MONTHS[thisMonth-1]}</h2><button class="cp-btn soft" id="cpSeeBirthdays">Ver todos os meses</button></div>
+   content=`<div class="cp-birthday-teaser"><div class="cp-main-heading"><h2>🎂 Aniversariantes de ${MONTHS[thisMonth-1]}</h2><button class="cp-btn soft" id="cpSeeBirthdays">Ver todos os meses</button></div>
    <div class="cp-list">${birthdayList.length?birthdayList.map(birthdayEntry).join(''):'<p class="cp-muted">Nenhum aniversariante publicado para este mês.</p>'}</div><div class="cp-birthday-next"><strong>Próximo mês · ${MONTHS[nextMonth-1]}</strong><div class="cp-birthday-preview">${nextBirthdays.length?nextBirthdays.map(p=>`<span>${safe(String(p.day).padStart(2,'0'))}/${safe(String(p.month).padStart(2,'0'))} · ${safe(p.name)}</span>`).join(''):'<span>Nenhum aniversariante cadastrado</span>'}</div></div></div>
    <h2 style="color:#12375e;margin-top:28px">Comunicados recentes</h2>${notes.slice(0,3).map(noticeHtml).join('')||'<p class="cp-muted">Sem avisos recentes.</p>'}`;
   }else if(tab==='calendario'||tab==='avaliacoes'){
@@ -914,7 +900,7 @@
     <button class="cp-btn gold" id="cpDownloadPublished" type="button">↓ Baixar os 12 meses (PDF)</button></div>
    <p class="cp-status" id="cpPdfProgress"></p></div>${compactYearSummary()}`;
 
-  here.innerHTML=`${flowHeader}${showBell?'':`<div class="cp-overview"><div class="cp-metric"><small>Atividades publicadas</small><strong>${events.length}</strong></div><div class="cp-metric"><small>Avaliações e simulados</small><strong>${assess.length}</strong></div><div class="cp-metric"><small>Avisos disponíveis</small><strong>${notes.length}</strong></div></div>${tabs}`}${alertPrompt}${content}<p class="cp-updated">Última publicação da Gestão: ${data?new Date(data.updatedAt).toLocaleString('pt-BR'):'ainda não publicada'} · Atualização automática enquanto o aplicativo estiver aberto.</p>`;
+  here.innerHTML=`${showBell?'':`<div class="cp-overview"><div class="cp-metric"><small>Atividades publicadas</small><strong>${events.length}</strong></div><div class="cp-metric"><small>Avaliações e simulados</small><strong>${assess.length}</strong></div><div class="cp-metric"><small>Avisos disponíveis</small><strong>${notes.length}</strong></div></div>${tabs}`}${flowHeader}${alertPrompt}${content}<p class="cp-updated">Última publicação da Gestão: ${data?new Date(data.updatedAt).toLocaleString('pt-BR'):'ainda não publicada'} · Atualização automática enquanto o aplicativo estiver aberto.</p>`;
   if(tab==='correcao'&&!showBell)window.CoraGrader?.mount({root:here,callApi:api,toast,profile:teacherProfile});
   here.querySelectorAll('[data-cp-delivery-status]').forEach(button=>button.addEventListener('click',async()=>{
     if(teacherSaving||!teacherProfile?.identified)return;
