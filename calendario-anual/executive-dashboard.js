@@ -121,6 +121,7 @@
       card('Eventos e atividades',model.events,'Registros do ano','events')+
       card('Avisos e comunicados',model.notices??'—',mode==='manager'?'Rascunhos da Gestão':'Publicados para a equipe','message')+
       card('Feriados',model.holidays,model.holidayCaption,'calendar')+
+      (mode==='manager'&&model.invalidMovable>0?card('Datas móveis para revisar',model.invalidMovable,'Abra Feriados e dias letivos → Conferir divergências','shield'):'')+
       card('Sábados com aula',model.saturdays,'Identificados nas atividades','calendar')+
       card('Avaliações e simulados',model.evaluations,'Pelo tipo ou descrição','document')+
       card('Prazos e entregas',model.deliveries,'Registros do calendário','clock')+
@@ -150,10 +151,13 @@
     let view=$('#coraExecutiveSummary');
     if(!view){view=document.createElement('div');view.id='coraExecutiveSummary';const welcome=$('.welcome',main);welcome?.insertAdjacentElement('afterend',view);}
     if(state.manager!=='overview')return;
-    const year=currentYear(),events=window.CoraCalendarIntegrity?.filterEvents?.(managementEvents(year))||managementEvents(year),
+    const year=currentYear(),sourceEvents=managementEvents(year),
+      events=window.CoraCalendarIntegrity?.filterEvents?.(sourceEvents)||sourceEvents,
+      invalidMovable=window.CoraCalendarIntegrity?.find?.(sourceEvents)||[],
       birthdays=window.CoraBirthdays?.all?.()||[];
     const model=metrics(events,birthdays,year,true);
     model.notices=(stored('cora_portal_draft_notices_'+year,[])||[]).length;
+    model.invalidMovable=invalidMovable.length;
     view.innerHTML=overviewContent(model,'manager');
     if(!state.accounts&&!state.accountsLoading&&!state.accountError)fetchAccounts();
   }
