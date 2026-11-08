@@ -71,9 +71,13 @@
    item.type?'Categoria: '+str(item.type):'',
    item.time?'Horário: '+str(item.time):'',
    item.place?'Local: '+str(item.place):'',
-   item.audience?'Público: '+str(item.audience):''
+   item.audience?'Público: '+str(item.audience):'',
+   item.mode?'Modalidade: '+str(item.mode):'',
+   item.duration?'Duração: '+Number(item.duration)+' minutos':'',
+   item.stageNumber?'Etapa: '+Number(item.stageNumber)+'ª':''
   ].filter(Boolean).join('  ·  ');
   if(meta)add(meta,20,BLUE,'600',28);
+  if(str(item.deliveryTypes))add('Avaliações previstas: '+str(item.deliveryTypes),20,MUTED,'400',29);
   if(str(item.notes))add('Observações: '+str(item.notes),20,MUTED,'400',29);
   if(str(item.meet))add('Acesso on-line: '+str(item.meet),19,MUTED,'400',27);
   return lines;
