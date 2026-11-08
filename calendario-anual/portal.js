@@ -16,6 +16,7 @@
  const dateStr=(date)=>{const d=new Date(date);return Number.isNaN(d.getTime())?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
  const isoNow=()=>{const d=new Date();return `${dateStr(d)}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`};
  const app=$('#app'),root=document.createElement('div');root.id='coraPortal';document.body.prepend(root);
+ let auditRefreshTimer=null;
  let role='',chosen='gestao',data=null,year=Number(window.CoraYears?.activeYear)||2026,availableYears=[2026],month=new Date().getFullYear()===2026?new Date().getMonth():0,tab='resumo',selectedStage=0,managerNotices=[],leadDays=3,timer=null,showBell=false,teacherProfile=null,teacherSaving=false,individualRequired=false,pushChecked=false,pushConfirmed=false;
  const seenPublicationIds=new Map();
  let teamStats=null,teamStatsAt=0,teamStatsLoading=false,teamStatsError='';
@@ -54,6 +55,7 @@
  function loadNoticeDraft(y=year){try{const v=JSON.parse(localStorage.getItem(noticeKey(y))||'[]');return Array.isArray(v)?v:[]}catch{return []}}
  function logo(){return window.CORA_SCHOOL_LOGO||window.CORA_STUDIO_ASSETS?.logo||''}
  function gateway(error=''){
+  clearInterval(auditRefreshTimer);auditRefreshTimer=null;
   window.CoraMonthPublisher=null;
   window.CoraMonthlyPublication=null;
   window.CoraGrader?.reset?.();
@@ -71,7 +73,7 @@
   };
    $('#cpLoginForm').onsubmit=async e=>{e.preventDefault();const btn=$('#cpLoginForm button[type=submit]');btn.disabled=true;try{const r=await api('login',{role:chosen,email:chosen==='equipe'&&!$('#cpUseLegacy').checked?$('#cpEmail').value.trim():'',password:$('#cpPassword').value});role=r.role;await enter();}catch(err){gateway((err.message||'Credenciais inválidas.')+' '+(err.status===503?'Contate a administração.':''));}finally{btn.disabled=false;}};
  }
- async function logout(){window.CoraHelpdesk?.teardown();teacherProfile=null;try{await api('logout',{})}catch{}clearInterval(timer);timer=null;gateway();}
+ async function logout(){window.CoraHelpdesk?.teardown();teacherProfile=null;clearInterval(auditRefreshTimer);auditRefreshTimer=null;try{await api('logout',{})}catch{}clearInterval(timer);timer=null;gateway();}
  async function enter(){if(role==='gestao')manager();else await team();}
 
  function publicationCandidates(targetYear){
@@ -127,11 +129,33 @@
     'Comparação com a publicação de '+new Date(report.updatedAt).toLocaleString('pt-BR')+
     '. Rascunhos e datas importadas precisam ser revisados na Gestão antes da publicação.':
     'Este ano ainda não foi publicado para a Equipe. Confira os meses antes de usar “Publicar para equipe”.';
+   const integrationHost=$('#coraIntegrationReport');
+   if(integrationHost&&window.CoraIntegrationAudit){
+    const result=window.CoraIntegrationAudit.inspect({
+     year:targetYear,
+     localEvents:loadEventDraft(targetYear),
+     approved:ready,
+     publication:reply.publication,
+     stages:window.CoraStages?.get?.(targetYear)||[],
+     assessments:window.CoraAssessments?.get?.(targetYear)||null,
+     localBirthdays:window.CoraBirthdays?.all?.()||[]
+    });
+    integrationHost.innerHTML=window.CoraIntegrationAudit.render(result);
+    window.CoraIntegrationAudit.storeReport(result);
+    const summary=$('#coraIntegrationAuditSummary');
+    if(summary)summary.textContent=(result.score==='ok'?'Sem divergências detectadas':result.issues.length+' ponto(s) para revisão')+' · '+targetYear;
+   }
   }catch(e){
-   if(current===syncRevision){status.textContent='Não foi possível conferir a sincronização';area.textContent=e.message||'Falha de conexão';}
+   if(current===syncRevision){
+     status.textContent='Não foi possível conferir a sincronização';area.textContent=e.message||'Falha de conexão';
+     const integrationHost=$('#coraIntegrationReport');
+     if(integrationHost)integrationHost.innerHTML='<p class="cora-int-error">Não foi possível consultar o calendário publicado; a integração da Equipe não pode ser confirmada.</p>';
+     const summary=$('#coraIntegrationAuditSummary');if(summary)summary.textContent='Não foi possível consultar o servidor';
+    }
   }
  }
  function manager(){
+  clearInterval(auditRefreshTimer);auditRefreshTimer=null;
   year=Number(window.CoraYears?.activeYear)||2026;
   window.CoraMonthPublisher={publish:publishApprovedMonth};
   document.body.classList.remove('portal-locked','portal-loading');
@@ -168,6 +192,23 @@
    '<button type="button" id="cpReviewImportedYear">Conferir atividades importadas</button>'+
    '<span id="cpSyncLastCheck" role="status"></span></div>'+
    '<div id="cpYearSyncGrid" class="cp-sync-year-grid" aria-live="polite"></div></details>');
+  $('#cpYearSync')?.insertAdjacentHTML('afterend',
+   '<details id="coraIntegrationAudit" class="cora-integration-audit" open>'+
+   '<summary><span>Auditoria das integrações · Gestão e Equipe</span><small id="coraIntegrationAuditSummary">Consultando publicação...</small></summary>'+
+   '<p>Verificação automática das etapas, avaliações, entregas, feriados, aniversários e eventos publicados.</p>'+
+   '<div id="coraIntegrationReport" role="status" aria-live="polite">Carregando dados...</div></details>');
+  $('#coraIntegrationAudit')?.addEventListener('click',event=>{
+   const button=event.target.closest('#coraAuditRefresh,#coraAuditExactFix');
+   if(!button||role!=='gestao')return;
+   if(button.id==='coraAuditRefresh'){void checkYearSync();return;}
+   const active=Number(window.CoraYears?.activeYear)||2026;
+   if(!confirm('Corrigir apenas cópias locais idênticas de '+active+'? Será criado um backup no aparelho. Nenhuma publicação da Equipe será alterada.'))return;
+   const result=window.CoraIntegrationAudit?.repairExact?.(active);
+   if(!result?.ok){toast('Auditoria: '+(result?.error||'Falha na correção.'));return;}
+   toast(result.removed?result.removed+' cópia(s) local(is) corrigida(s), com backup.':'Nenhuma cópia idêntica encontrada.');
+   if(result.removed)window.dispatchEvent(new CustomEvent('cora-data-changed',{detail:{year:active,source:'integration-audit'}}));
+   else void checkYearSync(active);
+  });
   window.CoraHolidays?.mountManager({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year,onPublish:publishHolidayDecisions});
   window.CoraCompliance?.mount({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year});
   window.CoraSinepe2027?.mount({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year});
@@ -181,6 +222,9 @@
    return true;
   };
   $('#cpSyncReload')?.addEventListener('click',()=>void checkYearSync());
+  auditRefreshTimer=setInterval(()=>{
+   if(role==='gestao'&&!document.hidden)void checkYearSync();
+  },180000);
   window.addEventListener('cora-events-updated',e=>{
    if(role==='gestao'&&Number(e.detail?.year)===Number(window.CoraYears?.activeYear))void checkYearSync();
   });

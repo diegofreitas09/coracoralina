@@ -1,0 +1,28 @@
+/* Auditoria das integrações no painel da Gestão */
+#coraIntegrationAudit{border:1px solid #d4e2ee;border-radius:15px;background:#fff;margin:13px 0 18px;box-shadow:0 5px 20px #173f5d0a;color:#1b466b;overflow:hidden}
+#coraIntegrationAudit>summary{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;cursor:pointer;padding:15px 17px;background:#f0f6fb;color:#163f60;font-size:15px;font-weight:850}
+#coraIntegrationAudit>summary small{font-size:11px;font-weight:650;color:#51728c}
+#coraIntegrationAudit>p{padding:0 17px;color:#667e92;font-size:12px;line-height:1.55}
+#coraIntegrationReport{padding:5px 17px 18px}
+.cora-int-header{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 13px}
+.cora-int-header strong{font-size:15px;color:#173d60}
+.cora-int-header span{font-size:11px;padding:5px 8px;border-radius:8px;font-weight:750}
+.cora-int-header .is-ok{background:#e7f5eb;color:#24714b}
+.cora-int-header .is-warning{background:#fff3dc;color:#916118}
+.cora-int-header .is-critical{background:#fce9e8;color:#9a332c}
+.cora-int-metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-bottom:13px}
+.cora-int-metrics span{padding:10px 8px;text-align:center;background:#f7f9fc;border:1px solid #e4edf4;border-radius:10px;font-size:11px;color:#657e90}
+.cora-int-metrics b{color:#184d7d}
+.cora-int-issues{margin:0 0 12px;padding:0;list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.cora-int-issues li{padding:11px 13px;border:1px solid #e3eaf0;border-left:3px solid #c89536;background:#fbfbfc;border-radius:8px;display:flex;flex-direction:column;gap:4px}
+.cora-int-issues li.is-critical{border-left-color:#b24a45}
+.cora-int-issues strong{font-size:12px;color:#17496b}
+.cora-int-issues span,.cora-int-note{font-size:11px;color:#62788c;line-height:1.55}
+.cora-int-note{margin:10px 0}
+.cora-int-good{background:#edf7f0;padding:10px;border-left:3px solid #327d54;color:#236044;font-size:12px}
+.cora-int-error{font-size:12px;color:#9c3028}
+.cora-int-actions{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}
+.cora-int-actions button{background:#1c5b88;color:white;border:1px solid #1c5b88;border-radius:10px;min-height:40px;padding:9px 13px;font-size:12px;font-weight:800;cursor:pointer}
+.cora-int-actions button+button{background:#fff;color:#1b567e;border-color:#bdd6e8}
+@media(max-width:860px){.cora-int-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.cora-int-issues{grid-template-columns:1fr}}
+@media(max-width:520px){#coraIntegrationAudit>summary{padding:13px 11px;font-size:14px}#coraIntegrationReport{padding:5px 11px 14px}.cora-int-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.cora-int-actions button{width:100%}}
