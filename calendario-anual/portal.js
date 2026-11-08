@@ -170,6 +170,7 @@
    '<div id="cpYearSyncGrid" class="cp-sync-year-grid" aria-live="polite"></div></details>');
   window.CoraHolidays?.mountManager({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year,onPublish:publishHolidayDecisions});
   window.CoraCompliance?.mount({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year});
+  window.CoraSinepe2027?.mount({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year});
   const reviewController=window.CoraYearReview?.mount({
    host:$('#cpYearSync'),getYear:()=>Number(window.CoraYears?.activeYear)||2026,
    onChange:(targetYear)=>void checkYearSync(targetYear),notify:toast
