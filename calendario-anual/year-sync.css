@@ -58,3 +58,19 @@
 [data-cora-theme="dark"] .cp-year-review-row,[data-cora-theme="dark"] .cp-year-review-empty{background:#1d3045;border-color:#3e546d}
 [data-cora-theme="dark"] .cp-year-review-event small,[data-cora-theme="dark"] .cp-year-review-row label{color:#ccdded}
 @media(max-width:780px){.cp-year-review-row{grid-template-columns:1fr;gap:9px}.cp-year-review-controls>*{flex:1}.cp-year-review-date{max-width:100%}}
+
+/* Diferença entre eventos locais e eventos publicados, mostrada no mês da Gestão. */
+.month-publication-status{margin:10px 12px 16px;padding:14px 16px;background:#fff8e9;border:1px solid #e6d09d;border-radius:13px;color:#60471b}
+.month-publication-status .month-publication-counts{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.month-publication-status .month-publication-counts strong{font-size:.9rem;color:#5d451a}
+.month-publication-status .month-publication-counts span{font-size:.82rem;font-weight:750;color:#846022}
+.month-publication-status p{margin:8px 0 11px;font-size:.81rem;line-height:1.5;color:#715728}
+.month-publication-actions{display:flex;flex-wrap:wrap;gap:8px}
+.month-publication-actions button{border:1px solid #ba994f;background:#fff;border-radius:9px;padding:10px 12px;font:700 .83rem inherit;color:#694612;cursor:pointer;min-height:40px}
+.month-publication-actions button[data-month-publish]{background:#174c7d;color:#fff;border-color:#174c7d}
+.month-publication-actions button:focus-visible{outline:3px solid #f0b940;outline-offset:2px}
+[data-cora-theme="dark"] .month-publication-status{background:#433b2b;border-color:#907141;color:#fff1c9}
+[data-cora-theme="dark"] .month-publication-status p,[data-cora-theme="dark"] .month-publication-status .month-publication-counts strong,[data-cora-theme="dark"] .month-publication-status .month-publication-counts span{color:#ffe6b1}
+[data-cora-theme="dark"] .month-publication-actions button{background:#273e58;color:#ffe9b9;border-color:#8f7e5d}
+[data-cora-theme="dark"] .month-publication-actions button[data-month-publish]{background:#30679d;color:#fff}
+@media(max-width:650px){.month-publication-status{margin:9px 4px 13px;padding:12px}.month-publication-actions button{flex:1 1 145px}}
