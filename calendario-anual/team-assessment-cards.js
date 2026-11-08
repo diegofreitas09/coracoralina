@@ -148,7 +148,7 @@
    (data.extras.length?'<section class="cta-assess-extras"><h3>Outras avaliações publicadas</h3>'+
      '<p>Atividades cuja etapa não foi identificada na publicação. A Gestão pode revisar a classificação.</p>'+
      renderRows(data.extras)+'</section>':'')+
-   '<p class="cta-assess-foot">Somente informações publicadas pela Gestão. As datas de entrega à coordenação ficam na página <b>Entregas</b>. '+
+   '<p class="cta-assess-foot">Somente informações publicadas pela Gestão. Os <b>Prazos de entrega</b> à coordenação ficam na página <b>Entregas</b>. '+
    'Cada período é apresentado uma única vez, mesmo quando o calendário registra início e fim separadamente.</p></section>';
  }
  window.CoraTeamAssessmentCards={collect,render,isAssessment,kind};
