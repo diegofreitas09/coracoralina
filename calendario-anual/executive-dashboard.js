@@ -86,12 +86,14 @@
     const members=hasAccounts?state.accounts.members:[];
     const teachers=members.filter(m=>/professor/i.test(String(m.profile||m.role||'')));
     const countBySeg=segment=>teachers.filter(m=>Array.isArray(m.segments)&&m.segments.includes(segment)).length;
+    const fundamentalTotal=teachers.filter(m=>Array.isArray(m.segments)&&m.segments.some(s=>s==='Ensino Fundamental I'||s==='Ensino Fundamental II')).length;
     const others=members.filter(m=>!/professor/i.test(String(m.profile||m.role||'')));
     let accountCards='';
     if(mode==='manager'){
       accountCards='<h3>Equipe cadastrada</h3><div class="cora-exec-grid">'+
         card('Professores cadastrados',hasAccounts?countStr(teachers.length):'—','Contas do servidor','people')+
         card('Outros colaboradores',hasAccounts?countStr(others.length):'—','Contas do servidor','people')+
+        card('Ensino Fundamental (total)',hasAccounts?countStr(fundamentalTotal):'—','Professores únicos de F1 e F2','people')+
         [['Educação Infantil','Educação Infantil'],['Fundamental I','Ensino Fundamental I'],
           ['Fundamental II','Ensino Fundamental II'],['Ensino Médio','Ensino Médio']].map(x=>
           card(x[0],hasAccounts?countStr(countBySeg(x[1])):'—','Professores vinculados','people')).join('')+
@@ -105,6 +107,7 @@
       '<h3>Distribuição dos dias da semana</h3><div class="cora-exec-grid cora-exec-week">'+week+'</div>'+
       '<h3>Agenda pedagógica e institucional</h3><div class="cora-exec-grid">'+
       card('Eventos e atividades',model.events,'Registros do ano','events')+
+      card('Avisos e comunicados',model.notices??'—',mode==='manager'?'Rascunhos da Gestão':'Publicados para a equipe','message')+
       card('Feriados',model.holidays,model.holidayCaption,'calendar')+
       card('Sábados com aula',model.saturdays,'Identificados nas atividades','calendar')+
       card('Avaliações e simulados',model.evaluations,'Pelo tipo ou descrição','document')+
@@ -137,7 +140,9 @@
     if(state.manager!=='overview')return;
     const year=currentYear(),events=window.CoraYears?.getEvents?.(year)||[],
       birthdays=window.CoraBirthdays?.all?.()||[];
-    view.innerHTML=overviewContent(metrics(events,birthdays,year,true),'manager');
+    const model=metrics(events,birthdays,year,true);
+    model.notices=(stored('cora_portal_draft_notices_'+year,[])||[]).length;
+    view.innerHTML=overviewContent(model,'manager');
     if(!state.accounts&&!state.accountsLoading&&!state.accountError)fetchAccounts();
   }
   const mainPageFor = el => {
@@ -174,7 +179,7 @@
     const label=ROUTES.find(x=>x[0]===state.manager)?.[1]||'Visão geral';
     const title=$('#coraPageTitle');if(title)title.textContent=label;
     const actions=$('#app .welcome-actions');if(actions)actions.classList.toggle('cora-route-hidden',!['calendar','files'].includes(state.manager));
-    if(state.manager==='staff'){const open=$('#cpAccountsOpen');if(open&&!$('#cpAccountsPanel')?.classList.contains('cora-route-hidden'))open.click();}
+    if(state.manager==='staff'&&$('#cpAccountsPanel')?.classList.contains('cp-hidden'))$('#cpAccountsOpen')?.click();
     if(state.manager==='notices'&&$('#cpManagerPanel')?.classList.contains('cp-hidden'))$('#cpTogglePanel')?.click();
     if(state.manager==='holidays')$('#chManager')?.setAttribute('open','');
     if(state.manager==='compliance'){$('#cpLegalDetails')?.setAttribute('open','');$('#cpSinepe27 details')?.setAttribute('open','');}
@@ -218,7 +223,9 @@
     if(current==='resumo'&&!snap.showBell){
       let section=$('#coraTeamExecutive');
       if(!section){section=document.createElement('div');section.id='coraTeamExecutive';view.prepend(section);}
-      section.innerHTML=overviewContent(metrics(snap.events,snap.birthdays,snap.year,false),'team');
+      const signature=JSON.stringify([snap.year,(snap.events||[]).map(e=>[e.id,e.date,e.title,e.type]),(snap.birthdays||[]).map(b=>[b.id,b.day,b.month,b.role]),(snap.notices||[]).length]);
+      if(section.dataset.signature!==signature){const model=metrics(snap.events,snap.birthdays,snap.year,false);model.notices=(snap.notices||[]).length;
+        section.innerHTML=overviewContent(model,'team');section.dataset.signature=signature;}
       if(state.teamTools){
         const tools=$('.cp-teacher-tools',view);
         if(tools&&!$('#coraToolsHeading')){
