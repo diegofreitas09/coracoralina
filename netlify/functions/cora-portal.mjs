@@ -53,6 +53,18 @@ const baseCookie=`Path=/calendario-anual/; HttpOnly; Secure; SameSite=Strict`;
 const str=(v,len=255)=>String(v??'').trim().slice(0,len);
 const cleanEvent=e=>{
  const item={id:str(e.id,140),date:str(e.date,10),title:str(e.title,170),type:str(e.type,36),notes:str(e.notes,600)};
+ // Preserva também os detalhes do cadastro, utilizados no PDF completo da Equipe.
+ // Publicações antigas sem esses campos permanecem compatíveis.
+ const time=str(e.time,5);
+ if(/^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/.test(time))item.time=time;
+ const place=str(e.place,180);if(place)item.place=place;
+ const audience=str(e.audience,100);if(audience)item.audience=audience;
+ const mode=str(e.mode,20).toLowerCase();
+ if(['presencial','online','hibrido','híbrido'].includes(mode))item.mode=mode;
+ const duration=Math.trunc(Number(e.duration)||0);
+ if(duration>=15&&duration<=480)item.duration=duration;
+ const meet=str(e.meet,500);
+ if(mode==='online'&&/^https:\/\//i.test(meet))item.meet=meet;
  // Campos de entrega de avaliações mantidos na publicação compartilhada.
  // Eventos comuns não recebem metadados de alerta obrigatório.
  if(e.assessmentDelivery===true && /^cora-entrega-avaliacoes-\d{4}-[1-4]$/.test(item.id)){
