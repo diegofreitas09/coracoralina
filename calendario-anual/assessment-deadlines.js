@@ -63,6 +63,7 @@
  }
  function draftFrom(y=activeYear(),source=2026){
   if(y<=2026)return {ok:false,error:'O ano-base 2026 não deve ser substituído.'};
+  if(y===2027)return {ok:false,error:'O cronograma de 2027 deve seguir o calendário SINEPE-CE/Copa aprovado pela Gestão. Não copie automaticamente provas e entregas de 2026.'};
   const previous=get(source);
   const data={year:y,approved:false,source:'Referência '+source+' — revisar todas as datas',items:previous.items.map(s=>({
     stage:s.stage,due:s.due?alignWeek(s.due,y):'',deliveryTypes:s.deliveryTypes,
@@ -200,7 +201,7 @@
    '<div class="assess-stage-progress" aria-label="Situação das quatro etapas">'+data.items.map(row=>
     '<span class="'+(isStageApproved(data,row.stage)?'done':'')+(selectedStage===row.stage?' selected':'')+'">'+row.stage+'ª '+(isStageApproved(data,row.stage)?'✓':'○')+'</span>').join('')+'</div></div>'+
    selectedCard()+
-   '<div class="assess-actions">'+(y>2026?'<button type="button" class="btn btn-outline" id="assessImportYear">Importar 2026 como rascunho</button>':'')+
+   '<div class="assess-actions">'+(y>2027?'<button type="button" class="btn btn-outline" id="assessImportYear">Importar 2026 como rascunho</button>':'')+
    '<button type="button" class="btn btn-outline" id="assessSave">Salvar esta etapa</button>'+
    '<button type="button" class="btn btn-primary" id="assessApprove">Validar '+selectedStage+'ª etapa</button></div>'+
    '<p class="assess-feedback" id="assessStatus" role="status" aria-live="polite"></p>'+
@@ -249,6 +250,17 @@
    const data=get(y),row=data.items[selectedStage-1];
    if(!row.due||!row.deliveryTypes||!row.items.length){status('Preencha a entrega, os tipos de prova e pelo menos um período de avaliação.');return}
    if(y>2026){const st=window.CoraStages?.get?.(y)?.find(x=>Number(x.number)===selectedStage);if(!st?.start||!st?.end||st.needsReview){status('Confira e valide primeiro o início e o fim da '+selectedStage+'ª etapa letiva.');return}}
+   if(y===2027){
+    const st=window.CoraStages?.get?.(y)?.find(x=>Number(x.number)===selectedStage);
+    const out=row.items.filter(a=>
+     a.start<st.start||a.end>st.end||
+     a.start<='2027-07-25'&&a.end>='2027-06-24'
+    );
+    if(out.length){
+     status('Validação bloqueada: '+out.length+' período(s) de prova fora da etapa ou durante o recesso da Copa Feminina. Corrija as avaliações, sem alterar as datas de entrega.');
+     return;
+    }
+   }
    const warnings=issues(data,selectedStage);
    const question=warnings.length?'Esta etapa possui '+warnings.length+' conferência(s):\n\n'+warnings.slice(0,5).join('\n')+'\n\nVocê conferiu e aprova as datas desta etapa?':
      'Confirma que o prazo de entrega e as avaliações da '+selectedStage+'ª etapa de '+y+' estão corretos?';
