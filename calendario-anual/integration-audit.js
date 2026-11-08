@@ -6,7 +6,7 @@
  'use strict';
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
- const date=y=>/^\d{4}-\d{2}-\d{2}$/.test(String(y||''))&&new Date(y+'T12:00:00Z').toISOString().slice(0,10)===y;
+ const date=y=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(String(y||'')))return false;const d=new Date(y+'T12:00:00Z');return Number.isFinite(d.getTime())&&d.toISOString().slice(0,10)===y;};
  const groupYear=(value,y)=>Number(String(value||'').slice(0,4))===Number(y);
  const dateFmt=v=>date(v)?v.slice(8,10)+'/'+v.slice(5,7)+'/'+v.slice(0,4):'Não informado';
  const keyOf=e=>String(e?.id||'');
