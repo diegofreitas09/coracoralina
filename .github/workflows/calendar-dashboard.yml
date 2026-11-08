@@ -1,0 +1,42 @@
+name: Verificar interface do Calendário Anual
+on:
+  pull_request:
+    paths:
+      - 'calendario-anual/**'
+  push:
+    branches:
+      - 'feat/dashboard-lateral-2027'
+    paths:
+      - 'calendario-anual/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir sintaxe dos scripts
+        run: |
+          node --check calendario-anual/executive-dashboard.js
+          node --check calendario-anual/portal.js
+          node --check calendario-anual/app.js
+      - name: Conferir recursos na página
+        run: |
+          node - <<'NODE'
+          const assert=require('node:assert/strict');
+          const fs=require('node:fs');
+          const html=fs.readFileSync('calendario-anual/index.html','utf8');
+          const css=fs.readFileSync('calendario-anual/executive-dashboard.css','utf8');
+          const js=fs.readFileSync('calendario-anual/executive-dashboard.js','utf8');
+          for(const f of ['executive-dashboard.css','executive-dashboard.js']){
+            assert.ok(html.includes(f),'Arquivo não carregado: '+f);
+          }
+          for(const id of ['coraManageNav','coraTeamDrawer','coraExecutiveSummary','coraTeamExecutive']){
+            assert.ok(js.includes(id),'Seção não encontrada: '+id);
+          }
+          assert.ok(css.includes('@media(max-width:900px)'),'Faltou responsividade');
+          assert.ok(fs.readFileSync('calendario-anual/portal.js','utf8').includes('CoraPortalSnapshot'));
+          console.log('Interface verificada.');
+          NODE
