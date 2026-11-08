@@ -46,7 +46,7 @@
   return items.sort((a,b)=>a.date.localeCompare(b.date)||a.title.localeCompare(b.title,'pt-BR'));
  }
  let host=null,activeYear=2027,displayMonth='all',record=null,rows=[],busy=false;
- const initial=y=>({year:y,uf:'CE',city:'Fortaleza',cityCode:'2304400',decisions:{},custom:[],attachments:[],savedAt:''});
+ const initial=y=>({year:y,uf:'CE',city:'',cityCode:'',decisions:{},custom:[],attachments:[],savedAt:''});
  const config=y=>{const v=read(KEY(y),null);return v&&v.year===y&&v.decisions&&typeof v.decisions==='object'?{...initial(y),...v}:initial(y)};
  function refreshRows(){rows=[...officialList(activeYear,record.uf,record.city),...(record.custom||[])].sort((a,b)=>a.date.localeCompare(b.date)||a.title.localeCompare(b.title,'pt-BR'))}
  function monthRows(){return displayMonth==='all'?rows:rows.filter(r=>Number(r.date.slice(5,7))===Number(displayMonth)+1)}
@@ -182,7 +182,7 @@
  }
  function panel(){
   const y=activeYear;
-  const years=Array.from({length:Math.min(77,Math.max(13,activeYear-2024+6))},(_,i)=>2024+i);
+  const years=Array.from({length:Math.min(74,Math.max(12,activeYear-2026+6))},(_,i)=>2026+i);
   return '<details id="chManager" class="ch-panel"><summary><span class="ch-icon" aria-hidden="true">▦</span><strong>Feriados e dias letivos</strong><small>Ano, estado, município e funcionamento escolar</small></summary>'+
    '<div class="ch-body"><p class="ch-lead">Confira os feriados da localidade, decida se haverá aula e publique as decisões no calendário dos professores. Feriados não podem ser alterados por decisão escolar; o que se registra aqui é o funcionamento da escola.</p>'+
    '<div class="ch-filters"><label>Ano letivo<select id="chYear">'+years.map(x=>'<option value="'+x+'" '+(x===y?'selected':'')+'>'+x+'</option>').join('')+'</select></label>'+
