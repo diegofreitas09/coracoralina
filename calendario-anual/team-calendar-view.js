@@ -52,7 +52,11 @@
    const date=iso(a.year,a.month,d),ev=monthEvents.filter(e=>e.date===date),
     names=a.birthdays.filter(p=>Number(p.month)===a.month+1&&Number(p.day)===d),
     boundaries=a.stages.flatMap(st=>st.start===date?['Início '+st.number+'ª etapa']:st.end===date?['Fim '+st.number+'ª etapa']:[]);
-   const labels=[...boundaries,...ev.map(x=>String(x.title||'')).filter(Boolean),...names.map(x=>'Aniv.: '+x.name)];
+   const school=assessmentsOnly?null:window.CoraSchoolCarnival2027?.status?.(date);
+   const alreadyClosed=ev.some(e=>/sem aula|recesso escolar/i.test(String(e.title||'')));
+   const schoolLabel=school?(school.kind==='aula'?(date==='2027-02-11'?'Retorno às aulas · normal':'Aula normal'):
+     (alreadyClosed?'':'Sem aula · período de Carnaval')):'';
+   const labels=[...boundaries,...(schoolLabel?[schoolLabel]:[]),...ev.map(x=>String(x.title||'')).filter(Boolean),...names.map(x=>'Aniv.: '+x.name)];
    days+='<div class="cy-day'+(labels.length?' has-events':'')+'" aria-label="'+esc(d+' de '+MONTHS[a.month]+': '+(labels.join('; ')||'sem compromissos'))+'">'+
       '<span class="cy-day-num">'+d+'</span>'+
       labels.slice(0,pdf?2:3).map((label,j)=>'<span class="cy-day-item '+(label.startsWith('Aniv.:')?'is-birthday':label.startsWith('Início ')||label.startsWith('Fim ')?'is-stage':'is-event')+'">'+esc(label)+'</span>').join('')+
