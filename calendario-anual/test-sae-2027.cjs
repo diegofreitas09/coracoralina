@@ -43,7 +43,7 @@ assert.equal(inCalendar.filter(e=>e.id.startsWith('cora-simulado-sae-')).length,
 const repeated=api.save(copy);assert.equal(repeated.ok,true,repeated.error||'Segundo salvamento falhou');
 inCalendar=JSON.parse(store.get('cora_calendario_eventos_2027_v1'));
 assert.equal(inCalendar.filter(e=>e.id.startsWith('cora-simulado-sae-')).length,4,'Regravar não duplica Simulado SAE');
-const changed=JSON.parse(JSON.stringify(data));changed.items[2].items[1].start='2027-09-27';
+const changed=JSON.parse(JSON.stringify(data));changed.items[2].items[1].start='2027-09-27';changed.items[2].items[1].end='2027-10-01';
 changed.approvedStages=[1,2,4];changed.approved=false;
 assert.equal(api.save(changed).ok,true);
 assert.equal(api.saeSchedule(changed)[2].date,'2027-09-24','Alteração da AD recalcula a sexta anterior');
