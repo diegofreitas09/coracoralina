@@ -89,7 +89,7 @@
       '<small>'+esc(d.description)+'</small></div>').join('')+'</div>'+
      '<button type="button" class="ch-outline" id="chCoraCarnavalApply">Definir 08, 09 e 10/02 como SEM AULA</button>'+
      '<p class="ch-cora-carnival-foot">Regra exclusiva deste calendário escolar. Os dias 15, 16 e 17/02 não são Carnaval. '+
-      'Depois de marcar, use “Salvar e publicar para a equipe”. Registros antigos devem ser conferidos na auditoria.</p>';
+      'Antes de publicar, confira e retire os registros falsos de 15–17/02 na auditoria com backup. Depois use “Salvar e publicar para a equipe”.</p>';
    }
   }
   const area=host.querySelector('#chRows');
@@ -244,7 +244,7 @@
    if(targets.length!==3){notice('O período não foi encontrado na base de feriados. Confira as configurações antes de aplicar.');return;}
    targets.forEach(r=>applyDecision(r.id,'sem',''));
    saved();render();
-   notice('Carnaval 2027: 08, 09 e 10/02 marcados SEM AULA. Sábado 06 e domingo 07 já são não letivos. Retorno em 11/02. Clique em Salvar e publicar para a equipe.');
+   notice('08, 09 e 10/02 definidos SEM AULA. Retorno normal em 11/02. Primeiro remova as duplicações de 15–17/02 pela auditoria (com backup), depois clique em Salvar e publicar para a equipe.');
   });
   wrapper.querySelector('#chExtra').onsubmit=e=>{e.preventDefault();try{addCustom(wrapper.querySelector('#chExtraDate').value,wrapper.querySelector('#chExtraName').value);wrapper.querySelector('#chExtraName').value='';notice('Data cadastrada. Escolha o funcionamento e salve.')}catch(error){notice(error.message)}};
   wrapper.querySelector('#chSave').onclick=()=>saveAndPublish(null);
@@ -259,7 +259,7 @@
   return wrapper;
  }
  function teacherPanel(year,events,month='all'){
-  const list=(Array.isArray(events)?events:[]).filter(e=>(e.type==='Feriado'||e.holidayManaged)&&Number(e.date?.slice(0,4))===Number(year)).filter(e=>month==='all'||Number(e.date.slice(5,7))===Number(month)+1).sort((a,b)=>a.date.localeCompare(b.date));
+  const list=(window.CoraCalendarIntegrity?.filterEvents?.(events)||Array.isArray(events)&&events||[]).filter(e=>(e.type==='Feriado'||e.holidayManaged)&&Number(e.date?.slice(0,4))===Number(year)).filter(e=>month==='all'||Number(e.date.slice(5,7))===Number(month)+1).sort((a,b)=>a.date.localeCompare(b.date));
   const region=(list.find(x=>x.holidayScope)||{}).holidayScope;
   const school=Number(year)===2027&&(month==='all'||Number(month)===1)?window.CoraSchoolCarnival2027:null;
   const schoolInfo=school?'<div class="ch-cora-team-info"><strong>Carnaval 2027 · funcionamento do Cora Coralina</strong>'+
