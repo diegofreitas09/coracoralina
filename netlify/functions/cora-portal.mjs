@@ -1,4 +1,5 @@
 import {gradebookAction} from './lib/cora-gradebook.mjs';
+import {roteiroAction} from './lib/cora-roteiros.mjs';
 // Access-controlled publication API for the Cora Coralina calendar.
 // Passwords and session keys are set in Netlify project environment variables, never in Git.
 import { createHmac, createHash, timingSafeEqual, randomBytes, scryptSync } from 'node:crypto';
@@ -292,6 +293,14 @@ export default async function handler(request,context){
   if(result.error)return answer({error:result.error},result.status||400);
   await queueMirror(context);
   return answer(result);
+ }
+ if(action==='roteiros'&&(request.method==='GET'||request.method==='POST')){
+  // Identidade individual obrigatória: contas coletivas não podem escrever roteiros.
+  if(role!=='gestao'&&!member)return answer({error:'Entre com seu e-mail e senha individual para acessar roteiros.'},403);
+  try{
+   const result=await roteiroAction({role,member,request,url});
+   return result.error?answer({error:result.error},result.status||400):answer(result);
+  }catch(err){console.error('Roteiros integration error',err);return answer({error:'Não foi possível acessar o módulo de roteiros.'},503);}
  }
  if(action==='gradebook'&&(request.method==='GET'||request.method==='POST')){
   if(role!=='equipe'||!member)return answer({error:'Entre na conta individual da Equipe para usar o corretor.'},403);
