@@ -21,7 +21,7 @@ const fair=plan.FAIR;
 assert.deepEqual(Array.from(new Set(fair.map(x=>x.date))),[
  '2027-09-11','2027-09-13','2027-09-14','2027-09-15','2027-09-16']);
 assert.deepEqual(Array.from(new Set(fair.map(x=>new Date(x.date+'T12:00:00Z').getUTCDay()))),[6,1,2,3,4]);
-assert.ok(fair.some(e=>e.date==='2027-09-16'&&/sem aulas regulares/i.test(e.notes)));
+assert.ok(fair.some(e=>e.date==='2027-09-16'&&/n[aã]o haver[aá] aulas regulares|sem aulas regulares/i.test(e.notes)));
 assert.ok(fair.some(e=>e.date==='2027-09-16'&&/resultado/i.test(e.title)));
 const earlier={year:2027,approved:true,approvedStages:[1,2,3,4],source:'Cora',items:[
  {stage:1,due:'2027-01-04',deliveryTypes:'AP2 e AD',items:[{title:'Provas AP2 - Fundamental',start:'2027-03-02',end:'2027-03-06'},{title:'AD 2027',start:'2027-04-01',end:'2027-04-02'}]},
