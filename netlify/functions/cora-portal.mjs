@@ -56,7 +56,7 @@ const cleanEvent=e=>{
  // Preserva também os detalhes do cadastro, utilizados no PDF completo da Equipe.
  // Publicações antigas sem esses campos permanecem compatíveis.
  const time=str(e.time,5);
- if(/^(?:[01]\\d|2[0-3]):[0-5]\\d$/.test(time))item.time=time;
+ if(/^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/.test(time))item.time=time;
  const place=str(e.place,180);if(place)item.place=place;
  const audience=str(e.audience,100);if(audience)item.audience=audience;
  const mode=str(e.mode,20).toLowerCase();
