@@ -65,6 +65,18 @@ const cleanEvent=e=>{
  if(duration>=15&&duration<=480)item.duration=duration;
  const meet=str(e.meet,500);
  if(mode==='online'&&/^https:\/\//i.test(meet))item.meet=meet;
+ // Metadados de funcionamento escolar: publicados somente como eventos da Gestão.
+ if(e.holidayManaged===true && /^cora-hm-[a-z0-9]+(?:-transfer|-principal)?$/.test(item.id) && item.type==='Feriado'){
+  item.holidayManaged=true;
+  const decision=str(e.holidayDecision,20);
+  if(['sem','com','antecipado','manter'].includes(decision))item.holidayDecision=decision;
+  const origin=str(e.holidayOriginalDate,10);
+  if(/^\d{4}-\d{2}-\d{2}$/.test(origin))item.holidayOriginalDate=origin;
+  const moved=str(e.holidayTransferredTo,10);
+  if(/^\d{4}-\d{2}-\d{2}$/.test(moved))item.holidayTransferredTo=moved;
+  item.holidayScope=str(e.holidayScope,40);
+  item.holidayReference=str(e.holidayReference,200);
+ }
  // Campos de entrega de avaliações mantidos na publicação compartilhada.
  // Eventos comuns não recebem metadados de alerta obrigatório.
  if(e.assessmentDelivery===true && /^cora-entrega-avaliacoes-\d{4}-[1-4]$/.test(item.id)){
