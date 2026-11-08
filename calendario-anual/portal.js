@@ -54,6 +54,8 @@
  function loadNoticeDraft(y=year){try{const v=JSON.parse(localStorage.getItem(noticeKey(y))||'[]');return Array.isArray(v)?v:[]}catch{return []}}
  function logo(){return window.CORA_SCHOOL_LOGO||window.CORA_STUDIO_ASSETS?.logo||''}
  function gateway(error=''){
+  document.getElementById('cpMonthPublicationBanner')?.remove();
+  latestMonthSync=null;
   window.CoraGrader?.reset?.();
   window.CoraHelpdesk?.teardown();
   document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');role='';
@@ -80,7 +82,58 @@
     !/^cora-(entrega-avaliacoes|periodo-avaliacao)-/.test(String(e.id||''))),...added];
   return {drafts,ready};
  }
- let syncRevision=0;
+ let syncRevision=0,latestMonthSync=null;
+ function renderMonthPublicationBanner(){
+  let banner=document.getElementById('cpMonthPublicationBanner');
+  if(role!=='gestao'||Number(window.CoraYears?.activeYear||year)<=2026){
+   banner?.remove();return;
+  }
+  const monthArea=document.querySelector('.month-area');
+  if(!monthArea)return;
+  if(!banner){
+   banner=document.createElement('section');
+   banner.id='cpMonthPublicationBanner';
+   banner.className='cp-month-publication-banner';
+   banner.setAttribute('aria-label','Situação de publicação do mês');
+   monthArea.parentNode?.insertBefore(banner,monthArea);
+  }
+  const targetYear=Number(window.CoraYears?.activeYear||year);
+  const month=Math.max(0,Math.min(11,Number(window.CoraYears?.month)||0));
+  if(!latestMonthSync||latestMonthSync.year!==targetYear){
+   banner.textContent='Conferindo atividades da Gestão e publicações para a Equipe...';
+   return;
+  }
+  const report=latestMonthSync.report.months[month];
+  if(!report){banner.textContent='Não foi possível comparar este mês.';return}
+  const draftsCount=latestMonthSync.drafts.filter(e=>Number(String(e.date||'').slice(5,7))===month+1).length;
+  const needsAttention=report.pending>0||report.ready!==report.published||report.stagesPending>0;
+  const monthName=window.CoraYearSync?.months?.[month]||'Mês';
+  const message=report.pending?
+    report.pending+' atividade(s) dependem de conferência de data antes de aparecer na Equipe.':
+    report.ready!==report.published?
+    'Existem atividades aprovadas na Gestão que ainda não constam da publicação para os professores.':
+    report.stagesPending?'As datas das etapas letivas ainda precisam de aprovação.':
+    'Os eventos aprovados deste mês correspondem à publicação consultada.';
+  banner.className='cp-month-publication-banner'+(needsAttention?' is-pending':' is-synced');
+  banner.innerHTML='<div class="cp-month-publication-heading"><strong>'+safe(monthName+' de '+targetYear)+' · Gestão × Equipe</strong>'+
+   '<span class="cp-month-publication-state">'+(needsAttention?'Atenção à publicação':'Conferido')+'</span></div>'+
+   '<div class="cp-month-publication-totals"><span><b>'+draftsCount+'</b> cadastrados</span>'+
+   '<span><b>'+report.pending+'</b> em revisão</span>'+
+   '<span><b>'+report.ready+'</b> aprovados</span>'+
+   '<span><b>'+report.published+'</b> publicados na Equipe</span></div>'+
+   '<p>'+safe(message)+'</p>'+
+   '<div class="cp-month-publication-actions">'+
+   (report.pending?'<button type="button" data-cp-month-sync="review">Conferir datas de '+safe(monthName)+'</button>':'')+
+   (report.ready>0&&report.ready!==report.published?'<button type="button" data-cp-month-sync="publish">Publicar atividades aprovadas</button>':'')+
+   '<button type="button" data-cp-month-sync="reload">Verificar novamente</button></div>';
+  banner.querySelector('[data-cp-month-sync="review"]')?.addEventListener('click',()=>{
+   document.getElementById('cpReviewImportedYear')?.click();
+  });
+  banner.querySelector('[data-cp-month-sync="publish"]')?.addEventListener('click',()=>{
+   document.getElementById('cpPublishNow')?.click();
+  });
+  banner.querySelector('[data-cp-month-sync="reload"]')?.addEventListener('click',()=>void checkYearSync(targetYear));
+ }
  async function checkYearSync(targetYear=Number(window.CoraYears?.activeYear)||2026){
   if(role!=='gestao')return;
   const area=$('#cpYearSyncGrid'),status=$('#cpYearSyncStatus');
@@ -97,6 +150,8 @@
     birthdaysLocal:window.CoraBirthdays?.all?.()||[],
     stages:window.CoraStages?.get?.(targetYear)||[]
    });
+   latestMonthSync={year:targetYear,report,drafts};
+   renderMonthPublicationBanner();
    const n=report.counts;
    status.textContent=targetYear+' · '+n.synchronized+' meses com atividades sincronizadas · '+n.empty+' sem atividades pedagógicas · '+n.pending+' em revisão · '+n.stale+' com alterações · '+n.unpublished+' sem publicação';
    area.innerHTML=report.months.map(m=>{
@@ -164,8 +219,15 @@
    onChange:(targetYear)=>void checkYearSync(targetYear),notify:toast
   });
   $('#cpSyncReload')?.addEventListener('click',()=>void checkYearSync());
+  window.addEventListener('cora-month-changed',()=>{if(role==='gestao')renderMonthPublicationBanner()});
+  window.addEventListener('cora-events-updated',e=>{
+   if(role==='gestao'&&Number(e.detail?.year)===Number(window.CoraYears?.activeYear))void checkYearSync();
+  });
+  window.addEventListener('cora-data-changed',e=>{
+   if(role==='gestao'&&Number(e.detail?.year)===Number(window.CoraYears?.activeYear))void checkYearSync();
+  });
   $('#cpReviewImportedYear')?.addEventListener('click',()=>{
-   reviewController?.open();
+   reviewController?.open(Math.max(0,Math.min(11,Number(window.CoraYears?.month)||0)));
   });
   $('#cpPrepareSchoolYear')?.addEventListener('click',()=>{
    const target=Number(window.CoraYears?.activeYear)||2026;
@@ -280,7 +342,7 @@
    year=Number(e.detail?.year)||2026;managerNotices=loadNoticeDraft(year);
    renderNoticeRows();
    const current=$('#cpPubStatus');if(current)current.textContent='Ano '+year+' · pronto para publicar';
-   void checkYearSync(year);
+   latestMonthSync=null;renderMonthPublicationBanner();void checkYearSync(year);
    const btn=$('#cpPublishNow');if(btn)btn.textContent='Publicar '+year+' para equipe';
    const prepareButton=$('#cpPrepareSchoolYear');if(prepareButton)prepareButton.hidden=year<=2026;
    const reviewButton=$('#cpReviewImportedYear');if(reviewButton)reviewButton.hidden=year<=2026;
