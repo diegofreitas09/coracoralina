@@ -52,7 +52,9 @@
     '<select id="cpYearReviewMonth">'+MONTHS.map((m,i)=>'<option value="'+i+'">'+m+'</option>').join('')+'</select>'+
     '<button type="button" id="cpYearReviewReload">Atualizar lista</button></div>'+
     '<form id="cpYearReviewForm"><div id="cpYearReviewRows"></div>'+
-    '<div class="cp-year-review-actions"><button type="submit" class="cp-btn" id="cpYearReviewSave">Salvar somente as datas marcadas e conferidas</button>'+
+    '<div class="cp-year-review-actions"><button type="button" class="cp-btn soft" id="cpYearReviewCheckAll">Marcar todas as datas que conferi</button>'+
+    '<button type="submit" class="cp-btn" id="cpYearReviewSave">Salvar somente as datas marcadas e conferidas</button>'+
+    '<button type="button" class="cp-btn gold" id="cpYearReviewPublishMonth">Publicar eventos aprovados deste mês</button>'+
     '<span id="cpYearReviewStatus" role="status" aria-live="polite"></span></div></form>'+
    '</details>');
   panel=host.querySelector('#cpYearReviewPanel');
@@ -64,6 +66,11 @@
    $('#cpYearReviewCount').textContent=' · '+todo.length+' pendente(s) em '+year;
    $('#cpYearReviewForm').hidden=year<=2026;
    if(year<=2026){status.textContent='Selecione 2027 ou um ano posterior na Gestão.';rows.innerHTML='';return}
+   const approved=read(year).filter(e=>String(e.date||'').startsWith(year+'-'+String(month+1).padStart(2,'0')+'-')&&!pending(e));
+   const publishButton=$('#cpYearReviewPublishMonth');
+   if(publishButton)publishButton.hidden=approved.length===0;
+   const allButton=$('#cpYearReviewCheckAll');
+   if(allButton)allButton.hidden=subset.length===0;
    if(!subset.length){
     rows.innerHTML='<p class="cp-year-review-empty">Nenhum evento em revisão em '+esc(MONTHS[month])+' de '+year+'.'+
      (todo.length?' Há outros meses com '+todo.length+' pendência(s).':' Para usar a estrutura do ano anterior, selecione “Importar estrutura do ano anterior”.')+'</p>';
@@ -82,6 +89,23 @@
   }
   $('#cpYearReviewMonth').addEventListener('change',e=>{month=Number(e.target.value)||0;paint()});
   $('#cpYearReviewReload').addEventListener('click',paint);
+  $('#cpYearReviewCheckAll').addEventListener('click',()=>{
+   const count=rows.querySelectorAll('.cp-year-review-mark').length;
+   if(!count){status.textContent='Este mês não possui datas pendentes.';return}
+   const dates=[...rows.querySelectorAll('.cp-year-review-date')].map(e=>e.value);
+   if(dates.some(d=>!validDate(d,year))){status.textContent='Corrija todas as datas inválidas antes de marcar.';return}
+   if(!window.confirm('Você conferiu os títulos e TODAS as '+count+' datas deste mês? Marcar como conferido não significa publicar.'))return;
+   rows.querySelectorAll('.cp-year-review-mark').forEach(checkbox=>{checkbox.checked=true});
+   status.textContent=count+' data(s) marcadas. Toque em Salvar para aprovar; depois confirme a publicação mensal.';
+  });
+  $('#cpYearReviewPublishMonth').addEventListener('click',async event=>{
+   const publisher=window.CoraMonthPublisher?.publish;
+   if(typeof publisher!=='function'){status.textContent='Entre na Gestão para publicar.';return}
+   const button=event.currentTarget;
+   button.disabled=true;
+   try{await publisher(year,month);paint()}
+   finally{button.disabled=false}
+  });
   $('#cpYearReviewForm').addEventListener('submit',e=>{
    e.preventDefault();
    if(year!==Number(getYear?.()||0)){status.textContent='O ano mudou. Atualize a conferência.';paint();return}

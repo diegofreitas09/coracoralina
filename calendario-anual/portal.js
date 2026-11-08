@@ -54,6 +54,7 @@
  function loadNoticeDraft(y=year){try{const v=JSON.parse(localStorage.getItem(noticeKey(y))||'[]');return Array.isArray(v)?v:[]}catch{return []}}
  function logo(){return window.CORA_SCHOOL_LOGO||window.CORA_STUDIO_ASSETS?.logo||''}
  function gateway(error=''){
+  window.CoraMonthPublisher=null;
   window.CoraMonthlyPublication=null;
   window.CoraGrader?.reset?.();
   window.CoraHelpdesk?.teardown();
@@ -132,6 +133,7 @@
  }
  function manager(){
   year=Number(window.CoraYears?.activeYear)||2026;
+  window.CoraMonthPublisher={publish:publishApprovedMonth};
   document.body.classList.remove('portal-locked','portal-loading');
   managerNotices=loadNoticeDraft();try{leadDays=Number(localStorage.getItem('cora_default_lead_days_'+year))||3}catch{}
   const adminIcon=(name)=>{
@@ -472,6 +474,54 @@
    }catch(error){$('#cpActivationError').textContent=error.message||'Não foi possível ativar. Confira e-mail e convite.';button.disabled=false}
   };
   return true;
+ }
+ let monthPublicationBusy=false;
+ async function publishApprovedMonth(targetYear,targetMonth){
+  const y=Number(targetYear),m=Number(targetMonth);
+  if(role!=='gestao'){toast('A publicação requer acesso administrativo da Gestão.');return false}
+  if(y!==Number(window.CoraYears?.activeYear)||y<=2026||!Number.isInteger(m)||m<0||m>11){
+   toast('Selecione um mês e ano letivo válidos na Gestão.');return false
+  }
+  if(monthPublicationBusy)return false;
+  const drafts=loadEventDraft(y).filter(e=>Number(String(e.date||'').slice(5,7))===m+1);
+  const pending=drafts.filter(e=>e.status==='Em revisão'||e.needsReview);
+  const approved=drafts.filter(e=>e.status!=='Em revisão'&&!e.needsReview);
+  const monthName=window.CoraMonthPublication?.MONTHS?.[m]||'mês selecionado';
+  if(!approved.length){
+   toast('Não há eventos aprovados em '+monthName+'. Confira as datas importadas primeiro.');
+   window.CoraYearReview?.requestOpen?.(y,m);
+   return false;
+  }
+  const preview=approved.slice(0,10).map(e=>String(e.date||'').slice(8,10)+'/'+String(e.date||'').slice(5,7)+' — '+String(e.title||'')).join('\n');
+  if(!window.confirm('PUBLICAR '+monthName.toUpperCase()+' DE '+y+' PARA A EQUIPE?\n\n'+
+   approved.length+' evento(s) aprovado(s) serão enviados.\n'+
+   pending.length+' evento(s) ainda em revisão NÃO serão enviados.\n\n'+preview+
+   (approved.length>10?'\n... e mais '+(approved.length-10)+' evento(s).':'')+
+   '\n\nAs publicações dos outros meses serão preservadas. Confirma as datas?'))return false;
+  monthPublicationBusy=true;let posted=false;
+  try{
+   const response=await api('state',undefined,'year='+y);
+   if(y!==Number(window.CoraYears?.activeYear))throw Error('O ano letivo mudou. Repita a operação.');
+   const previous=response.publication;
+   const payload=window.CoraMonthPublication?.makePayload?.({
+    year:y,month:m,previous,approved,
+    birthdays:window.CoraBirthdays?.all?.()||[],
+    projects:window.CoraYears?.getProjects?.(y)||[],
+    defaultLeadDays:leadDays
+   });
+   if(!payload)throw Error('Preparação do mês indisponível. Atualize o aplicativo.');
+   await api('publish',payload);posted=true;
+   const confirmation=await api('state',undefined,'year='+y);
+   if(!window.CoraMonthPublication.matches(confirmation.publication,approved))
+    throw Error('Servidor não confirmou todos os eventos. Verifique a publicação antes de repetir.');
+   const savedCount=(confirmation.publication?.events||[]).filter(e=>Number(String(e.date||'').slice(5,7))===m+1).length;
+   toast('✓ '+monthName+' '+y+': '+savedCount+' evento(s) publicados e confirmados na Equipe. Outros meses preservados.');
+   await checkYearSync(y);
+   return true;
+  }catch(error){
+   toast((posted?'A publicação foi enviada, mas precisa de conferência: ':'Não foi possível publicar o mês: ')+(error.message||'Falha desconhecida.'));
+   return false;
+  }finally{monthPublicationBusy=false}
  }
  async function publish(){
   const year=Number(window.CoraYears?.activeYear)||2026;const {drafts,ready:events}=publicationCandidates(year);
