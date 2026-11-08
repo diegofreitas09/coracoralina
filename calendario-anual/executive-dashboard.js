@@ -230,6 +230,7 @@
     if(!snap||snap.role!=='equipe'||!view)return;
     const team=$('.cp-team');if(!team)return;
     const current=snap.tab||'resumo';
+    team.dataset.coraTab=current;
     if(current!=='resumo')state.teamTools=false;
     if(!state.teamTools){state.team=current;}
     team.dataset.coraTools=state.teamTools&&current==='resumo'?'yes':'no';
