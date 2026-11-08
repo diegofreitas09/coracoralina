@@ -11,7 +11,7 @@
  const normalize=({year,month,events=[],stages=[],birthdays=[],projects=[]}={})=>{
   const y=Number(year),m=Number(month);
   return {year:Number.isInteger(y)&&y>=2026&&y<=2099?y:2026,month:goodMonth(m)?m:0,
-   events:Array.isArray(events)?events.filter(e=>e&&e.date&&e.title):[],
+   events:Array.isArray(events)?(window.CoraCalendarIntegrity?.filterEvents?.(events)||events).filter(e=>e&&e.date&&e.title):[],
    stages:Array.isArray(stages)?stages:[],
    birthdays:Array.isArray(birthdays)?birthdays.filter(e=>e&&e.name&&Number(e.day)>=1&&Number(e.day)<=31&&Number(e.month)>=1&&Number(e.month)<=12):[],
    projects:Array.isArray(projects)?projects:[]};
