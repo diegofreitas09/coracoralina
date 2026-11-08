@@ -1,0 +1,58 @@
+/* Feriados e dias letivos — identidade visual da Gestão e da Equipe Cora Coralina */
+#coraHolidayManager{margin:13px 0 17px}
+.ch-panel{background:var(--card,#fff);border:1px solid rgba(37,83,128,.2);border-radius:18px;overflow:hidden;box-shadow:0 7px 24px rgba(15,49,82,.07);color:var(--ink,#193e62)}
+.ch-panel>summary{cursor:pointer;display:flex;align-items:center;gap:12px;padding:17px 19px;font-size:1rem;list-style:none}
+.ch-panel>summary::-webkit-details-marker{display:none}
+.ch-panel>summary:after{content:"⌄";margin-left:auto;font-size:1.4rem;transition:transform .15s}
+.ch-panel[open]>summary:after{transform:rotate(180deg)}
+.ch-panel>summary strong{font-size:1rem;color:var(--ink,#193e62)}
+.ch-panel>summary small{font-size:.78rem;color:var(--muted,#6a8198);font-weight:500}
+.ch-icon{width:37px;height:37px;border-radius:11px;background:#dfeaf9;color:#164b84;display:grid;place-items:center;font-size:1.3rem}
+.ch-body{padding:0 19px 21px}
+.ch-lead{max-width:950px;line-height:1.5;font-size:.88rem;color:var(--muted,#64788a);margin:4px 0 19px}
+.ch-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;align-items:end}
+.ch-filters label,.ch-decision label{display:grid;gap:5px;color:var(--ink,#24425e);font-weight:700;font-size:.76rem}
+.ch-filters select,.ch-filters input,.ch-decision select,.ch-decision input,.ch-extra input{background:var(--card,#fff);border:1px solid #c8d6e4;padding:10px 12px;border-radius:10px;color:var(--ink,#17395c);font-size:.86rem;max-width:100%;width:100%;min-height:42px}
+.ch-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:16px 0}
+.ch-metrics span{border:1px solid rgba(51,98,143,.15);border-radius:12px;padding:13px 10px;color:var(--muted,#54738b);background:var(--soft,#f5f8fc);font-size:.72rem}
+.ch-metrics strong{display:block;color:var(--ink,#193e62);font-size:1.4rem}
+.ch-actions{display:flex;gap:8px;flex-wrap:wrap;margin:7px 0 13px}
+.ch-outline,.ch-primary{font:inherit;cursor:pointer;border-radius:9px;padding:10px 12px;font-size:.79rem;font-weight:700;line-height:1.25;transition:filter .15s}
+.ch-outline{background:var(--card,#fff);border:1px solid #a9bed2;color:var(--ink,#1a4975)}
+.ch-primary{background:#174b84;border:1px solid #174b84;color:#fff}
+.ch-outline:hover,.ch-primary:hover{filter:brightness(.94)}
+.ch-rows{border:1px solid rgba(78,112,151,.18);border-radius:13px;overflow:hidden;max-height:535px;overflow-y:auto}
+.ch-row{display:grid;grid-template-columns:56px minmax(160px,1fr) minmax(150px,210px);gap:12px;align-items:center;padding:12px 13px;border-bottom:1px solid rgba(63,99,136,.12);background:var(--card,#fff)}
+.ch-row:nth-child(even){background:var(--soft,#f7faff)}
+.ch-row:last-child{border-bottom:0}
+.ch-date{background:#ecf2fb;color:#164b7a;padding:8px 4px;text-align:center;border-radius:9px;font-size:1.16rem;font-weight:800;line-height:1.15}
+.ch-date small{display:block;font-size:.68rem;text-transform:uppercase;font-weight:700}
+.ch-info{display:flex;flex-direction:column;gap:5px;min-width:0}
+.ch-info strong{font-size:.83rem;line-height:1.4;color:var(--ink,#1d3952)}
+.ch-info span{font-size:.75rem;line-height:1.35;color:var(--muted,#65819a)}
+.ch-review{color:#a25f15!important;font-size:.7rem}
+.ch-decision{display:grid;gap:6px}
+.ch-remove{padding:4px;border:0;background:none;color:#b64d55;text-decoration:underline;cursor:pointer;text-align:left;font-size:.73rem}
+.ch-empty{padding:23px;color:#6a8198}
+.ch-extra{display:grid;grid-template-columns:1fr 140px minmax(160px,2fr) auto;gap:9px;align-items:center;margin:19px 0}
+.ch-extra strong{font-size:.85rem;line-height:1.4}
+.ch-upload{margin:14px 0;border:1px dashed #a5bacd;background:var(--soft,#f5f9ff);border-radius:13px;padding:15px}
+.ch-upload>strong{font-size:.9rem;color:var(--ink,#21496e)}
+.ch-upload p{font-size:.79rem;line-height:1.5;color:var(--muted,#607790);margin:6px 0 12px}
+.ch-drop{cursor:pointer;text-align:center;border:1px solid #8cabc7;background:var(--card,#fff);color:#235586;padding:18px 10px;border-radius:10px;font-weight:700;font-size:.86rem}
+.ch-drop.ch-drag,.ch-drop:hover{border-color:#1a64ab;background:#e6f3ff}
+#chAttachments{display:block;color:var(--muted,#60809b);line-height:1.5;margin-top:12px;overflow-wrap:anywhere}
+.ch-foot,.ch-warning{font-size:.72rem;line-height:1.5;color:var(--muted,#678098)}
+.ch-end{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:15px 0}
+#chStatus{font-size:.78rem;color:var(--muted,#65809b);flex:1 1 210px}
+.ch-warning{border-left:3px solid #d2a554;padding:8px 10px;margin:12px 0 0;background:var(--soft,#faf9f3)}
+.ch-team{background:var(--card,#fff);border-radius:16px;padding:20px;border:1px solid rgba(41,82,118,.14);color:var(--ink,#17395b)}
+.ch-team h2{font-size:1.15rem;margin:0 0 7px}
+.ch-team>p{color:var(--muted,#677b8e);font-size:.85rem;line-height:1.45}
+.ch-team-list{display:grid;gap:8px;margin-top:15px}
+.ch-team-list article{display:flex;gap:14px;padding:12px 10px;border:1px solid rgba(62,98,140,.14);border-radius:10px;align-items:center}
+.ch-team-list time{font-size:.78rem;font-weight:800;white-space:nowrap;color:var(--ink,#214969)}
+.ch-team-list strong{font-size:.86rem;color:var(--ink,#17395b)}
+.ch-team-list p{font-size:.78rem;margin:4px 0 0;color:var(--muted,#5d778e)}
+@media(max-width:900px){.ch-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.ch-extra{grid-template-columns:1fr 1fr}.ch-extra strong{grid-column:1 / -1}.ch-extra input:nth-of-type(2){grid-column:1 / -1}.ch-extra button{grid-column:1 / -1}}
+@media(max-width:620px){.ch-panel>summary{gap:9px;flex-wrap:wrap}.ch-panel>summary small{flex:1 1 100%;padding-left:47px}.ch-body{padding:0 12px 15px}.ch-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.ch-filters label:nth-child(3),.ch-filters label:nth-child(4){grid-column:1 / -1}.ch-row{grid-template-columns:45px 1fr;gap:9px}.ch-decision{grid-column:2}.ch-date{font-size:1rem}.ch-actions button,.ch-end button{flex:1 1 125px}.ch-team{padding:14px}}
