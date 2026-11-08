@@ -79,7 +79,7 @@
   const added=(window.CoraAssessments?.publicationEvents?.(targetYear)||[])
    .filter(e=>targetYear!==2026||e.assessmentDelivery);
   const ready=[...drafts.filter(e=>e.status!=='Em revisão'&&!e.needsReview&&
-    !/^cora-(entrega-avaliacoes|periodo-avaliacao)-/.test(String(e.id||''))),...added];
+    !/^cora-(entrega-avaliacoes|periodo-avaliacao|simulado-sae)-/.test(String(e.id||''))),...added];
   return {drafts,ready};
  }
  let syncRevision=0;
@@ -932,7 +932,7 @@
   }else if(tab==='equipe'&&!showBell){
    content=teamStats?window.CoraTeamStats?.render(teamStats)||'<p class="cp-muted">Painel indisponível.</p>':
     '<section class="cp-team-metrics"><div class="cp-main-heading"><h2>Equipe em números</h2></div><p class="cp-muted">'+(teamStatsError?'Não foi possível carregar: '+safe(teamStatsError):'Consultando indicadores da equipe...')+'</p><button type="button" class="cp-btn soft" id="cpRetryTeamStats">Atualizar indicadores</button></section>';
-  }else if(!data){content='<div class="cp-paper"><h2>Nenhuma publicação disponível</h2><p class="cp-muted">A Gestão ainda não publicou o calendário e os comunicados para a equipe. O conteúdo ficará disponível aqui após a primeira publicação.</p></div>'}
+  }else if(!data&&tab!=='avaliacoes'){content='<div class="cp-paper"><h2>Nenhuma publicação disponível</h2><p class="cp-muted">A Gestão ainda não publicou o calendário e os comunicados para a equipe. O conteúdo ficará disponível aqui após a primeira publicação.</p></div>'}
   else if(showBell){content=`<div class="cp-bell-panel"><div class="cp-main-heading"><div class="cp-alert-heading-left"><button type="button" class="cp-btn soft cp-back-alert" id="cpBackFromBell" aria-label="Voltar à Equipe Pedagógica">← Voltar</button><h2>🔔 Central de alertas</h2></div><button class="cp-btn soft" id="cpMarkRead">Marcar como lidos</button></div>${alertList.length?alertList.map(a=>`<article class="cp-alert-entry ${a.unread?'unread':''}"><time>${safe(String(a.date||'').slice(0,10))}</time><div><small>${a.kind==='notice'?'Comunicado da Gestão':a.kind==='reminder'?'Lembrete programado':'Evento próximo'}</small><strong>${safe(a.title)}</strong><p>${safe(a.desc||'')}</p>${a.unread?'<span class="cp-tag cp-tag-new">Novo · não lido</span>':''}</div><button class="cp-btn soft" type="button" data-cp-read="${safe(a.id)}">✓ Lido</button></article>`).join(''):'<p class="cp-muted">Nenhuma atividade ou aviso exige atenção no período configurado.</p>'}</div>`;}
   else if(tab==='resumo'){
    const now=new Date();
@@ -945,8 +945,13 @@
    <h2 style="color:#12375e;margin-top:28px">Comunicados recentes</h2>${notes.slice(0,3).map(noticeHtml).join('')||'<p class="cp-muted">Sem avisos recentes.</p>'}`;
   }else if(tab==='feriados'){
    content=window.CoraHolidays?.teacherPanel?.(year,events,'all')||'<p>Calendário de feriados indisponível.</p>';
-  }else if(tab==='calendario'||tab==='avaliacoes'){
-   const arr=(tab==='avaliacoes'?assess:events).filter(e=>Number(e.date.slice(5,7))===month+1);
+  }else if(tab==='avaliacoes'){
+   // Visualização exclusiva por etapas, sem repetir a lista dos doze meses.
+   // Fonte: apenas o que a Gestão validou e publicou.
+   content=window.CoraTeamAssessmentCards?.render?.({year,events,stages:annualSource.stages})||
+    '<section class="cp-paper"><h2>Avaliações por etapa</h2><p>Não foi possível carregar os cartões. Atualize o aplicativo.</p></section>';
+  }else if(tab==='calendario'){
+   const arr=events.filter(e=>Number(e.date.slice(5,7))===month+1);
    const yearOverview=compactYearSummary();
 
    const annualBirthdays=tab==='calendario'
