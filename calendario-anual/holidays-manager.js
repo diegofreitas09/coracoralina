@@ -261,7 +261,12 @@
  function teacherPanel(year,events,month='all'){
   const list=(Array.isArray(events)?events:[]).filter(e=>(e.type==='Feriado'||e.holidayManaged)&&Number(e.date?.slice(0,4))===Number(year)).filter(e=>month==='all'||Number(e.date.slice(5,7))===Number(month)+1).sort((a,b)=>a.date.localeCompare(b.date));
   const region=(list.find(x=>x.holidayScope)||{}).holidayScope;
-  return '<section class="ch-team"><h2>Feriados e funcionamento escolar · '+esc(year)+'</h2><p>Datas e decisões divulgadas pela Gestão. O funcionamento pode mudar mediante novo comunicado.</p>'+
+  const school=Number(year)===2027&&(month==='all'||Number(month)===1)?window.CoraSchoolCarnival2027:null;
+  const schoolInfo=school?'<div class="ch-cora-team-info"><strong>Carnaval 2027 · funcionamento do Cora Coralina</strong>'+
+   '06 e 07/02: sábado e domingo, sem aulas regulares. 08, 09 e 10/02: sem aula (Carnaval e Cinzas). '+
+   '<b>Retorno: quinta-feira, 11/02, com aula normal.</b> Também haverá aula normal em 12, 15, 16 e 17/02. '+
+   'Os dias 15, 16 e 17 não são Carnaval.</div>':'';
+  return '<section class="ch-team"><h2>Feriados e funcionamento escolar · '+esc(year)+'</h2><p>Datas e decisões divulgadas pela Gestão. O funcionamento pode mudar mediante novo comunicado.</p>'+schoolInfo+
    (list.length?'<div class="ch-team-list">'+list.map(e=>'<article><time>'+esc(printable(e.date))+'</time><div><strong>'+esc(e.title)+'</strong><p>'+esc(e.holidayDecision?statusName(e.holidayDecision):'Calendário publicado · confirmar funcionamento')+(e.holidayDecision==='antecipado'?' — '+esc(printable(e.holidayTransferredTo)):'')+'</p></div></article>').join('')+'</div>':'<p>Nenhum feriado divulgado para este período.</p>')+'</section>';
  }
  window.CoraHolidays={mountManager,teacherPanel,officialList,config,KEY};
