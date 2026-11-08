@@ -56,3 +56,9 @@
 .ch-team-list p{font-size:.78rem;margin:4px 0 0;color:var(--muted,#5d778e)}
 @media(max-width:900px){.ch-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.ch-extra{grid-template-columns:1fr 1fr}.ch-extra strong{grid-column:1 / -1}.ch-extra input:nth-of-type(2){grid-column:1 / -1}.ch-extra button{grid-column:1 / -1}}
 @media(max-width:620px){.ch-panel>summary{gap:9px;flex-wrap:wrap}.ch-panel>summary small{flex:1 1 100%;padding-left:47px}.ch-body{padding:0 12px 15px}.ch-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.ch-filters label:nth-child(3),.ch-filters label:nth-child(4){grid-column:1 / -1}.ch-row{grid-template-columns:45px 1fr;gap:9px}.ch-decision{grid-column:2}.ch-date{font-size:1rem}.ch-actions button,.ch-end button{flex:1 1 125px}.ch-team{padding:14px}}
+
+/* Funcionamento institucional do Carnaval 2027, na Gestão e Equipe. */
+.ch-carnaval-cora{margin:13px 0 15px;padding:14px 16px;background:#eaf4fc;border:1px solid #c9dfee;border-radius:12px;color:#173e60;font-size:13px;line-height:1.65}
+.ch-carnaval-cora[hidden]{display:none!important}
+.ch-carnaval-cora strong{font-size:14px;color:#174d76}
+.ch-carnaval-cora p{margin:7px 0 0;color:#3d5c72}
