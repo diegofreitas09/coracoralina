@@ -156,9 +156,17 @@
    '<p>Compare o que está organizado neste aparelho com os eventos aprovados e publicados. Importações em revisão não são enviadas aos professores.</p>'+
    '<div class="cp-sync-controls"><button type="button" id="cpSyncReload">Conferir sincronização</button>'+
    '<button type="button" id="cpPrepareSchoolYear">Importar estrutura do ano anterior</button>'+
+   '<button type="button" id="cpReviewImportedYear">Conferir atividades importadas</button>'+
    '<span id="cpSyncLastCheck" role="status"></span></div>'+
    '<div id="cpYearSyncGrid" class="cp-sync-year-grid" aria-live="polite"></div></details>');
+  const reviewController=window.CoraYearReview?.mount({
+   host:$('#cpYearSync'),getYear:()=>Number(window.CoraYears?.activeYear)||2026,
+   onChange:(targetYear)=>void checkYearSync(targetYear),notify:toast
+  });
   $('#cpSyncReload')?.addEventListener('click',()=>void checkYearSync());
+  $('#cpReviewImportedYear')?.addEventListener('click',()=>{
+   reviewController?.open();
+  });
   $('#cpPrepareSchoolYear')?.addEventListener('click',()=>{
    const target=Number(window.CoraYears?.activeYear)||2026;
    if(target<=2026)return;
@@ -166,6 +174,8 @@
   });
   const prepareButton=$('#cpPrepareSchoolYear');
   if(prepareButton)prepareButton.hidden=year<=2026;
+  const reviewButton=$('#cpReviewImportedYear');
+  if(reviewButton)reviewButton.hidden=year<=2026;
   window.CoraHelpdesk?.mount('gestao',root);
   // Gestão: o cadastro da planilha é espelho administrativo; a autorização efetiva ocorre neste painel.
   root.insertAdjacentHTML('beforeend','<section id="cpAccountsPanel" class="cp-accounts-panel cp-hidden">'+
@@ -273,6 +283,7 @@
    void checkYearSync(year);
    const btn=$('#cpPublishNow');if(btn)btn.textContent='Publicar '+year+' para equipe';
    const prepareButton=$('#cpPrepareSchoolYear');if(prepareButton)prepareButton.hidden=year<=2026;
+   const reviewButton=$('#cpReviewImportedYear');if(reviewButton)reviewButton.hidden=year<=2026;
    for(const field of ['cpNoticeEventDate']){const input=$('#'+field);if(input){input.min=year+'-01-01';input.max=year+'-12-31';input.value=''}}
   });
   $('#cpTogglePanel').onclick=()=>$('#cpManagerPanel').classList.toggle('cp-hidden');
