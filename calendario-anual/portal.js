@@ -1077,18 +1077,33 @@
      if(!projects.length)paintText(g,'Nenhum projeto publicado.',84,1054,18,'#73869b');
      window.CoraCalendarBirthdays?.drawBlock?.(g,birthdayPeople,{x:65,y:1124,width:W-130,
        title:'ANIVERSARIANTES DE '+MONTHS[month].toUpperCase(),font:18,rowHeight:25,columns:3,maxRows:4});
-     paintText(g,'PDF SOLUÇÃO EDUCACIONAL · COLÉGIO CORA CORALINA',68,1316,18,'#567089');
+     paintText(g,events.length?'RESUMO VISUAL · ATIVIDADES COMPLETAS NAS PRÓXIMAS PÁGINAS':'PDF SOLUÇÃO EDUCACIONAL · COLÉGIO CORA CORALINA',68,1316,18,'#567089');
      return c;
    };
+   const renderer=window.CoraPDFActivities;
+   if(!renderer)throw Error('O módulo do PDF completo ainda não carregou. Atualize o aplicativo.');
    const canvases=[];
+   if(!single)canvases.push(renderer.annualCover({
+     year,events:all,stages:stageList,projects:data?.projects||[],
+     birthdays:publishedBirthdays(),logo:image
+   }));
    const months=single?[monthOnly]:Array.from({length:12},(_,i)=>i);
-   for(const m of months){if(status)status.textContent='Preparando '+MONTHS[m]+'...';canvases.push(make(m))}
-   const file=window.CoraPDF.fromCanvases(canvases,{pageWidth:1180,pageHeight:946,title:'Calendário Cora Coralina '+year});
+   let detailed=0;
+   for(const m of months){
+    if(status)status.textContent='Preparando '+MONTHS[m]+' e suas atividades completas...';
+    canvases.push(make(m));
+    const monthItems=all.filter(e=>Number(e.date.slice(5,7))===m+1);
+    const extras=renderer.detailPages({year,month:m,events:monthItems,logo:image});
+    canvases.push(...extras);
+    detailed+=monthItems.length;
+   }
+   const file=window.CoraPDF.fromCanvases(canvases,{pageWidth:1180,pageHeight:946,title:'Calendário completo Cora Coralina '+year});
    const url=URL.createObjectURL(file),anchor=document.createElement('a');anchor.href=url;
    anchor.download=single?'Calendario_Cora_Coralina_'+year+'_'+MONTHS[monthOnly]+'.pdf':'Calendario_Cora_Coralina_'+year+'.pdf';
    document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
-   if(status)status.textContent=single?'PDF mensal preparado com aniversariantes.':'PDF anual preparado com 12 meses e aniversariantes.';
-  }catch(e){if(status)status.textContent='Falha ao gerar PDF: '+e.message}
+   if(status)status.textContent=(single?'PDF mensal':'PDF anual')+
+     ' completo: '+canvases.length+' página(s), '+detailed+' atividade(s) detalhada(s), projetos e aniversariantes.';
+  }catch(e){console.error('Erro ao gerar calendário completo:',e);if(status)status.textContent='Falha ao gerar PDF completo: '+e.message;else toast('Falha ao gerar PDF completo: '+e.message)}
   finally{if(btn)btn.disabled=false;}
  }
 
