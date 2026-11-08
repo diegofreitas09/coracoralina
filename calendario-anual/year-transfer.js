@@ -22,7 +22,7 @@
  };
  const saveProjects=(y,p)=>Array.isArray(p)&&p.length===12&&save(PROJECT_KEY(y),p);
  const CoraYears={
-   activeYear:getYear(),month:getMonth(),filterVisible:events=>events,
+   activeYear:getYear(),month:getMonth(),filterVisible:events=>window.CoraCalendarIntegrity?.filterEvents?.(events)||events,
    getProjects,saveProjects,
    setActiveMonth(year,month){if(year!==this.activeYear)return;this.month=month;localStorage.setItem(MONTH_KEY,String(month));}
  };
