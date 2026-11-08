@@ -31,7 +31,11 @@
 
 ## Pendências de implantação não disfarçadas como concluídas
 
-O PR #50 continua em rascunho e inclui recursos que **não pertencem a esta correção de produção**: menus laterais, cartões das avaliações por etapa para a Equipe, Simulado SAE automático, planejamento ExpoCora e painel ampliado. A auditoria não presume que essas funcionalidades estejam ativadas na versão principal.
+O PR #50 continua em rascunho, mas os recursos de **avaliações por etapa, Simulado SAE e proposta SINEPE/ExpoCora** foram integrados por meio do PR #54 e estão na versão principal após aprovação da bateria de testes.
+
+A implantação dos **menus laterais e dashboard executivo ampliado** continua em revisão no PR #50. Não afirmar que essa interface foi ativada em produção.
+
+O módulo legado `calendar-integrations.js` (Google Agenda/ICS) está presente no repositório, mas **não é carregado** por `index.html` e usa `CoraYears.getEvents`, API que a versão carregada não disponibiliza. Não deve ser ativado automaticamente sem adaptação e teste; os atalhos já usados pela Equipe permanecem independentes. O módulo legado `notifications.js` também não é carregado; o fluxo de avisos da Equipe é tratado por `portal.js` e recursos push do servidor.
 
 ## Validação operacional necessária
 
@@ -42,3 +46,25 @@ O PR #50 continua em rascunho e inclui recursos que **não pertencem a esta corr
 5. Conferir acesso, recuperação de senha e segmentos com contas de teste; checar o espelhamento para Google Sheets quando a integração estiver autorizada.
 
 **Princípio de proteção:** a auditoria nunca faz uma publicação administrativa sozinha e não altera os prazos de entrega. O resultado dos testes automatizados não substitui uma verificação autenticada e visual em aparelhos reais.
+
+
+## Atualização de implantação e regressões — 08/11/2026
+
+- **Commit implantado:** `59b2ea1f5183d6f834df9f006fab37386f69565e`, integrado pelo PR #54.
+- **Plataforma principal:** `https://calendario-anual-cora-2026.netlify.app/calendario-anual/`; Netlify confirmou build pronto e `main` servindo esse commit.
+- **Bateria de regressão concluída com sucesso no PR #54:** auditoria Gestão–Equipe, segurança do Carnaval 2027, períodos de avaliação, Simulado SAE e cartões da Equipe.
+- **Funcionamento SAE:** o sistema calcula a sexta-feira anterior à AD; na 1ª etapa de 2027, 19/03 é feriado municipal e a data gerada é 12/03. Outras datas propostas: 11/06, 17/09 e 19/11.
+- **SINEPE/ExpoCora:** a Gestão ganhou ferramenta de proposta e revisão das janelas de 2027. A ferramenta **não** substitui o calendário publicado sem confirmação e não altera os prazos atuais de entrega das avaliações.
+- **Equipe:** Avaliações deixa de repetir a lista mensal e passa a listar até quatro cartões com as atividades efetivamente publicadas por etapa. Etapas não publicadas exibem mensagem de ausência de dados, sem inventar avaliações.
+- **Atualização automática:** o monitor da Gestão revalida enquanto a tela estiver aberta e após eventos locais; a Equipe consulta a publicação periodicamente enquanto o app estiver aberto. Isso **não** substitui um monitoramento externo ininterrupto.
+- **Proteção de dados:** nenhuma rotina de auditoria publica automaticamente rascunhos, altera senhas, apaga eventos únicos ou altera as entregas. Cópias exatamente iguais só podem ser corrigidas com backup e confirmação administrativa.
+
+### Não foi possível confirmar exclusivamente por inspeção de código
+
+- Entrada real de uma conta da Gestão e de uma conta da Equipe, com o mesmo ano selecionado, até a atualização visual em um dispositivo diferente.
+- Entrega efetiva de notificações push com o aplicativo fechado no Android e no iPhone, leitura do sino e cadastro de dispositivos.
+- Espelhamento e acesso aos dados de produção em Google Sheets; depende das permissões reais da conta conectada.
+- Geração visual e impressão dos PDFs mensal e anual em aparelhos e impressoras reais.
+- Funcionamento de atalhos de ferramentas de terceiros com credenciais pessoais e segmentação de professores.
+
+Os módulos para essas funções existem, mas não se deve apresentar essa etapa como homologação operacional completa.

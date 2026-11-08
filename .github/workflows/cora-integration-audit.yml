@@ -5,7 +5,8 @@ on:
       - 'calendario-anual/**'
       - 'netlify/functions/**'
   push:
-    branches: [fix/auditoria-integracoes-calendario-2027]
+    branches: [main]
+  workflow_dispatch:
 jobs:
   audit:
     runs-on: ubuntu-latest
@@ -21,6 +22,8 @@ jobs:
           node --check calendario-anual/year-sync.js
           node --check calendario-anual/year-transfer.js
           node --check calendario-anual/assessment-deadlines.js
+          node --check calendario-anual/team-assessment-cards.js
+          node --check calendario-anual/academic-2027-replan.js
           node --check calendario-anual/academic-2027-replan.js
           node --check calendario-anual/team-assessment-cards.js
           node --check calendario-anual/calendar-integrity.js
@@ -28,6 +31,11 @@ jobs:
       - name: Testar integracoes e reparos
         run: node calendario-anual/test-integration-audit.cjs
       - name: Validar avaliações por etapa, Simulado SAE e calendário 2027
+        run: |
+          node calendario-anual/test-team-assessment-cards.cjs
+          node calendario-anual/test-sae-2027.cjs
+          node calendario-anual/test-academic-2027.cjs
+      - name: Auditar calendário pedagógico, SAE e cartões da Equipe
         run: |
           node calendario-anual/test-team-assessment-cards.cjs
           node calendario-anual/test-sae-2027.cjs
