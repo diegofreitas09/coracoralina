@@ -66,7 +66,7 @@
 .month-publication-status .month-publication-counts span{font-size:.82rem;font-weight:750;color:#846022}
 .month-publication-status p{margin:8px 0 11px;font-size:.81rem;line-height:1.5;color:#715728}
 .month-publication-actions{display:flex;flex-wrap:wrap;gap:8px}
-.month-publication-actions button{border:1px solid #ba994f;background:#fff;border-radius:9px;padding:10px 12px;font:700 .83rem inherit;color:#694612;cursor:pointer;min-height:40px}
+.month-publication-actions button{border:1px solid #ba994f;background:#fff;border-radius:9px;padding:10px 12px;font-family:inherit;font-weight:700;font-size:.83rem;color:#694612;cursor:pointer;min-height:40px}
 .month-publication-actions button[data-month-publish]{background:#174c7d;color:#fff;border-color:#174c7d}
 .month-publication-actions button:focus-visible{outline:3px solid #f0b940;outline-offset:2px}
 [data-cora-theme="dark"] .month-publication-status{background:#433b2b;border-color:#907141;color:#fff1c9}
