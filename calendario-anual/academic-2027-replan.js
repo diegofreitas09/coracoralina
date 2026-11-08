@@ -135,14 +135,16 @@
    const counts=data?.items?.map(x=>x.items?.length||0)||[];
    const stageMismatch=STAGES.filter((s,i)=>existing[i]?.start!==s.start||existing[i]?.end!==s.end);
    const checks=validatePlan();
+   const saeDates=window.CoraAssessments?.saeSchedule?.({year:YEAR,items:WINDOWS.map((items,i)=>({stage:i+1,items}))})||[];
    $('#cora2027ReplanRows',area()).innerHTML=STAGES.map((s,i)=>'<tr><th>'+s.number+'ª</th><td>'+fmt(s.start)+'–'+fmt(s.end)+'</td><td>'+
      WINDOWS[i].map(w=>'<span class="cora-2027-window"><b>'+esc(w.kind)+'</b> '+fmt(w.start)+'–'+fmt(w.end)+'</span>').join('')+
+     (saeDates.find(x=>x.stage===s.number)?'<span class="cora-2027-window"><b>SAE</b> '+fmt(saeDates.find(x=>x.stage===s.number).date)+' · 2º EF à 3ª EM</span>':'')+
      '</td><td>'+esc(data?.items?.[i]?.due||'').replace(/^(\d{4})-(\d{2})-(\d{2})$/,'$3/$2/$1').replace(/^$/,'Ainda não cadastrada')+
      '</td></tr>').join('');
    $('#cora2027ReplanNote',area()).textContent=stageMismatch.length
      ?'Há '+stageMismatch.length+' etapa(s) com limites diferentes do modelo SINEPE. A aplicação vai deixá-las EM REVISÃO, sem publicação automática.'
      :'Os limites das etapas coincidem com o modelo SINEPE. Janelas novas continuarão em revisão.';
-   $('#cora2027ReplanExtra',area()).textContent='Períodos anteriores: '+counts.join(' + ')+
+   $('#cora2027ReplanExtra',area()).textContent='Simulado SAE: sempre na sexta-feira anterior à AD. Na 1ª etapa, 12/03 (19/03 é feriado municipal em Fortaleza). Períodos anteriores: '+counts.join(' + ')+
     '. Semana anterior à 1ª etapa: 22 a 24/03 (apenas 3 dias letivos disponíveis; 25/03 e 26/03 não entram). As entregas existentes serão mantidas exatamente como estão.';
    $('#cora2027ReplanApply',area()).disabled=Boolean(checks.length);
    if(checks.length)status('Conflitos na proposta: '+checks.join(' | '));
