@@ -116,7 +116,7 @@
   const list=s.composite||[],pending=list.filter(x=>x.condition!=='aprovado');
   const ref=s.year===2026?'<p class="cr-help">O roteiro de 2026 pode aparecer apenas como referência histórica, nunca como material aprovado sem conferência da Gestão.</p>':'';
   return '<section class="cr-card"><div class="cr-preview-head"><div><h3>4. Prévia para famílias</h3><p>Roteiros agrupados automaticamente por data, série e disciplina.</p></div>'+
-   '<div class="cr-actions"><button class="cr-btn" id="crExportPNG">Baixar PNG</button><button class="cr-btn primary" id="crExportPDF">Baixar PDF</button></div></div>'+
+   '<div class="cr-actions"><label class="cr-page-label">Página PNG <input id="crPngPage" type="number" min="1" max="100" value="'+(s.pngPage||1)+'"></label><button class="cr-btn" id="crExportPNG">Baixar PNG</button><button class="cr-btn primary" id="crExportPDF">Baixar PDF completo</button></div></div>'+
    '<p class="cr-help">'+list.length+' disciplina(s) programada(s) · '+pending.length+' pendência(s). Os arquivos com pendências terão a marca PRÉVIA PARA CONFERÊNCIA.</p>'+ref+
    '<div class="cr-preview-list">'+(list.length?list.slice().sort(byDate).map(row=>
     '<article class="cr-preview-item"><div><time>'+fmt(row.date)+'</time><strong>'+esc(row.grade)+' · '+esc(row.subject)+'</strong><span>'+esc(row.assessment)+' · '+row.stage+'ª etapa</span></div>'+
@@ -234,6 +234,7 @@
     try{await send(s,'schedule',{items:s.pendingSchedule||s.schedule});s.message='Cronograma salvo. Os roteiros aprovados serão associados automaticamente às datas.';await fetchData(s);s.pendingSchedule=null;render(s)}
     catch(e){err(s,e)}
    });
+   $('#crPngPage')?.addEventListener('change',e=>{s.pngPage=Math.max(1,Math.min(100,Number(e.target.value)||1))});
    $('#crExportPNG')?.addEventListener('click',()=>exportFile(s,'png'));
    $('#crExportPDF')?.addEventListener('click',()=>exportFile(s,'pdf'));
   }
@@ -309,9 +310,10 @@
     download(window.CoraPDF.fromCanvases(list,{title:'Roteiros de Avaliações Cora '+s.year}),base+'.pdf');
     s.message='PDF com '+list.length+' página(s) preparado.';render(s);
    }else{
-    const only=list.length===1?list:[list[0]];
-    only[0].toBlob(blob=>{if(blob)download(blob,base+'_pagina_1.png');else{s.message='Não foi possível gerar PNG.';render(s)}},'image/png');
-    s.message=list.length>1?'PNG da primeira página gerado. Para todo o documento, use o PDF com '+list.length+' páginas.':'PNG preparado.';
+    const index=Math.max(0,Math.min(list.length-1,Number(s.pngPage||1)-1));
+    list[index].toBlob(blob=>{if(blob)download(blob,base+'_pagina_'+(index+1)+'.png');else{s.message='Não foi possível gerar PNG.';render(s)}},'image/png');
+    s.pngPage=index+1;
+    s.message='PNG da página '+(index+1)+'/'+list.length+' gerado. O PDF reúne todas as páginas.';
     render(s);
    }
   }catch(e){s.message=e.message;render(s)}
