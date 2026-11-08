@@ -38,7 +38,19 @@
   ];
   const state={manager:'overview',team:'resumo',teamTools:false,drawer:false,accounts:null,accountsLoading:false,accountError:false};
   const stored = (key,fallback) => {try {const data=JSON.parse(localStorage.getItem(key)||'null');return data===null?fallback:data;}catch{return fallback;}};
-  const currentYear = () => Number(window.CoraYears?.activeYear)||2026;
+  const currentYear = () => Number(window.CoraYears?.activeYear)||Number($('#schoolYearSelect')?.value)||2026;
+  const managementEvents = year => {
+    if(typeof window.CoraYears?.getEvents==='function')return window.CoraYears.getEvents(year);
+    const removed=new Set(year===2026?stored('cora_official_2026_removed_v1',[]):[]);
+    const map=new Map();
+    if(year===2026)for(const e of (window.CORA_OFFICIAL_2026?.events||[]))
+      if(e?.id&&!removed.has(e.id))map.set(e.id,e);
+    const local=stored('cora_calendario_eventos_'+year+'_v1',[]);
+    if(Array.isArray(local))for(const e of local){
+      if(e?.id&&String(e.date||'').startsWith(year+'-')&&!removed.has(e.id))map.set(e.id,e);
+    }
+    return [...map.values()].filter(e=>/^\d{4}-\d{2}-\d{2}$/.test(e.date||''));
+  };
   const countWeekdays = year => {
     const days=Array(7).fill(0);
     for(let m=0;m<12;m++) for(let d=1,last=new Date(Date.UTC(year,m+1,0)).getUTCDate();d<=last;d++)
@@ -138,7 +150,7 @@
     let view=$('#coraExecutiveSummary');
     if(!view){view=document.createElement('div');view.id='coraExecutiveSummary';const welcome=$('.welcome',main);welcome?.insertAdjacentElement('afterend',view);}
     if(state.manager!=='overview')return;
-    const year=currentYear(),events=window.CoraYears?.getEvents?.(year)||[],
+    const year=currentYear(),events=managementEvents(year),
       birthdays=window.CoraBirthdays?.all?.()||[];
     const model=metrics(events,birthdays,year,true);
     model.notices=(stored('cora_portal_draft_notices_'+year,[])||[]).length;
@@ -155,7 +167,7 @@
     if(el.matches('#coraStages')||el.matches('.stage-panel')||el.matches('#yearStagePanel'))return 'stages';
     if(el.matches('.files-section'))return 'files';
     if(el.matches('.studio-shortcuts'))return 'tools';
-    if(el.matches('.welcome, footer'))return 'persistent';
+    if(el.matches('.welcome, footer, .cora-route-title'))return 'persistent';
     if(el.matches('#officialBanner, .official-banner, #officialCalendarSection, .month-area, #yearCarryTools, #yearProjects'))return 'calendar';
     return 'calendar';
   };
