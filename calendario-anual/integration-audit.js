@@ -78,9 +78,9 @@
   // ou podem ser publicações antigas. O módulo não assume que são descartáveis.
   const localIds=new Set(ready.map(e=>String(e?.id||'')));
   const serverOnly=remote.filter(e=>e?.id&&!localIds.has(String(e.id)));
-  if(publication&&serverOnly.length)problems('warning','remote-only','Eventos somente na publicação',
-   serverOnly.length+' evento(s) aparecem para os professores, mas não estão na lista de aprovados deste aparelho. '+
-   'Podem ter sido publicados por outro gestor ou permanecer de uma versão antiga. Confira antes de solicitar qualquer exclusão.');
+  if(publication&&serverOnly.length)warnings.push(
+   serverOnly.length+' evento(s) publicados pelo servidor não constam da lista de aprovados neste aparelho. '+
+   'Podem vir de outro gestor ou de versões antigas: não são excluídos automaticamente.');
   const stageList=Array.isArray(stages)?stages:[];
   const remoteStages=Array.isArray(publication?.stages)?publication.stages:[];
   if(publication&&remoteStages.length!==4)problems('warning','stages','Etapas não sincronizadas',
