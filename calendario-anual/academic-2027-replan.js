@@ -95,10 +95,21 @@
    return {data,warnings};
  }
  function fairImported(e){
-   const title=normalized(e.title);
+   const title=normalized(e?.title);
    return e?.originYear===2026||String(e?.id||'').startsWith('carry-2027-2026-')
      ? /expocora|exposicao cultural|interclasse fundamental|reorganizacao interna|organizacao interna/.test(title) &&
        String(e?.date||'')>='2027-09-11'&&String(e?.date||'')<='2027-09-17' : false;
+ }
+ function obsoleteImportedEvaluations(before){
+   if(!Array.isArray(before))return [];
+   return before.filter(e=>{
+     if(!e||!String(e.date||'').startsWith('2027-'))return false;
+     const imported=Number(e.originYear)===2026||String(e.id||'').startsWith('carry-2027-2026-');
+     const title=normalized(e.title);
+     if(!imported||/entrega|prazo/.test(title)||e.assessmentDelivery)return false;
+     if(String(e.type||'')!=='Avaliação'&&!/avaliac|prova|simulado|sondagem|recomposic/.test(title))return false;
+     return e.date>='2027-06-24'&&e.date<='2027-07-25';
+   });
  }
  function proposedFair(before){
    if(!Array.isArray(before))throw Error('Eventos do calendário estão indisponíveis neste navegador.');
@@ -152,6 +163,14 @@
    const original=window.CoraAssessments?.get?.(YEAR),current=window.CoraStages?.get?.(YEAR);
    if(!original||!Array.isArray(current)||current.length!==4){status('Cadastros indisponíveis. Nenhum dado alterado.');return;}
    const {data,warnings}=mergeAssessment(original);
+   const localBefore=read(EVENTS_KEY,[]);
+   const obsolete=obsoleteImportedEvaluations(localBefore);
+   for(let i=0;i<data.items.length;i++){
+     const stage=STAGES[i];
+     const extras=data.items[i].items.filter(x=>!WINDOWS[i].some(w=>w.start===x.start&&w.end===x.end));
+     for(const item of extras)if(item.start<stage.start||item.end>stage.end||item.start<='2027-07-25'&&item.end>='2027-06-24')
+       warnings.push('Avaliação adicional fora da '+(i+1)+'ª etapa ou durante a Copa: '+item.title+'. Ajustar antes de validar.');
+   }
    const oldDues=original.items.map(r=>r.due),newDues=data.items.map(r=>r.due);
    if(JSON.stringify(oldDues)!==JSON.stringify(newDues))throw Error('A proposta tentou modificar datas de entrega.');
    const changed=STAGES.filter((s,i)=>s.start!==current[i].start||s.end!==current[i].end).length;
@@ -159,7 +178,8 @@
     '• Adequar '+changed+' limite(s) de etapa(s) ao modelo SINEPE-CE;\n'+
     '• Definir as janelas de AP2, AD e AR conforme a prévia;\n'+
     '• PRESERVAR exatamente todas as datas de entrega à coordenação;\n'+
-    '• Voltar todas as quatro avaliações para EM REVISÃO até validação da Gestão.\n\n'+
+    '• Voltar todas as quatro avaliações para EM REVISÃO até validação da Gestão.\n'+
+    (obsolete.length?'• Retirar '+obsolete.length+' avaliação(ões) importada(s) de 2026 durante as férias da Copa, sem remover entregas.\n':'')+'\n'+
     'Atenção: atividades já publicadas para os professores não serão alteradas até nova publicação. Confirmar?';
    if(!confirm(message))return;
    let snapshot;
@@ -176,10 +196,20 @@
        window.CoraStages.save(YEAR,snapshot.stages);
        throw Error(saved.error||'Não foi possível salvar as avaliações. As etapas originais foram restauradas.');
      }
+     // A API de avaliações já sincronizou AP2/AD/AR; retire somente legados importados
+     // e comprovadamente incompatíveis com o recesso da Copa. Prazos de entrega são preservados.
+     if(obsolete.length){
+       const ids=new Set(obsolete.map(e=>String(e.id)));
+       const updated=read(EVENTS_KEY,[]);
+       if(!Array.isArray(updated))throw Error('Calendário indisponível após salvar; conferir backup.');
+       localStorage.setItem(EVENTS_KEY,JSON.stringify(updated.filter(e=>!ids.has(String(e.id)))));
+     }
      window.dispatchEvent(new CustomEvent('cora-data-changed',{detail:{year:YEAR,source:'2027-assessments-replan'}}));
      window.dispatchEvent(new CustomEvent('cora-2027-planning-updated',{detail:{year:YEAR}}));
      layout();window.CoraAssessments?.display?.();
-     status('Proposta de avaliações salva EM REVISÃO. Entregas preservadas. '+(warnings.join(' ')||'Valide as quatro etapas e as janelas antes de publicar.'));
+     status('Proposta de avaliações salva EM REVISÃO. Entregas preservadas. '+
+       (obsolete.length?obsolete.length+' prova(s) herdada(s) durante a Copa removida(s) deste navegador. ':'')+
+       (warnings.join(' ')||'Valide as quatro etapas e as janelas antes de publicar.'));
    }catch(e){status('Não foi possível salvar: '+String(e.message||e)+'. Confira o backup da Gestão.');}
  }
  function applyFair(){
@@ -224,5 +254,5 @@
    layout();
  }
  document.addEventListener('DOMContentLoaded',init);
- window.CoraAcademic2027={STAGES,WINDOWS,FAIR,validatePlan,mergeAssessment,proposedFair,kind};
+ window.CoraAcademic2027={STAGES,WINDOWS,FAIR,validatePlan,mergeAssessment,proposedFair,obsoleteImportedEvaluations,kind};
 })();
