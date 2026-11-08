@@ -22,10 +22,14 @@ jobs:
           node --check calendario-anual/executive-dashboard.js
           node --check calendario-anual/portal.js
           node --check calendario-anual/year-transfer.js
+          node --check calendario-anual/academic-2027-replan.js
+          node --check calendario-anual/assessment-deadlines.js
           node --check calendario-anual/holiday-audit.js
           node --check calendario-anual/app.js
       - name: Testar feriados móveis e impedir duplicações
         run: node calendario-anual/test-calendar-holidays.cjs
+      - name: Testar replanejamento de avaliações e ExpoCora 2027
+        run: node calendario-anual/test-academic-2027.cjs
       - name: Conferir recursos na página
         run: |
           node - <<'NODE'
