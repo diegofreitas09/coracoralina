@@ -81,7 +81,7 @@
   const added=(window.CoraAssessments?.publicationEvents?.(targetYear)||[])
    .filter(e=>targetYear!==2026||e.assessmentDelivery);
   const ready=[...drafts.filter(e=>e.status!=='Em revisão'&&!e.needsReview&&
-    !/^cora-(entrega-avaliacoes|periodo-avaliacao)-/.test(String(e.id||''))),...added];
+    !/^cora-(entrega-avaliacoes|periodo-avaliacao|simulado-sae)-/.test(String(e.id||''))),...added];
   return {drafts,ready};
  }
  let syncRevision=0;
