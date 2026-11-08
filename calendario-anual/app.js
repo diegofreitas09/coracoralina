@@ -143,10 +143,8 @@
       (ready?'<button type="button" data-month-publish>Publicar ano '+YEAR+' para a Equipe</button>':'')+
       '</div>';
     box.querySelector('[data-month-review]')?.addEventListener('click',()=>{
-      window.dispatchEvent(new CustomEvent('cora-review-month-request',{detail:{year:YEAR,month:selectedMonth}}));
-      if(!document.getElementById('cpYearReviewPanel')){
-        notify('Entre na Gestão e abra Conferência dos 12 meses → Conferir atividades importadas.');
-      }
+      const opened=window.CoraYearReview?.requestOpen?.(YEAR,selectedMonth);
+      if(!opened)notify('Entre na Gestão e abra Conferência dos 12 meses → Conferir atividades importadas.');
     });
     box.querySelector('[data-month-publish]')?.addEventListener('click',()=>{
       const publish=document.getElementById('cpPublishNow');
