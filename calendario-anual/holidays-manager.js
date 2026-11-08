@@ -15,7 +15,7 @@
  const addDays=(iso,days)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)};
  const printable=iso=>String(iso||'').slice(8,10)+'/'+String(iso||'').slice(5,7)+'/'+String(iso||'').slice(0,4);
  function easter(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k+7)%7,m=Math.floor((a+11*h+22*l)/451);const mo=Math.floor((h+l-7*m+114)/31),day=(h+l-7*m+114)%31+1;return make(y,mo,day)}
- function idFor(d,title,scope){return d+'-'+normal(title)+'-'+normal(scope)}
+ function idFor(d,title,scope){const t=normal(title),hash=Array.from(t).reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7).toString(36);return d+'-'+t.slice(0,66)+'-'+hash+'-'+normal(scope).slice(0,12)}
  function row(date,title,scope,law,verified=true){
   return {id:idFor(date,title,scope),date,title,scope,law,verified};
  }
@@ -103,7 +103,7 @@
   record.decisions[id]={status,movedTo:movedTo||record.decisions[id]?.movedTo||''};
  }
  function makeEvent(r,decision,date,extra=false){
-  const dec=decision.status,title=extra?'Recesso antecipado — '+r.title:r.title;
+  const dec=decision.status,title=extra?'Sem aula antecipada — '+r.title:dec==='sem'?'Sem aula — '+r.title:dec==='com'?'Haverá aula — '+r.title:dec==='antecipado'?'Feriado antecipado — '+r.title:'Feriado · manter programação — '+r.title;
   const operation=extra?'SEM AULA (data transferida de '+printable(r.date)+')':
    dec==='sem'?'SEM AULA':dec==='com'?'HAVERÁ AULA':dec==='antecipado'?'TRANSFERIDO para '+printable(decision.movedTo):'MANTER PROGRAMAÇÃO EXISTENTE';
   return {id:'cora-hm-'+normal(r.id)+'-'+(extra?'transfer':'principal'),date,title,type:'Feriado',notes:'Funcionamento escolar: '+operation+'. '+r.scope+'. '+r.law+'. Decisão da Gestão.',source:'Gestão · Feriados e dias letivos',status:'Publicado',needsReview:false,audience:'Todos',holidayManaged:true,holidayDecision:extra?'sem':dec,holidayOriginalDate:r.date,holidayScope:r.scope,holidayTransferredTo:dec==='antecipado'?decision.movedTo:'',holidayReference:r.law,mode:'presencial',time:'',duration:60,place:'',meet:''};
@@ -131,7 +131,7 @@
   try{
    const amount=commit();
    notice(amount+' registro(s) incluído(s) no calendário da Gestão. '+(callback?'Enviando para a Equipe...':'Use Publicar para equipe para sincronizar.'));
-   if(callback)await callback();
+   if(callback){const published=await callback();notice(published?'Decisões publicadas e conferidas na Equipe Pedagógica.':'Decisões salvas na Gestão. A publicação para a Equipe não foi concluída.')}
   }catch(error){notice('Atenção: '+error.message)}
   finally{busy=false}
  }
@@ -182,7 +182,7 @@
  }
  function panel(){
   const y=activeYear;
-  const years=Array.from({length:12},(_,i)=>2025+i);
+  const years=Array.from({length:Math.min(77,Math.max(13,activeYear-2024+6))},(_,i)=>2024+i);
   return '<details id="chManager" class="ch-panel"><summary><span class="ch-icon" aria-hidden="true">▦</span><strong>Feriados e dias letivos</strong><small>Ano, estado, município e funcionamento escolar</small></summary>'+
    '<div class="ch-body"><p class="ch-lead">Confira os feriados da localidade, decida se haverá aula e publique as decisões no calendário dos professores. Feriados não podem ser alterados por decisão escolar; o que se registra aqui é o funcionamento da escola.</p>'+
    '<div class="ch-filters"><label>Ano letivo<select id="chYear">'+years.map(x=>'<option value="'+x+'" '+(x===y?'selected':'')+'>'+x+'</option>').join('')+'</select></label>'+
