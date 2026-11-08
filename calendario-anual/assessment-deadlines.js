@@ -63,7 +63,7 @@
  }
  function draftFrom(y=activeYear(),source=2026){
   if(y<=2026)return {ok:false,error:'O ano-base 2026 não deve ser substituído.'};
-  if(y===2027)return {ok:false,error:'O cronograma de 2027 deve seguir o calendário SINEPE-CE/Copa aprovado pela Gestão. Não copie automaticamente provas e entregas de 2026.'};
+  if(y===2027)return {ok:false,error:'Para 2027, utilize o planejador SINEPE/Copa. As datas atuais de entrega não serão substituídas pelo importador de 2026.'};
   const previous=get(source);
   const data={year:y,approved:false,source:'Referência '+source+' — revisar todas as datas',items:previous.items.map(s=>({
     stage:s.stage,due:s.due?alignWeek(s.due,y):'',deliveryTypes:s.deliveryTypes,
@@ -100,9 +100,42 @@
   if(y>2026)out.push('Confira feriados municipais, recessos, sábados letivos, carga horária e mínimo legal de 200 dias antes da publicação.');
   return [...new Set(out)];
  }
+ // Simulado SAE: 2º ano do EF à 3ª série do EM, na sexta anterior à AD.
+ // Em Fortaleza, 19/03/2027 é feriado municipal, então a opção é 12/03.
+ const SAE_SCOPE='2º ano do Ensino Fundamental à 3ª série do Ensino Médio';
+ const isDiagnostic=a=>/diagnostic|\bad\b/.test(String(a?.title||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());
+ const previousFriday=date=>{
+  const d=new Date(String(date)+'T12:00:00Z');if(!Number.isFinite(d.getTime()))return '';
+  d.setUTCDate(d.getUTCDate()-(((d.getUTCDay()-5+7)%7)||7));return d.toISOString().slice(0,10);
+ };
+ const fridayBlocked=(date,y)=>{
+  if(y===2027&&HOLIDAYS_2027[date])return HOLIDAYS_2027[date];
+  let events=[];try{events=JSON.parse(localStorage.getItem('cora_calendario_eventos_'+y+'_v1')||'[]')}catch{}
+  const conflict=Array.isArray(events)?events.find(e=>e?.date===date&&(
+   e.holidayManaged===true&&e.holidayDecision==='sem'||
+   e.type==='Feriado'&&!e.holidayManaged||
+   /sem aula|recesso escolar|suspens[aã]o de aula/i.test(String(e.title||'')))):null;
+  return conflict?.title||'';
+ };
+ function saeSchedule(data=get(activeYear())){
+  if(Number(data?.year)!==2027||!Array.isArray(data.items))return [];
+  return data.items.flatMap(row=>{
+   const ad=(row.items||[]).find(isDiagnostic);
+   if(!ad?.start||!iso(ad.start))return [];
+   const expected=previousFriday(ad.start);let day=expected,blocked='';
+   for(let k=0;k<10&&day;k++){
+    const why=fridayBlocked(day,Number(data.year));if(!why)break;
+    if(!blocked)blocked=why;day=previousFriday(day);
+   }
+   if(!day||!day.startsWith(data.year+'-'))return [];
+   const exception=expected!==day?'Sexta-feira '+display(expected)+' indisponível ('+blocked+'). Antecipado para '+display(day)+'.':'';
+   return [{stage:row.stage,date:day,adStart:ad.start,expected,exception,scope:SAE_SCOPE}];
+  });
+ }
  function publicationEvents(y=activeYear()){
   const data=get(y);
   const result=[];
+  const simulados=saeSchedule(data);
   for(const row of data.items){
    if(!isStageApproved(data,row.stage))continue;
    const label=row.stage+'ª etapa';
@@ -113,6 +146,14 @@
     stageNumber:row.stage,leadDays:5,deliveryTypes:row.deliveryTypes,
     fundamentalEmail:FUND,medioEmail:MED,
     notes:'Prazo de entrega: '+(row.deliveryTypes||'Avaliações')+'. Ensino Fundamental: '+FUND+'. Ensino Médio: '+MED+'. Lembrete 5 dias antes.',
+    source:SCHOOL+' · Cronograma pedagógico '+y
+   });
+   const sae=simulados.find(x=>x.stage===row.stage);
+   if(sae)result.push({
+    id:'cora-simulado-sae-'+y+'-'+row.stage,date:sae.date,
+    title:'Simulado SAE — 2º ano EF à 3ª série EM — '+label,
+    type:'Avaliação',status:'Publicado',audience:'Alunos e professores',
+    notes:'Simulado SAE do '+SAE_SCOPE+'. Sexta-feira anterior às Avaliações Diagnósticas (AD), que começam em '+display(sae.adStart)+'. '+sae.exception,
     source:SCHOOL+' · Cronograma pedagógico '+y
    });
    for(const [i,item] of row.items.entries()){
@@ -137,7 +178,7 @@
   const key='cora_calendario_eventos_'+y+'_v1';
   let existing=[];try{existing=JSON.parse(localStorage.getItem(key)||'[]')}catch{}
   if(!Array.isArray(existing))existing=[];
-  const clean=existing.filter(e=>!/^cora-(entrega-avaliacoes|periodo-avaliacao)-/.test(String(e.id||'')));
+  const clean=existing.filter(e=>!/^cora-(entrega-avaliacoes|periodo-avaliacao|simulado-sae)-/.test(String(e.id||'')));
   const next=clean.concat(approved);
   if(JSON.stringify(next)!==JSON.stringify(existing)){
    try{localStorage.setItem(key,JSON.stringify(next));window.dispatchEvent(new CustomEvent('cora-data-changed',{detail:{year:y}}));}catch{}
@@ -148,6 +189,15 @@
   const y=activeYear(),data=get(y),row=data.items[selectedStage-1],valid=isStageApproved(data,selectedStage);
   if(!row)return '';
   const alertItems=issues(data,selectedStage);
+  const sae=y===2027?saeSchedule(data).find(x=>x.stage===selectedStage):null;
+  const saePreview=y!==2027?'':sae
+   ?'<section class="assess-sae-preview"><strong>Simulado SAE · '+selectedStage+'ª etapa</strong>'+
+     '<p><b>'+display(sae.date)+'</b> · sexta-feira anterior à AD de '+display(sae.adStart)+'</p>'+
+     '<small>Participantes: '+esc(SAE_SCOPE)+'. A data acompanha automaticamente a AD desta etapa.</small>'+
+     (sae.exception?'<p class="assess-sae-warning">Atenção: '+esc(sae.exception)+'</p>':'')+
+     '<p><small>Visível aos professores após validação e publicação pela Gestão.</small></p></section>'
+   :'<section class="assess-sae-preview"><strong>Simulado SAE · '+selectedStage+'ª etapa</strong>'+
+     '<p>Cadastre a AD para gerar a data do Simulado SAE.</p></section>';
   const windows=row.items.map((item,i)=>'<div data-assessment-item class="assess-eval-item">'+
    '<div class="assess-eval-title"><span class="assess-eval-index">'+String(i+1).padStart(2,'0')+'</span>'+
    '<input aria-label="Nome da avaliação '+(i+1)+'" data-assessment-title value="'+esc(item.title)+'" placeholder="Nome da avaliação"></div>'+
@@ -163,7 +213,7 @@
    '<div class="assess-item-list">'+windows+'</div><button type="button" class="assess-add" data-add-assessment>+ Adicionar avaliação</button></details>'+
    '<div class="assess-notes"><strong>Conferência desta etapa</strong><div>'+
      (alertItems.length?alertItems.slice(0,9).map(t=>'<p>• '+esc(t)+'</p>').join(''):'<p>Nenhum conflito automático identificado para a etapa selecionada.</p>')+
-   '</div></div></div>';
+   '</div></div>'+saePreview+'</div>';
  }
  function readSelected(){
   const host=document.getElementById('coraAssessmentPanel');
@@ -251,15 +301,23 @@
    if(!row.due||!row.deliveryTypes||!row.items.length){status('Preencha a entrega, os tipos de prova e pelo menos um período de avaliação.');return}
    if(y>2026){const st=window.CoraStages?.get?.(y)?.find(x=>Number(x.number)===selectedStage);if(!st?.start||!st?.end||st.needsReview){status('Confira e valide primeiro o início e o fim da '+selectedStage+'ª etapa letiva.');return}}
    if(y===2027){
-    const st=window.CoraStages?.get?.(y)?.find(x=>Number(x.number)===selectedStage);
-    const out=row.items.filter(a=>
-     a.start<st.start||a.end>st.end||
-     a.start<='2027-07-25'&&a.end>='2027-06-24'
-    );
-    if(out.length){
-     status('Validação bloqueada: '+out.length+' período(s) de prova fora da etapa ou durante o recesso da Copa Feminina. Corrija as avaliações, sem alterar as datas de entrega.');
-     return;
+    const ref=window.CoraSinepe2027?.STAGES?.find(x=>Number(x.number)===selectedStage);
+    const selected=window.CoraStages?.get?.(y)?.find(x=>Number(x.number)===selectedStage);
+    if(!ref||!selected||selected.start!==ref.start||selected.end!==ref.end){
+     status('As avaliações de 2027 precisam de etapas alinhadas ao SINEPE. Confira os limites antes de validar.');return;
     }
+    const blocked=row.items.filter(a=>{
+     if(a.start<ref.start||a.end>ref.end)return true;
+     if(a.start<='2027-07-25'&&a.end>='2027-06-24')return true;
+     const start=new Date(a.start+'T12:00:00Z'),end=new Date(a.end+'T12:00:00Z');
+     for(let time=start.getTime(),k=0;Number.isFinite(time)&&time<=end.getTime()&&k<55;time+=86400000,k++){
+      const d=new Date(time),iso=d.toISOString().slice(0,10);
+      if([0,6].includes(d.getUTCDay())||HOLIDAYS_2027[iso]||
+        (iso>='2027-09-11'&&iso<='2027-09-16'))return true;
+     }
+     return false;
+    });
+    if(blocked.length){status('Corrija '+blocked.length+' janela(s) com datas fora da etapa, feriados, fim de semana, Copa ou Feira Cultural. Validação bloqueada.');return;}
    }
    const warnings=issues(data,selectedStage);
    const question=warnings.length?'Esta etapa possui '+warnings.length+' conferência(s):\n\n'+warnings.slice(0,5).join('\n')+'\n\nVocê conferiu e aprova as datas desta etapa?':
@@ -280,5 +338,5 @@
   window.addEventListener('cora-year-changed',()=>{selectedStage=1;syncToCalendar(activeYear());render()});
   window.addEventListener('cora-stages-updated',render);
  });
- window.CoraAssessments={get,save,draftFrom,issues,publicationEvents,isStageApproved,display,FUND,MED};
+ window.CoraAssessments={get,save,draftFrom,issues,publicationEvents,isStageApproved,saeSchedule,display,FUND,MED};
 })();
