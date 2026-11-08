@@ -150,19 +150,19 @@
       '<p>'+message+'</p>'+
       '<div class="month-publication-actions">'+
       (pending?'<button type="button" data-month-review>Conferir '+pending+' evento(s) importado(s)</button>':'')+
-      (ready?'<button type="button" data-month-publish>Publicar ano '+YEAR+' para a Equipe</button>':'')+
+      (ready?'<button type="button" data-month-publish>Publicar apenas '+month+' aprovado na Equipe</button>':'')+
       '</div>';
     box.querySelector('[data-month-review]')?.addEventListener('click',()=>{
       const opened=window.CoraYearReview?.requestOpen?.(YEAR,selectedMonth);
       if(!opened)notify('Entre na Gestão e abra Conferência dos 12 meses → Conferir atividades importadas.');
     });
-    box.querySelector('[data-month-publish]')?.addEventListener('click',()=>{
-      const publish=document.getElementById('cpPublishNow');
-      if(!publish){
-        notify('Entre na Gestão e selecione Publicar '+YEAR+' para a equipe.');
-        return;
-      }
-      publish.click();
+    box.querySelector('[data-month-publish]')?.addEventListener('click',async event=>{
+      const button=event.currentTarget;
+      const publisher=window.CoraMonthPublisher?.publish;
+      if(typeof publisher!=='function'){notify('Entre na Gestão para publicar os eventos aprovados.');return;}
+      button.disabled=true;
+      try{await publisher(YEAR,selectedMonth)}
+      finally{button.disabled=false}
     });
   }
   function renderEvents() {
