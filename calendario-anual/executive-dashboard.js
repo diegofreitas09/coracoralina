@@ -150,7 +150,7 @@
     let view=$('#coraExecutiveSummary');
     if(!view){view=document.createElement('div');view.id='coraExecutiveSummary';const welcome=$('.welcome',main);welcome?.insertAdjacentElement('afterend',view);}
     if(state.manager!=='overview')return;
-    const year=currentYear(),events=managementEvents(year),
+    const year=currentYear(),events=window.CoraCalendarIntegrity?.filterEvents?.(managementEvents(year))||managementEvents(year),
       birthdays=window.CoraBirthdays?.all?.()||[];
     const model=metrics(events,birthdays,year,true);
     model.notices=(stored('cora_portal_draft_notices_'+year,[])||[]).length;
