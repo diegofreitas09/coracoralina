@@ -80,6 +80,7 @@
    '<p id="cpSinepeSatCount" class="cp-sinepe-hint" role="status"></p>'+
    '<div class="cp-sinepe-actions"><button type="button" class="cp-btn soft" id="cpSinepeSaveSats">Salvar sábados selecionados</button><button type="button" class="cp-btn" id="cpSinepeDraftSats">Criar eventos de sábado para revisão</button></div>'+
    '<p class="cp-sinepe-note"><b>Atenção jurídica:</b> 19/03 (São José) é feriado <b>municipal em Fortaleza</b>, não estadual, conforme Lei municipal 8.796/2003. Carnaval, Cinzas e as datas exclusivas de descanso docente precisam de tratamento próprio. Use o Gestor de Feriados para decidir cada município.</p>'+
+   '<p class="cp-sinepe-note"><b>Outras verificações do PDF:</b> a Lei estadual 16.746/2018 fixa 01/11/2026 para disponibilizar a lista de materiais de 2027, se exigida pela escola. Confira o comprovante. A semana de 25/05/2027 exige atividades sobre o desporto escolar (Lei 14.579/2023). Em 2027, 25/03 coincide com a Data Magna e a Quinta-feira Santa: não conte a mesma data duas vezes.</p>'+ 
    '<p class="cp-sinepe-note"><b>Vinculação à Equipe:</b> validar datas e publicação é obrigatório. Salvar este modelo não modifica jornadas docentes, não autoriza sábados nem publica novos eventos.</p>'+
    '<div class="cp-sinepe-links">Base legal: <a href="https://www2.camara.leg.br/legin/fed/lei/2026/lei-15421-1-junho-2026-799207-normaatualizada-pl.html" target="_blank" rel="noopener">Lei 15.421/2026</a> · <a href="https://agenciagov.ebc.com.br/noticias/202609/mec-homologa-parecer-sobre-ano-letivo-na-copa-feminina" target="_blank" rel="noopener">Parecer CNE/CEB 7/2026</a></div>'+
    '</div></details></section>');
@@ -90,7 +91,7 @@
    element.hidden=year()!==YEAR;
    if(element.hidden)return;
    $("#cpSinepeRows").innerHTML=compare().map(e=>{
-    const text=e.action==="igual"?"Período coincide":e.action==="validada"?"Data validada diferente — preservar":"Vazio / importado em revisão";
+    const text=e.action==="igual"?(e.current.needsReview?"Período coincide — em revisão":"Período coincide — conferido"):e.action==="validada"?"Data validada diferente — preservar":"Vazio / importado em revisão";
     return '<tr><th>'+e.number+'ª</th><td>'+isoToBR(e.start)+' a '+isoToBR(e.end)+'</td><td>'+e.days+'</td><td>'+e.saturdays+'</td><td>'+esc(text)+'</td></tr>';
    }).join("");
    const selected=getSelections();
