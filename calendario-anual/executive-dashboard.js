@@ -164,6 +164,7 @@
     if(el.matches('#birthdayStudio'))return 'birthdays';
     if(el.matches('#cardStudio'))return 'tools';
     if(el.matches('#coraAssessmentPanel'))return 'evaluations';
+    if(el.matches('#cora2027Replan'))return 'evaluations';
     if(el.matches('#coraStages')||el.matches('.stage-panel')||el.matches('#yearStagePanel'))return 'stages';
     if(el.matches('.files-section'))return 'files';
     if(el.matches('.studio-shortcuts'))return 'tools';
