@@ -7,6 +7,7 @@ import {currentMember,loginEmployee,activateEmployee,resetEmployeePassword,listE
 import {vapidKeys,registrations,saveRegistration,deleteRegistration,dispatchPush,deliveryId,hasDelivered,markDelivered,testDevicePush} from './lib/cora-push-core.mjs';
 import {mirrorStatus,syncEmployeesToSheets} from './lib/cora-google-sheets-mirror.mjs';
 import {listHelpdesk,readHelpdesk,createQuestion,replyQuestion,markHelpdeskRead} from './lib/cora-helpdesk.mjs';
+import {reconcileCarnaval2027} from './lib/cora-carnaval-2027.mjs';
 
 const COOKIE='cora_portal_session';
 const YEAR=2026;
@@ -351,6 +352,25 @@ export default async function handler(request,context){
   if(state&&!Array.isArray(state.stages))state={...state,stages:year===2026?STAGES_2026:stagesFor([],year)};
   // Repara publicações antigas em tempo de leitura sem mexer em comunicados ou em anos posteriores.
   if(year===2026)state=includeOfficial2026Deliveries(state);
+  // Elimina o Carnaval falso que 2026 importou para 15–17/02/2027.
+  // A Equipe recebe a leitura saneada mesmo com o aplicativo antigo instalado.
+  if(state&&year===2027){
+   const fixed=reconcileCarnaval2027(state.events,year);
+   if(fixed.removed.length){
+    const before=state;
+    state={...state,events:fixed.events};
+    if(role==='gestao'){
+     // Backup da publicação original para auditoria e reversibilidade.
+     const backupKey='backup-carnaval-2027-before-fix';
+     const previousBackup=await store.get(backupKey,{type:'json',consistency:'strong'});
+     if(!previousBackup)await store.setJSON(backupKey,{
+      at:new Date().toISOString(),year,previousPublication:before,
+      removedEventIds:fixed.removed.map(e=>String(e.id||''))
+     });
+     await store.setJSON(publishedKey(year),state);
+    }
+   }
+  }
   return answer({role,year,availableYears,publication:state});
  }
  if(action==='publish'&&request.method==='POST'){
@@ -361,8 +381,10 @@ export default async function handler(request,context){
   let input;try{input=await request.json()}catch{return answer({error:'JSON inválido'},400)}
   const year=schoolYear(input.year||YEAR);if(!year)return answer({error:'Ano letivo inválido'},400);
   if(!Array.isArray(input.events)||!Array.isArray(input.notices)||input.events.length>5000||input.notices.length>300)return answer({error:'Dados inválidos'},400);
-  const incomingEvents=input.events.map(cleanEvent).filter(e=>validISO(e.date,year)&&e.id&&e.title);
-  if(incomingEvents.length!==input.events.length)return answer({error:'Eventos com datas inválidas ou de outro ano: revise o calendário.'},400);
+  const parsedEvents=input.events.map(cleanEvent).filter(e=>validISO(e.date,year)&&e.id&&e.title);
+  if(parsedEvents.length!==input.events.length)return answer({error:'Eventos com datas inválidas ou de outro ano: revise o calendário.'},400);
+  // Impede a republicação futura dos dias falsos a partir de rascunhos antigos.
+  const {events:incomingEvents,removed:removedCarnaval}=reconcileCarnaval2027(parsedEvents,year);
   const notices=input.notices.map(cleanNotice).filter(n=>n.id&&n.title);
   if(input.birthdays!==undefined&&(!Array.isArray(input.birthdays)||input.birthdays.length>500))return answer({error:'Aniversariantes inválidos'},400);
   const previous=await store.get(publishedKey(year),{type:'json',consistency:'strong'});
@@ -405,7 +427,9 @@ export default async function handler(request,context){
     if(stats.sent>0){await markDelivered(id,{...stats,year,kind:'notice'});sentStats.notices++}
    }catch(error){console.error('Falha ao enviar push da Gestão',error.message)}
   }
-  return answer({ok:true,year,availableYears:years,updatedAt:state.updatedAt,push:sentStats,counts:{events:events.length,notices:notices.length,birthdays:birthdays.length,stages:stages.filter(x=>x.start&&x.end).length}});
+  return answer({ok:true,year,availableYears:years,updatedAt:state.updatedAt,push:sentStats,
+   fixedCarnavalEvents:removedCarnaval.length,
+   counts:{events:events.length,notices:notices.length,birthdays:birthdays.length,stages:stages.filter(x=>x.start&&x.end).length}});
  }
  return answer({error:'Recurso inexistente'},404);
 }

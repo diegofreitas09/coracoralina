@@ -73,6 +73,14 @@
   rows.filter(r=>currentDecision(r).status==='antecipado'&&valid(currentDecision(r).movedTo,activeYear)).forEach(r=>closed.add(currentDecision(r).movedTo));
   const potential=weekdays.filter(d=>{const day=d.getUTCDay(),str=d.toISOString().slice(0,10);return ((day>0&&day<6)||extra.has(str))&&!closed.has(str)}).length;
   host.querySelector('#chMetrics').innerHTML='<span><strong>'+rows.length+'</strong> datas apresentadas</span><span><strong>'+confirmed+'</strong> feriados identificados na base</span><span><strong>'+total+'</strong> decisões preenchidas</span><span><strong>'+potential+'</strong> dias úteis potenciais*</span>';
+  const carnaval=host.querySelector('#chCarnaval2027');
+  if(carnaval){
+   carnaval.hidden=activeYear!==2027||record.uf!=='CE';
+   if(!carnaval.hidden)carnaval.innerHTML='<strong>Carnaval 2027 · calendário do Cora Coralina</strong>'+
+     '<p><b>06 e 07/02:</b> sábado e domingo (sem aulas regulares). <b>08, 09 e 10/02:</b> sem aula, '+
+     'incluindo toda a Quarta-feira de Cinzas. <b>11/02:</b> retorno às aulas. '+
+     '<b>12, 15, 16 e 17/02:</b> aulas normais. Não há Carnaval em 15, 16 ou 17/02.</p>';
+  }
   const area=host.querySelector('#chRows');
   const data=monthRows();
   area.innerHTML=data.length?data.map(r=>{
@@ -190,7 +198,7 @@
    '<label>Município (IBGE)<select id="chCitySelect"><option>Carregando...</option></select></label>'+
    '<label>Ou digite o município<input id="chCityText" type="text" maxlength="110" value="'+esc(record.city)+'" placeholder="Ex.: Fortaleza"></label>'+
    '<label>Exibir<select id="chMonth"><option value="all">Ano inteiro · 12 meses</option>'+MONTHS.map((m,i)=>'<option value="'+i+'">'+m+'</option>').join('')+'</select></label></div>'+
-   '<div id="chMetrics" class="ch-metrics"></div>'+
+   '<div id="chMetrics" class="ch-metrics"></div><div id="chCarnaval2027" class="ch-carnaval-cora" hidden></div>'+
    '<div class="ch-actions"><button type="button" id="chAllNo" class="ch-outline">Marcar sem aula · período exibido</button><button type="button" id="chAllKeep" class="ch-outline">Manter programação · período exibido</button><button type="button" id="chClear" class="ch-outline">Voltar para A definir</button></div>'+
    '<div id="chRows" class="ch-rows"></div>'+
    '<form id="chExtra" class="ch-extra"><strong>Adicionar feriado, recesso ou dia especial</strong><input type="date" id="chExtraDate" min="'+y+'-01-01" max="'+y+'-12-31" required><input type="text" id="chExtraName" placeholder="Descrição da data" maxlength="140" required><button type="submit" class="ch-outline">Adicionar data</button></form>'+
@@ -231,9 +239,15 @@
   return wrapper;
  }
  function teacherPanel(year,events,month='all'){
-  const list=(Array.isArray(events)?events:[]).filter(e=>(e.type==='Feriado'||e.holidayManaged)&&Number(e.date?.slice(0,4))===Number(year)).filter(e=>month==='all'||Number(e.date.slice(5,7))===Number(month)+1).sort((a,b)=>a.date.localeCompare(b.date));
+  const cleaned=window.CoraCalendarIntegrity?.filterEvents?.(events)||events;
+  const list=(Array.isArray(cleaned)?cleaned:[]).filter(e=>(e.type==='Feriado'||e.holidayManaged)&&Number(e.date?.slice(0,4))===Number(year)).filter(e=>month==='all'||Number(e.date.slice(5,7))===Number(month)+1).sort((a,b)=>a.date.localeCompare(b.date));
   const region=(list.find(x=>x.holidayScope)||{}).holidayScope;
-  return '<section class="ch-team"><h2>Feriados e funcionamento escolar · '+esc(year)+'</h2><p>Datas e decisões divulgadas pela Gestão. O funcionamento pode mudar mediante novo comunicado.</p>'+
+  const note=Number(year)===2027&&(month==='all'||Number(month)===1)
+   ?'<div class="ch-carnaval-cora"><strong>Carnaval 2027 · Colégio Cora Coralina</strong>'+
+     '<p><b>06 e 07/02:</b> sábado e domingo, sem aulas regulares. <b>08 a 10/02:</b> sem aula, '+
+     'inclusive Quarta-feira de Cinzas. <b>11/02:</b> retorno com aula normal. '+
+     '<b>12, 15, 16 e 17/02:</b> aula normal. Não há Carnaval na semana de 15 a 17/02.</p></div>':'';
+  return '<section class="ch-team"><h2>Feriados e funcionamento escolar · '+esc(year)+'</h2><p>Datas e decisões divulgadas pela Gestão. O funcionamento pode mudar mediante novo comunicado.</p>'+note+
    (list.length?'<div class="ch-team-list">'+list.map(e=>'<article><time>'+esc(printable(e.date))+'</time><div><strong>'+esc(e.title)+'</strong><p>'+esc(e.holidayDecision?statusName(e.holidayDecision):'Calendário publicado · confirmar funcionamento')+(e.holidayDecision==='antecipado'?' — '+esc(printable(e.holidayTransferredTo)):'')+'</p></div></article>').join('')+'</div>':'<p>Nenhum feriado divulgado para este período.</p>')+'</section>';
  }
  window.CoraHolidays={mountManager,teacherPanel,officialList,config,KEY};

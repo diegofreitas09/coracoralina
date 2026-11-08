@@ -8,7 +8,7 @@
  const font=(size,weight='400')=>weight+' '+size+'px Arial, sans-serif';
  const str=value=>String(value??'').replace(/\r/g,'').trim();
  const monthId=e=>Number(String(e?.date||'').slice(5,7))-1;
- const eventsOfMonth=(events,month,year)=>Array.isArray(events)?events.filter(e=>
+ const eventsOfMonth=(events,month,year)=>Array.isArray(events)?(window.CoraCalendarIntegrity?.filterEvents?.(events)||events).filter(e=>
     String(e?.date||'').startsWith(year+'-'+String(month+1).padStart(2,'0')+'-')&&str(e.title))
    .sort((a,b)=>String(a.date).localeCompare(String(b.date))||
      String(a.time||'').localeCompare(String(b.time||''))||

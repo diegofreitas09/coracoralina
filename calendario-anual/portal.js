@@ -799,7 +799,7 @@
  }
  const isSecond=e=>/2[ªaº°]?\s*chamada|segunda\s+chamada/i.test(`${e.title} ${e.notes||''}`);
  const isAssessment=e=>/avaliaç|avaliação|simulado|sondagem|recomposiç|prova/i.test(`${e.title} ${e.type||''}`);
- function filteredEvents(){return (data?.events||[]).filter(e=>String(e.date||'').startsWith(year+'-')).sort((a,b)=>a.date.localeCompare(b.date))}
+ function filteredEvents(){const events=window.CoraCalendarIntegrity?.filterEvents?.(data?.events||[])||data?.events||[];return events.filter(e=>String(e.date||'').startsWith(year+'-')).sort((a,b)=>a.date.localeCompare(b.date))}
  function activeNotices(){const now=new Date();return (data?.notices||[]).filter(n=>{const start=n.publishAt?new Date(n.publishAt):null;const end=n.expiresAt?new Date(n.expiresAt):null;return (!start||start<=now)&&(!end||end>=now)}).sort((a,b)=>String(b.publishAt||'').localeCompare(String(a.publishAt||'')))}
 
  // Comunicados são mensagens imediatamente disponíveis. A antecedência cria lembretes extras.
