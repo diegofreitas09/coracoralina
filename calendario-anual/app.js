@@ -123,8 +123,43 @@
     $('#calendar').innerHTML = html + '</div>';
     $('#calendar').querySelectorAll('[data-date]').forEach(button => button.addEventListener('click',() => {const date=button.dataset.date;if(eventsFor(selectedMonth).some(item=>item.date===date)&&typeof window.coraOpenDayEvents==='function')window.coraOpenDayEvents(date);else openEventModal(date);}));
   }
+
+  // A Gestão guarda eventos localmente; eles só chegam à Equipe após revisão
+  // (quando importados) e publicação explícita do ano pela administração.
+  function renderPublicationStatus(list){
+    const box=$('#monthPublicationStatus');
+    if(!box)return;
+    if(YEAR<=2026){box.hidden=true;box.innerHTML='';return}
+    const pending=list.filter(e=>e?.status==='Em revisão'||e?.needsReview===true).length;
+    const ready=list.length-pending;
+    const month=MONTHS[selectedMonth];
+    box.hidden=false;
+    box.innerHTML='<div class="month-publication-counts">'+
+      '<strong>'+list.length+' cadastrado(s) em '+month+' de '+YEAR+'</strong>'+
+      '<span>'+pending+' aguardando conferência · '+ready+' pronto(s) para envio</span></div>'+
+      '<p>O calendário do professor mostra somente as atividades aprovadas <strong>depois</strong> que a Gestão publica o ano letivo. Salvar um evento aqui não o envia automaticamente.</p>'+
+      '<div class="month-publication-actions">'+
+      (pending?'<button type="button" data-month-review>Conferir '+pending+' evento(s) importado(s)</button>':'')+
+      (ready?'<button type="button" data-month-publish>Publicar ano '+YEAR+' para a Equipe</button>':'')+
+      '</div>';
+    box.querySelector('[data-month-review]')?.addEventListener('click',()=>{
+      window.dispatchEvent(new CustomEvent('cora-review-month-request',{detail:{year:YEAR,month:selectedMonth}}));
+      if(!document.getElementById('cpYearReviewPanel')){
+        notify('Entre na Gestão e abra Conferência dos 12 meses → Conferir atividades importadas.');
+      }
+    });
+    box.querySelector('[data-month-publish]')?.addEventListener('click',()=>{
+      const publish=document.getElementById('cpPublishNow');
+      if(!publish){
+        notify('Entre na Gestão e selecione Publicar '+YEAR+' para a equipe.');
+        return;
+      }
+      publish.click();
+    });
+  }
   function renderEvents() {
     const list = eventsFor(selectedMonth);
+    renderPublicationStatus(list);
     const summary=monthView==='resumida';
     const preview=summary?list.slice(0,MONTH_PREVIEW_SIZE):list;
     const panel=document.querySelector('.events-panel');
@@ -139,7 +174,7 @@
     if(footer)footer.hidden=!(summary&&list.length>MONTH_PREVIEW_SIZE);
     if(all)all.textContent='Ver todos os '+list.length+' eventos';
     if (!list.length) { $('#eventList').innerHTML = '<div class="empty"><div class="empty-icon">▦</div>Nenhum evento neste mês.<br/>Clique no calendário para começar.</div>'; return; }
-    $('#eventList').innerHTML = preview.map(event => `<div class="event"><div class="event-date"><b>${Number(event.date.slice(8,10))}</b><small>${MONTHS[selectedMonth].slice(0,3)}</small></div><div class="event-info"><strong>${escapeHtml(event.title)}</strong>${event.notes?`<small>${escapeHtml(event.notes)}</small>`:''}<span class="tag">${escapeHtml(event.type)}</span>${event.time?`<small class="event-meta">Horário: ${escapeHtml(event.time)} ${event.mode==='online'?' · On-line':''}</small>`:''}${event.status==='Em revisão'?'<small class="review-event">Em revisão · não divulgar</small>':''}${event.audience&&event.audience!=='Todos'?`<small class="event-meta">Para: ${escapeHtml(event.audience)}</small>`:''}</div><div class="event-actions"><button data-google="${escapeHtml(event.id)}" aria-label="Adicionar ao Google Agenda" title="Google Agenda">G</button><button data-edit="${escapeHtml(event.id)}" aria-label="Editar evento" title="Editar">✎</button><button data-delete="${escapeHtml(event.id)}" aria-label="Excluir evento" title="Excluir">✕</button></div></div>`).join('');
+    $('#eventList').innerHTML = preview.map(event => `<div class="event"><div class="event-date"><b>${Number(event.date.slice(8,10))}</b><small>${MONTHS[selectedMonth].slice(0,3)}</small></div><div class="event-info"><strong>${escapeHtml(event.title)}</strong>${event.notes?`<small>${escapeHtml(event.notes)}</small>`:''}<span class="tag">${escapeHtml(event.type)}</span>${event.time?`<small class="event-meta">Horário: ${escapeHtml(event.time)} ${event.mode==='online'?' · On-line':''}</small>`:''}${event.status==='Em revisão'||event.needsReview===true?'<small class="review-event">Em revisão · não divulgar</small>':''}${event.audience&&event.audience!=='Todos'?`<small class="event-meta">Para: ${escapeHtml(event.audience)}</small>`:''}</div><div class="event-actions"><button data-google="${escapeHtml(event.id)}" aria-label="Adicionar ao Google Agenda" title="Google Agenda">G</button><button data-edit="${escapeHtml(event.id)}" aria-label="Editar evento" title="Editar">✎</button><button data-delete="${escapeHtml(event.id)}" aria-label="Excluir evento" title="Excluir">✕</button></div></div>`).join('');
     $('#eventList').querySelectorAll('[data-edit]').forEach(button=>button.addEventListener('click',eventClick=>{
       eventClick.preventDefault();
       const item=events.find(event=>String(event.id)===String(button.dataset.edit));
