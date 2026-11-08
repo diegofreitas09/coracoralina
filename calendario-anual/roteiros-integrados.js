@@ -87,7 +87,7 @@
   const rows=s.pendingSchedule||s.schedule||[];
   return '<section class="cr-card"><h3>3. Programar datas das avaliações</h3>'+
    '<p class="cr-help">Escolha o dia e as disciplinas. Os roteiros enviados e aprovados serão vinculados automaticamente à programação.</p>'+
-   '<div class="cr-fields"><label>Data<input id="crScheduleDate" type="date" min="'+s.year+'-01-01" max="'+s.year+'-12-31"></label>'+
+   '<div class="cr-fields"><label>Data<input id="crScheduleDate" type="date" value="'+esc(s.scheduleDate||'')+'" min="'+s.year+'-01-01" max="'+s.year+'-12-31"></label>'+
    '<label>Série<select id="crScheduleGrade">'+gradeOptions(s)+'</select></label>'+
    '<label>Disciplina<select id="crScheduleSubject">'+opt(subjectList(s),subject)+'</select></label>'+
    '<label>Modelo<select id="crScheduleTest">'+opt(s.types?.tests||types,'AD')+'</select></label>'+
@@ -144,7 +144,10 @@
   s.editorParts=readBlocks(el);s.editorInstructions=el.querySelector('#crInstructions')?.value||'';
  }
  function changeGrade(s,key,subKey){const select=s.host.querySelector('#'+key);if(!select)return;
-  s.grade=select.value;s.subject=subjectList(s)[0]||'';if(s.role==='equipe'){s.editorParts=null;s.editorInstructions=null;}render(s);}
+  s.grade=select.value;s.subject=subjectList(s)[0]||'';
+  const other=s.host.querySelector('#'+subKey);
+  if(other)other.innerHTML=opt(subjectList(s),s.subject);
+ }
  function send(s,operation,body){return api(s,{operation,...body})}
  async function reload(s){s.message='';await fetchData(s);s.pendingAssignments=null;s.pendingSchedule=null;s.editorParts=null;s.editorInstructions=null;render(s)}
  function err(s,error){s.message=error?.message||'Não foi possível salvar os dados.';render(s)}
@@ -190,6 +193,7 @@
    $('#crTeacher')?.addEventListener('change',()=>{s.teacherEmail=$('#crTeacher').value;s.pendingAssignments=null;render(s)});
    $('#crAssignGrade')?.addEventListener('change',()=>changeGrade(s,'crAssignGrade','crAssignSubject'));
    $('#crScheduleGrade')?.addEventListener('change',()=>changeGrade(s,'crScheduleGrade','crScheduleSubject'));
+   $('#crScheduleDate')?.addEventListener('change',event=>{s.scheduleDate=event.target.value});
    $('#crAssignSubject')?.addEventListener('change',()=>{s.subject=$('#crAssignSubject').value});
    $('#crScheduleSubject')?.addEventListener('change',()=>{s.subject=$('#crScheduleSubject').value});
    $('#crAddAssignment')?.addEventListener('click',()=>{
@@ -221,7 +225,7 @@
     const row={date,grade,subject,assessment,stage},list=s.pendingSchedule||[...s.schedule];
     if(list.some(e=>e.date===date&&e.grade===grade&&e.subject===subject&&e.assessment===assessment&&e.stage===stage)){
      s.message='Esta disciplina já consta nesta data.';render(s);return}
-    list.push(row);s.pendingSchedule=list;s.message='';render(s);
+    list.push(row);s.scheduleDate=date;s.pendingSchedule=list;s.message='';render(s);
    });
    s.host.querySelectorAll('[data-remove-schedule]').forEach(btn=>btn.onclick=()=>{
     const list=s.pendingSchedule||[...s.schedule];s.pendingSchedule=list.filter((_,i)=>i!==Number(btn.dataset.removeSchedule));render(s);
