@@ -33,3 +33,28 @@
 [data-cora-theme="dark"] .cp-sync-month.is-stale .cp-sync-status{color:#ffbfa5}
 [data-cora-theme="dark"] .cp-team-year-overview summary{color:#d7e9fc}
 @media(max-width:700px){.cp-year-sync{margin:10px;padding:12px}.cp-sync-year-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.cp-sync-month{padding:10px}.cp-team-year-overview{padding:12px}}
+
+/* Revisão individual das datas importadas, antes da publicação para os professores. */
+.cp-year-review{margin-top:16px;background:#f7f9fc;border:1px solid #cfdce8;border-radius:12px;padding:14px}
+.cp-year-review summary{cursor:pointer;font-size:.9rem;font-weight:800;color:#183e64}
+.cp-year-review summary span{font-weight:650;color:#876121}
+.cp-year-review p{font-size:.83rem;color:#526b83;line-height:1.55}
+.cp-year-review-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:13px 0}
+.cp-year-review-controls label{font-size:.82rem;font-weight:700}
+.cp-year-review-controls select,.cp-year-review-controls button{border:1px solid #b9cadc;border-radius:9px;padding:9px 11px;background:#fff;color:#173b62;font:inherit}
+.cp-year-review-row{display:grid;grid-template-columns:minmax(180px,2fr) minmax(145px,1fr) minmax(180px,1.1fr);align-items:center;gap:12px;padding:12px;margin:9px 0;background:#fff;border:1px solid #dce6f1;border-radius:10px}
+.cp-year-review-event{display:flex;flex-direction:column;min-width:0;gap:5px}
+.cp-year-review-event strong{font-size:.86rem;color:#1c4169;overflow-wrap:anywhere}
+.cp-year-review-event small{font-size:.73rem;color:#617a91}
+.cp-year-review-row label{font-size:.79rem;color:#355776;font-weight:650}
+.cp-year-review-date{display:block;width:100%;margin-top:5px;min-height:38px;padding:8px;border-radius:8px;border:1px solid #aebfd0;background:#fff;color:#223f60;box-sizing:border-box;font:inherit}
+.cp-year-review-confirm{display:flex;gap:9px;align-items:center;cursor:pointer}
+.cp-year-review-confirm input{width:19px;height:19px;flex-shrink:0;accent-color:#2c6c9d}
+.cp-year-review-actions{display:flex;align-items:center;flex-wrap:wrap;gap:11px;margin-top:14px}
+.cp-year-review-actions #cpYearReviewStatus{font-size:.79rem;line-height:1.5;color:#4d6680}
+.cp-year-review-empty{background:#fff;border:1px solid #e0e9f2;border-radius:9px;padding:13px}
+[data-cora-theme="dark"] .cp-year-review{background:#23354a;border-color:#4a6078}
+[data-cora-theme="dark"] .cp-year-review summary,[data-cora-theme="dark"] .cp-year-review-event strong{color:#e1f0ff}
+[data-cora-theme="dark"] .cp-year-review-row,[data-cora-theme="dark"] .cp-year-review-empty{background:#1d3045;border-color:#3e546d}
+[data-cora-theme="dark"] .cp-year-review-event small,[data-cora-theme="dark"] .cp-year-review-row label{color:#ccdded}
+@media(max-width:780px){.cp-year-review-row{grid-template-columns:1fr;gap:9px}.cp-year-review-controls>*{flex:1}.cp-year-review-date{max-width:100%}}
