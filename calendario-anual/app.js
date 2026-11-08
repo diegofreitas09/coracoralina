@@ -133,11 +133,21 @@
     const pending=list.filter(e=>e?.status==='Em revisão'||e?.needsReview===true).length;
     const ready=list.length-pending;
     const month=MONTHS[selectedMonth];
+    const comparison=window.CoraMonthlyPublication?.year===YEAR?
+      window.CoraMonthlyPublication.months?.[selectedMonth]:null;
+    const remoteCount=comparison?Number(comparison.published)||0:null;
+    const needsUpdate=comparison&&remoteCount!==Number(comparison.ready);
+    const message=comparison
+      ?pending>0?'Confira as datas das atividades importadas antes de liberar a publicação.'
+       :needsUpdate?'Existem eventos aprovados na Gestão que ainda não chegaram à Equipe. Publique o ano letivo.'
+       :'A publicação foi conferida. Novas alterações exigem outra publicação.'
+      :'Ainda conferindo a publicação na Equipe. Salvar na Gestão não envia eventos automaticamente.';
     box.hidden=false;
     box.innerHTML='<div class="month-publication-counts">'+
       '<strong>'+list.length+' cadastrado(s) em '+month+' de '+YEAR+'</strong>'+
-      '<span>'+pending+' aguardando conferência · '+ready+' pronto(s) para envio</span></div>'+
-      '<p>O calendário do professor mostra somente as atividades aprovadas <strong>depois</strong> que a Gestão publica o ano letivo. Salvar um evento aqui não o envia automaticamente.</p>'+
+      '<span>'+pending+' em revisão · '+ready+' aprovado(s)'+
+       (remoteCount===null?'':' · '+remoteCount+' publicado(s) na Equipe')+'</span></div>'+
+      '<p>'+message+'</p>'+
       '<div class="month-publication-actions">'+
       (pending?'<button type="button" data-month-review>Conferir '+pending+' evento(s) importado(s)</button>':'')+
       (ready?'<button type="button" data-month-publish>Publicar ano '+YEAR+' para a Equipe</button>':'')+
@@ -665,6 +675,9 @@
     window.addEventListener('cora-projects-changed',e=>{if(Number(e.detail?.year)===YEAR)render();});
     window.addEventListener('cora-stages-updated',e=>{if(Number(e.detail?.year)===YEAR)render();});
     window.addEventListener('cora-data-changed',e=>{if(Number(e.detail.year)===YEAR){loadEvents();render();}});
+    window.addEventListener('cora-month-publication-updated',e=>{
+     if(Number(e.detail?.year)===YEAR)renderPublicationStatus(eventsFor(selectedMonth));
+    });
     try{database=await openDB();await refreshFiles();}catch(error){console.error(error);notify('Os arquivos não podem ser salvos neste navegador.');}
     render();
     if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
