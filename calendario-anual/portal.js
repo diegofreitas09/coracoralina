@@ -168,7 +168,7 @@
    '<button type="button" id="cpReviewImportedYear">Conferir atividades importadas</button>'+
    '<span id="cpSyncLastCheck" role="status"></span></div>'+
    '<div id="cpYearSyncGrid" class="cp-sync-year-grid" aria-live="polite"></div></details>');
-  window.CoraHolidays?.mountManager({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year,onPublish:publish});
+  window.CoraHolidays?.mountManager({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year,onPublish:publishHolidayDecisions});
   const reviewController=window.CoraYearReview?.mount({
    host:$('#cpYearSync'),getYear:()=>Number(window.CoraYears?.activeYear)||2026,
    onChange:(targetYear)=>void checkYearSync(targetYear),notify:toast
@@ -545,6 +545,37 @@
    toast('Publicado '+year+': '+res.counts.events+' eventos e '+res.counts.notices+' comunicados'+status+'.');
    void checkYearSync(year);
   }catch(e){toast('Não foi possível publicar: '+e.message);}finally{btn.disabled=false;}
+ }
+
+ async function publishHolidayDecisions(){
+  if(role!=='gestao'){toast('Entre na Gestão para publicar decisões de feriados.');return false}
+  const target=Number(window.CoraYears?.activeYear)||2026;
+  const holidayDraft=loadEventDraft(target).filter(e=>e.holidayManaged===true);
+  try{
+   // Atualização específica e não destrutiva: outros eventos, etapas e comunicados permanecem.
+   const result=await api('state',undefined,'year='+target),previous=result.publication||{};
+   const prior=Array.isArray(previous.events)?previous.events:[];
+   const unchanged=prior.filter(e=>e.holidayManaged!==true);
+   const byId=new Map(unchanged.map(e=>[String(e.id),e]));
+   for(const e of holidayDraft)byId.set(String(e.id),e);
+   const merged=[...byId.values()].sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.title).localeCompare(String(b.title),'pt-BR'));
+   const payload={
+    year:target,events:merged,
+    notices:Array.isArray(previous.notices)?previous.notices:[],
+    birthdays:Array.isArray(previous.birthdays)?previous.birthdays:(window.CoraBirthdays?.all?.()||[]),
+    stages:Array.isArray(previous.stages)?previous.stages:(window.CoraStages?.get?.(target)||[]),
+    projects:Array.isArray(previous.projects)?previous.projects:(window.CoraYears?.getProjects?.(target)||[]),
+    config:{defaultLeadDays:Number(previous.config?.defaultLeadDays??leadDays)}
+   };
+   await api('publish',payload);
+   const verification=await api('state',undefined,'year='+target);
+   const remote=verification.publication?.events||[];
+   if(holidayDraft.some(e=>!remote.some(x=>x.id===e.id&&x.date===e.date&&x.holidayDecision===e.holidayDecision)))
+    throw Error('Publicação enviada, mas os feriados ainda não foram confirmados no servidor.');
+   toast('Feriados de '+target+' sincronizados: '+holidayDraft.length+' decisão(ões). Atividades anteriores preservadas.');
+   void checkYearSync(target);
+   return true;
+  }catch(error){toast('Não foi possível publicar feriados: '+String(error.message||error));return false}
  }
 
  function cpTeamIcon(name){
