@@ -84,7 +84,7 @@
     return {year,events:records.length,meetings:meeting.length,family:family.length,
       pedagogy:pedagogy.length,evaluations:evaluations.length,deliveries:deliveries.length,
       birthdays:b.length,teacherBirthdays:teachers.length,staffBirthdays:staff.length,
-      holidays,holidayCaption,saturdays:schoolSaturdays.length,weekdays:countWeekdays(year)};
+      holidays,holidayCaption,saturdays:new Set(schoolSaturdays.map(e=>e.date)).size,weekdays:countWeekdays(year)};
   };
   const card=(label,value,note,ico='events')=>'<article class="cora-exec-card">'+
     '<div class="cora-exec-icon">'+icon(ico)+'</div>'+
@@ -230,6 +230,7 @@
     if(!snap||snap.role!=='equipe'||!view)return;
     const team=$('.cp-team');if(!team)return;
     const current=snap.tab||'resumo';
+    if(current!=='resumo')state.teamTools=false;
     if(!state.teamTools){state.team=current;}
     team.dataset.coraTools=state.teamTools&&current==='resumo'?'yes':'no';
     if(current==='resumo'&&!snap.showBell){
@@ -282,7 +283,7 @@
     if(manager){
       if($('#coraTeamDrawer'))state.teamTools=false;
       managerNav();renderManagerDashboard();applyManagerRoute();
-    } else {document.body.classList.remove('cora-exec-manager','cora-nav-open');}
+    } else {document.body.classList.remove('cora-exec-manager','cora-nav-open');state.accounts=null;state.accountError=false;}
     if(team){teamNav();updateTeamOverview();}
   }
   let pending=false;
