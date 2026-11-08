@@ -19,6 +19,8 @@
  let role='',chosen='gestao',data=null,year=Number(window.CoraYears?.activeYear)||2026,availableYears=[2026],month=new Date().getFullYear()===2026?new Date().getMonth():0,tab='resumo',selectedStage=0,managerNotices=[],leadDays=3,timer=null,showBell=false,teacherProfile=null,teacherSaving=false,individualRequired=false,pushChecked=false,pushConfirmed=false;
  const seenPublicationIds=new Map();
  let teamStats=null,teamStatsAt=0,teamStatsLoading=false,teamStatsError='';
+ // Exposição apenas de dados já autorizados à sessão; não altera permissões nem publica rascunhos.
+ window.CoraPortalSnapshot=()=>role==='equipe'?{role,year,tab,showBell,events:filteredEvents(),birthdays:publishedBirthdays(),notices:activeNotices(),teamStats}:{role,year};
  async function loadTeamStats(force=false){
   if(role!=='equipe'||teamStatsLoading||(!force&&teamStats&&Date.now()-teamStatsAt<120000))return;
   teamStatsLoading=true;teamStatsError='';
