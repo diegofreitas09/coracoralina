@@ -55,7 +55,8 @@
  function fmtBR(s){const [y,m,d]=String(s).split('-');return d+'/'+m+'/'+y;}
 
  // Sugestões anuais: conserva cadastros existentes; novas datas exigem validação.
- const managedAssessmentEvent=e=>/^cora-(?:entrega-avaliacoes|periodo-avaliacao)-/.test(String(e?.id||''));
+ const managedAssessmentEvent=e=>/^cora-(?:entrega-avaliacoes|periodo-avaliacao|simulado-sae)-/.test(String(e?.id||''));
+ const managedHolidayEvent=e=>String(e?.type||'').toLowerCase()==='feriado'||e?.holidayManaged===true;
  const suggestedDate=(value,from,to,title='Atividade escolar')=>String(value||'').startsWith(from+'-')?(targetDate(value,to,'Pedagógico',title)?.date||''):'';
  function suggestedRange(start,end,from,to,title){
    const moved=suggestedDate(start,from,to,title);
@@ -235,7 +236,7 @@
    refreshPreview();
  }
  function refreshPreview(){
-   preview=readEvents(sourceYear,targetMonth).filter(e=>!managedAssessmentEvent(e)).map(e=>({...e,adjusted:targetDate(e.date,targetYear,e.type,e.title)}));
+   preview=readEvents(sourceYear,targetMonth).filter(e=>!managedAssessmentEvent(e)&&!managedHolidayEvent(e)).map(e=>({...e,adjusted:targetDate(e.date,targetYear,e.type,e.title)}));
    const count=preview.length;
    const projects=getProjects(sourceYear)[targetMonth]||[];
    const srcPlan=stored(PLAN_KEY(sourceYear),{})[targetMonth];
@@ -290,7 +291,7 @@
  }
 
  function copyYearMonth(from,to,month,includeProjects,includePlan){
-   const events=readEvents(from,month).filter(e=>!managedAssessmentEvent(e)),key=EVENT_KEY(to),existing=stored(key,[]);
+   const events=readEvents(from,month).filter(e=>!managedAssessmentEvent(e)&&!managedHolidayEvent(e)),key=EVENT_KEY(to),existing=stored(key,[]);
    const next=Array.isArray(existing)?[...existing]:[];
    let added=0,duplicates=0;
    for(const event of events){
@@ -347,7 +348,7 @@
      const from=Number($('fullSource').value);
      const suggested=academicPreview(from,year),output=$('fullAcademicPreview');
      if(output)output.textContent=suggested.stages+' etapa(s) e '+suggested.assessments+' cronograma(s) disponíveis.'+(suggested.firstStage?' Primeira etapa sugerida: '+fmtBR(suggested.firstStage)+'.':'')+(suggested.firstDue?' Primeira entrega: '+fmtBR(suggested.firstDue)+'.':'');
-     const counts=MONTHS.map((name,month)=>({name,month,n:readEvents(from,month).filter(e=>!managedAssessmentEvent(e)).length,p:getProjects(from)[month]?.length||0}));
+     const counts=MONTHS.map((name,month)=>({name,month,n:readEvents(from,month).filter(e=>!managedAssessmentEvent(e)&&!managedHolidayEvent(e)).length,p:getProjects(from)[month]?.length||0}));
      $('fullSummary').textContent=counts.reduce((a,b)=>a+b.n,0)+' eventos e '+counts.reduce((a,b)=>a+b.p,0)+' projetos disponíveis em '+from+'.';
      $('fullMonths').innerHTML=counts.map(c=>'<label><input type="checkbox" data-full-month="'+c.month+'" checked /><strong>'+c.name+'</strong><small>'+c.n+' eventos · '+c.p+' projetos</small></label>').join('');
    };
