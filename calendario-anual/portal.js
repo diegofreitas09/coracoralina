@@ -171,6 +171,7 @@
    '<span id="cpSyncLastCheck" role="status"></span></div>'+
    '<div id="cpYearSyncGrid" class="cp-sync-year-grid" aria-live="polite"></div></details>');
   window.CoraHolidays?.mountManager({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year,onPublish:publishHolidayDecisions});
+  window.CoraHolidayAudit?.mount({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year,api,toast});
   window.CoraCompliance?.mount({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year});
   window.CoraSinepe2027?.mount({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year});
   const reviewController=window.CoraYearReview?.mount({
@@ -492,6 +493,11 @@
   const pending=drafts.filter(e=>e.status==='Em revisão'||e.needsReview);
   const approved=drafts.filter(e=>e.status!=='Em revisão'&&!e.needsReview);
   const monthName=window.CoraMonthPublication?.MONTHS?.[m]||'mês selecionado';
+  const wrongHolidayDates=window.CoraHolidayAudit?.findConflicts?.(approved,y)||[];
+  if(wrongHolidayDates.length){
+   toast('Publicação interrompida: '+wrongHolidayDates.length+' data(s) de feriados móveis divergentes. Abra Feriados → Conferir divergências.');
+   return false;
+  }
   if(!approved.length){
    toast('Não há eventos aprovados em '+monthName+'. Confira as datas importadas primeiro.');
    window.CoraYearReview?.requestOpen?.(y,m);
@@ -530,6 +536,8 @@
  }
  async function publish(){
   const year=Number(window.CoraYears?.activeYear)||2026;const {drafts,ready:events}=publicationCandidates(year);
+  const wrongHolidayDates=window.CoraHolidayAudit?.findConflicts?.(events,year)||[];
+  if(wrongHolidayDates.length){toast('Publicação interrompida: '+wrongHolidayDates.length+' data(s) móveis incorretas. Confira a auditoria do Gestor de Feriados.');return;}
   const pending=drafts.filter(e=>e.status==='Em revisão'||e.needsReview);
   const btn=$('#cpPublishNow');if(!btn)return;
   if(pending.length&&!confirm('Atenção: '+pending.length+' evento(s) de '+year+' ainda estão em revisão e NÃO serão enviados à Equipe. Deseja publicar somente os eventos aprovados?'))return;
@@ -563,6 +571,8 @@
    const byId=new Map(unchanged.map(e=>[String(e.id),e]));
    for(const e of holidayDraft)byId.set(String(e.id),e);
    const merged=[...byId.values()].sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.title).localeCompare(String(b.title),'pt-BR'));
+   const wrongHolidayDates=window.CoraHolidayAudit?.findConflicts?.(merged,target)||[];
+   if(wrongHolidayDates.length)throw Error(wrongHolidayDates.length+' data(s) divergente(s) em feriados móveis. Abra Feriados → Conferir divergências antes de publicar.');
    const payload={
     year:target,events:merged,
     notices:Array.isArray(previous.notices)?previous.notices:[],
