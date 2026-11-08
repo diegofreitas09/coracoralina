@@ -1,0 +1,33 @@
+name: Conferência Carnaval 2027 - Gestão e Equipe
+on:
+  pull_request:
+    paths:
+      - 'calendario-anual/**'
+      - 'netlify/functions/**'
+  push:
+    branches:
+      - fix/carnaval-2027-gestao-equipe-producao
+    paths:
+      - 'calendario-anual/**'
+      - 'netlify/functions/**'
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir sintaxe JavaScript e ESM
+        run: |
+          node --check calendario-anual/calendar-integrity.js
+          node --check calendario-anual/year-transfer.js
+          node --check calendario-anual/portal.js
+          node --check calendario-anual/holidays-manager.js
+          node --check calendario-anual/team-calendar-view.js
+          node --check calendario-anual/calendar-pdf-activities.js
+          node --check calendario-anual/service-worker.js
+          node --check netlify/functions/lib/cora-carnaval-2027.mjs
+          node --check netlify/functions/cora-portal.mjs
+      - name: Validar datas, leitura, PDFs, backup e bloqueio de republicação
+        run: node calendario-anual/test-fix-carnaval-2027.mjs
