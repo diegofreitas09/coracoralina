@@ -35,6 +35,9 @@
    const invalidStages=stages.filter(s=>Boolean(s.start)!==Boolean(s.end)||(s.start&&s.end&&(!date(s.start)||!date(s.end)||s.start>s.end||!groupYear(s.start,y)||!groupYear(s.end,y))));
    if(invalidStages.length)add('error','Etapas com limites inválidos',invalidStages.length+' etapa(s) com início ou fim inconsistentes.','stages');
    if(y===2027){
+    const defined=stages.filter(s=>date(s.start)&&date(s.end)&&s.start<=s.end).length;
+    if(defined<4)add('attention','Etapas aguardando publicação',
+      (4-defined)+' etapa(s) ainda sem início e fim definidos na publicação.','stage-pending');
     const outside=events.filter(e=>{
      if(!/cora-periodo-avaliacao-|^cora-simulado-sae-/.test(keyOf(e))&&!e.assessmentWindow)return false;
      if(e.assessmentDelivery)return false;
