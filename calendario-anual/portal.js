@@ -54,6 +54,7 @@
  function loadNoticeDraft(y=year){try{const v=JSON.parse(localStorage.getItem(noticeKey(y))||'[]');return Array.isArray(v)?v:[]}catch{return []}}
  function logo(){return window.CORA_SCHOOL_LOGO||window.CORA_STUDIO_ASSETS?.logo||''}
  function gateway(error=''){
+  window.CoraMonthlyPublication=null;
   window.CoraGrader?.reset?.();
   window.CoraHelpdesk?.teardown();
   document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');role='';
@@ -97,6 +98,11 @@
     birthdaysLocal:window.CoraBirthdays?.all?.()||[],
     stages:window.CoraStages?.get?.(targetYear)||[]
    });
+   window.CoraMonthlyPublication={year:targetYear,updatedAt:reply.publication?.updatedAt||null,
+    months:report.months.map(m=>({month:m.month,ready:m.ready,pending:m.pending,
+      published:m.published,projects:m.projects,publishedProjects:m.publishedProjects,
+      stagesPending:m.stagesPending,status:m.status}))};
+   window.dispatchEvent(new CustomEvent('cora-month-publication-updated',{detail:{year:targetYear}}));
    const n=report.counts;
    status.textContent=targetYear+' · '+n.synchronized+' meses com atividades sincronizadas · '+n.empty+' sem atividades pedagógicas · '+n.pending+' em revisão · '+n.stale+' com alterações · '+n.unpublished+' sem publicação';
    area.innerHTML=report.months.map(m=>{
@@ -169,8 +175,14 @@
    return true;
   };
   $('#cpSyncReload')?.addEventListener('click',()=>void checkYearSync());
+  window.addEventListener('cora-events-updated',e=>{
+   if(role==='gestao'&&Number(e.detail?.year)===Number(window.CoraYears?.activeYear))void checkYearSync();
+  });
+  window.addEventListener('cora-data-changed',e=>{
+   if(role==='gestao'&&Number(e.detail?.year)===Number(window.CoraYears?.activeYear))void checkYearSync();
+  });
   $('#cpReviewImportedYear')?.addEventListener('click',()=>{
-   reviewController?.open();
+   reviewController?.open(Math.max(0,Math.min(11,Number(window.CoraYears?.month)||0)));
   });
   $('#cpPrepareSchoolYear')?.addEventListener('click',()=>{
    const target=Number(window.CoraYears?.activeYear)||2026;
@@ -283,6 +295,7 @@
   window.addEventListener('cora-year-changed',e=>{
    if(role!=='gestao')return;
    year=Number(e.detail?.year)||2026;managerNotices=loadNoticeDraft(year);
+   window.CoraMonthlyPublication=null;
    renderNoticeRows();
    const current=$('#cpPubStatus');if(current)current.textContent='Ano '+year+' · pronto para publicar';
    void checkYearSync(year);
