@@ -40,7 +40,7 @@ assert.equal(published.filter(e=>e.assessmentDelivery).length,4);
 assert.ok(JSON.stringify(api.get(2027).items.map(r=>r.due))===JSON.stringify(dues));
 let inCalendar=JSON.parse(store.get('cora_calendario_eventos_2027_v1'));
 assert.equal(inCalendar.filter(e=>e.id.startsWith('cora-simulado-sae-')).length,4);
-assert.equal(api.save(copy).ok,true);
+const repeated=api.save(copy);assert.equal(repeated.ok,true,repeated.error||'Segundo salvamento falhou');
 inCalendar=JSON.parse(store.get('cora_calendario_eventos_2027_v1'));
 assert.equal(inCalendar.filter(e=>e.id.startsWith('cora-simulado-sae-')).length,4,'Regravar não duplica Simulado SAE');
 const changed=JSON.parse(JSON.stringify(data));changed.items[2].items[1].start='2027-09-27';
