@@ -1,0 +1,20 @@
+/* Monitor compacto de integração; Gestão e Equipe. */
+.cora-integration-audit{border:1px solid #d9e5ef;background:#fff;border-radius:16px;padding:18px 19px;margin:14px 0 19px;color:#143b5b;box-shadow:0 6px 20px #0d315b08}
+.cora-integration-audit .cora-audit-title{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.cora-integration-audit .cora-audit-title small{font-size:10px;font-weight:850;letter-spacing:1px;color:#547b9b}
+.cora-integration-audit h3{font-size:16px;font-weight:850;color:#173e5d;margin:5px 0}
+.cora-integration-audit p{font-size:12px;line-height:1.5;color:#5d7388;margin:5px 0 8px}
+.cora-integration-audit .cora-audit-pill{font-size:11px;font-weight:800;border-radius:20px;background:#eff4f8;color:#385e78;padding:7px 10px}
+.cora-integration-audit.is-ok{border-left:4px solid #2b7866}
+.cora-integration-audit.has-warning{border-left:4px solid #b7812e}
+.cora-integration-audit.has-error{border-left:4px solid #bd4e48}
+.cora-integration-audit .cora-audit-stat{display:flex;flex-wrap:wrap;gap:7px 16px;margin:12px 0;font-size:11px;color:#5d748a}
+.cora-integration-audit .cora-audit-stat b{color:#1b4a6d}
+.cora-integration-audit .cora-audit-issues{list-style:none;margin:10px 0;padding:0;display:grid;gap:7px}
+.cora-integration-audit .cora-audit-issues li{background:#f8fafc;border:1px solid #e1eaf0;border-radius:10px;padding:9px 11px}
+.cora-integration-audit .cora-audit-issues li.is-error{border-left:3px solid #bd4e48}
+.cora-integration-audit .cora-audit-issues li.is-warning{border-left:3px solid #b7812e}
+.cora-integration-audit .cora-audit-issues strong{display:block;font-size:12px;color:#1d425f}
+.cora-integration-audit .cora-audit-issues small{display:block;margin-top:4px;color:#657a8d;line-height:1.5;font-size:11px}
+.cora-integration-audit .cora-audit-meta{font-size:10px;color:#73879a;margin:10px 0 0}
+@media(max-width:640px){.cora-integration-audit{padding:12px 11px}.cora-integration-audit .cora-audit-title{gap:6px}.cora-integration-audit h3{font-size:14px}.cora-integration-audit .cora-audit-stat{gap:4px 10px}}
