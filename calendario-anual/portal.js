@@ -291,7 +291,15 @@
     const status=$('#cpAccountsStatus');if(status)status.textContent='Relatório copiado. Cole na aba Auditoria de Logins, célula A1. Esta transferência é manual.';
    }catch(e){toast('Não foi possível copiar relatório: '+e.message)}finally{button.disabled=false}
   };
-  $('#cpAccountsOpen').onclick=()=>{$('#cpAccountsPanel').classList.remove('cp-hidden');void loadAccounts()};
+  // Roteiros: usa as contas individuais já cadastradas, sem cadastrar senhas em outra base.
+  root.insertAdjacentHTML('beforeend','<section id="cpRoteirosManager" class="cr-root" hidden aria-label="Roteiros e cronograma das avaliações"></section>');
+  $('#cpAccountsOpen').insertAdjacentHTML('beforebegin','<button id="cpRoteirosOpen" class="cp-btn soft" type="button">Roteiros pedagógicos</button>');
+  $('#cpRoteirosOpen').onclick=()=>{
+   const panel=$('#cpRoteirosManager');panel.hidden=!panel.hidden;
+   if(!panel.hidden){void window.CoraRoteiros?.mount?.({role:'gestao',host:panel,year:Number(window.CoraYears?.activeYear)||year,api});
+    panel.scrollIntoView({behavior:'smooth',block:'start'});}
+  };
+    $('#cpAccountsOpen').onclick=()=>{$('#cpAccountsPanel').classList.remove('cp-hidden');void loadAccounts()};
   $('#cpAccountsClose').onclick=()=>$('#cpAccountsPanel').classList.add('cp-hidden');
   $('#cpEnforceIndividual').onclick=async()=>{
    if(!confirm('ATENÇÃO: depois da confirmação, a senha coletiva da Equipe deixará de abrir o calendário. Professores sem conta individual ativa não conseguirão entrar. Confirmar?'))return;
@@ -893,6 +901,7 @@
  function drawTeam(){const here=$('#cpView');if(!here)return;
   // Preserva identificações e correções digitadas durante atualizações automáticas.
   if(tab==='correcao'&&!showBell&&$('#coraGrader')?.querySelector('#cgTestForm, #cgResultForm'))return;
+  if(tab==='roteiros'&&!showBell&&here.querySelector('#crTeamPanel #crEditorForm'))return;
   const events=filteredEvents(),notes=activeNotices(),assess=events.filter(e=>isAssessment(e)&&!isSecond(e)),alertList=upcoming(),unread=alertList.filter(a=>a.unread).length;
   const badge=$('#cpBellCount');if(badge){badge.style.display=unread?'block':'none';badge.textContent=unread>99?'99+':String(unread);badge.setAttribute('aria-label',unread+' alertas não lidos')}const bell=$('#cpBell');if(bell){bell.classList.toggle('has-unread',unread>0);bell.setAttribute('aria-label',unread?unread+' alertas novos. Abrir notificações':'Abrir notificações')}
   const annualSource={year,month,events,stages:Array.isArray(data?.stages)?data.stages:[],
@@ -903,7 +912,7 @@
   const selectedMonthGrid=(assessmentOnly=false,pdf=false)=>sameYearView?.monthGrid?.(
    {...annualSource,events:assessmentOnly?assess:events,
     birthdays:assessmentOnly?[]:annualSource.birthdays,projects:assessmentOnly?[]:annualSource.projects},{pdf,assessmentsOnly:assessmentOnly})||'';
-  const sections=[['resumo','Visão Geral'],['calendario','Calendário '+year],['feriados','Feriados e dias letivos'],['etapas','Etapas letivas'],['avaliacoes','Avaliações e Simulados'],['entregas','Prazos de entrega'],['aniversarios','🎂 Aniversariantes'],['avisos','Avisos'],['equipe','Equipe em números'],['correcao','Corretor de gabaritos'],['pdf','PDF Anual']];
+  const sections=[['resumo','Visão Geral'],['calendario','Calendário '+year],['feriados','Feriados e dias letivos'],['etapas','Etapas letivas'],['avaliacoes','Avaliações e Simulados'],['roteiros','Digitação de roteiros'],['entregas','Prazos de entrega'],['aniversarios','🎂 Aniversariantes'],['avisos','Avisos'],['equipe','Equipe em números'],['correcao','Corretor de gabaritos'],['pdf','PDF Anual']];
   const tabs=`<div class="cp-tabs">${sections.map(([id,label])=>`<button class="${tab===id?'active':''}" data-cp-tab="${id}">${label}</button>`).join('')}</div>`;
   const alertPrompt=!showBell&&unread?'<button type="button" id="cpUnreadPrompt" class="cp-unread-banner">🔔 '+unread+' alerta(s) não lido(s) · Toque para ver os recados da Gestão</button>':'';
 
@@ -912,7 +921,7 @@
   const todayISO=dateStr(new Date());
   const currentStage=stageList.find(st=>st.start&&st.end&&todayISO>=st.start&&todayISO<=st.end);
   const closestStage=currentStage||stageList.find(st=>st.start&&st.start>todayISO)||stageList.find(st=>st.start);
-  const quickLinks=[['calendario','calendar','Calendário','Atividades e projetos'],['feriados','calendar','Feriados','Aulas e recessos'],['avaliacoes','check','Avaliações','Provas e simulados'],
+  const quickLinks=[['calendario','calendar','Calendário','Atividades e projetos'],['feriados','calendar','Feriados','Aulas e recessos'],['avaliacoes','check','Avaliações','Provas e simulados'],['roteiros','check','Roteiros','Digitação por disciplina'],
     ['entregas','clock','Entregas','Prazos e e-mails'],['avisos','message','Comunicados','Orientações da Gestão'],['equipe','people','Equipe em números','Professores e acessos'],['correcao','check','Corretor de gabaritos','Captura e notas da turma'],['pdf','pdf','PDF anual','Documento completo']].map(item=>
     '<button type="button" class="cp-flow-link" data-cp-tab="'+item[0]+'"><span class="cp-flow-icon">'+cpTeamTileIcon(item[1])+'</span>'+
     '<span><strong>'+item[2]+'</strong><small>'+item[3]+'</small></span></button>').join('')+
@@ -928,10 +937,10 @@
   const teacherTools='<section class="cp-teacher-tools" aria-labelledby="cpTeacherToolsTitle">'+
    '<div class="cp-teacher-tools-head"><div><small>ACESSOS PEDAGÓGICOS</small><h3 id="cpTeacherToolsTitle">Ferramentas do professor</h3></div><span>Roteiros, notas, agenda e materiais digitais</span></div>'+
    '<div class="cp-teacher-tools-grid">'+
-    '<a class="cp-teacher-tool" href="'+TEACHER_LINKS.roteiros+'" target="_blank" rel="noopener noreferrer" aria-label="Abrir planilha de roteiros para professores do Fundamental II e Ensino Médio em nova aba">'+
+    '<button type="button" class="cp-teacher-tool" data-cp-tab="roteiros" aria-label="Abrir os roteiros integrados da Equipe Pedagógica">'+
      '<span class="cp-teacher-tool-icon cp-teacher-tool-roteiros" aria-hidden="true">'+roteiroIcon+'</span>'+
-     '<span class="cp-teacher-tool-copy"><strong>Digitação de roteiros</strong><small>Professores do Fundamental II e Ensino Médio</small></span>'+
-     '<span class="cp-teacher-tool-open" aria-hidden="true">'+openIcon+'</span></a>'+
+     '<span class="cp-teacher-tool-copy"><strong>Digitação de roteiros</strong><small>Minhas séries, disciplinas e avaliações</small></span>'+
+     '<span class="cp-teacher-tool-open" aria-hidden="true">'+openIcon+'</span></button>'+
     '<a class="cp-teacher-tool" href="'+TEACHER_LINKS.gestor+'" target="_blank" rel="noopener noreferrer" aria-label="Abrir Gestor Escolar para digitação de notas em nova aba">'+
      '<span class="cp-teacher-tool-icon cp-teacher-tool-gestor" data-tool-icon="gestor" aria-hidden="true">'+gestorIcon+'</span>'+
      '<span class="cp-teacher-tool-copy"><strong>Gestor Escolar</strong><small>Digitação de notas</small></span>'+
@@ -1002,6 +1011,8 @@
      '<p class="cp-calendar-empty-note">'+(tab==='avaliacoes'?'Nenhuma avaliação aprovada e publicada em '+MONTHS[month]+' de '+year+'.':
       'Nenhuma atividade pedagógica aprovada e publicada em '+MONTHS[month]+' de '+year+'. Os projetos e aniversariantes já aparecem no próprio calendário. A Gestão pode ter eventos aguardando revisão.')+'</p>'}
    ${tab==='calendario'?'<div class="cg-toolbar"><button class="cp-btn gold" id="cpDownloadMonth" type="button">↓ PDF completo de '+safe(MONTHS[month])+'</button></div>':''}${yearOverview}${annualBirthdays}`;
+  }else if(tab==='roteiros'){
+   content='<section id="crTeamPanel" class="cr-root" aria-label="Roteiros individuais de avaliação"></section>';
   }else if(tab==='entregas'){
     const rows=events.filter(e=>e.assessmentDelivery).sort((a,b)=>Number(a.stageNumber)-Number(b.stageNumber));
     const contents=events.filter(e=>e.type==='Entrega de conteúdo').sort((a,b)=>a.date.localeCompare(b.date));
@@ -1066,6 +1077,7 @@
 
   here.innerHTML=`${showBell?'':`<div class="cp-overview"><div class="cp-metric"><small>Atividades publicadas</small><strong>${events.length}</strong></div><div class="cp-metric"><small>Avaliações e simulados</small><strong>${assess.length}</strong></div><div class="cp-metric"><small>Avisos disponíveis</small><strong>${notes.length}</strong></div></div>${tabs}`}${flowHeader}${alertPrompt}${content}<p class="cp-updated">Última publicação da Gestão: ${data?new Date(data.updatedAt).toLocaleString('pt-BR'):'ainda não publicada'} · Atualização automática enquanto o aplicativo estiver aberto.</p>`;
   if(tab==='correcao'&&!showBell)window.CoraGrader?.mount({root:here,callApi:api,toast,profile:teacherProfile});
+  if(tab==='roteiros'&&!showBell)void window.CoraRoteiros?.mount?.({role:'equipe',host:here.querySelector('#crTeamPanel'),year,api});
   here.querySelectorAll('[data-cp-delivery-status]').forEach(button=>button.addEventListener('click',async()=>{
     if(teacherSaving||!teacherProfile?.identified)return;
     const stage=Number(button.dataset.cpDeliveryStage),status=button.dataset.cpDeliveryStatus;
