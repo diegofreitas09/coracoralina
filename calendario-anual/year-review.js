@@ -4,6 +4,7 @@
 (()=>{
  'use strict';
  const MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+ let activeReview=null;
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const key=y=>'cora_calendario_eventos_'+y+'_v1';
  const pending=e=>e?.needsReview===true||e?.status==='Em revisão';
@@ -108,10 +109,18 @@
   const onEvent=e=>{if(Number(e.detail?.year)===year&&panel.open)paint()};
   window.addEventListener('cora-year-changed',()=>{year=Number(getYear?.()||2026);paint()});
   window.addEventListener('cora-data-changed',onEvent);
-  return {refresh:paint,open(m){
+  const controller={refresh:paint,open(m){
    if(Number.isInteger(m)&&m>=0&&m<12){month=m;$('#cpYearReviewMonth').value=String(m)}
    host.open=true;panel.open=true;paint();panel.scrollIntoView({behavior:'smooth',block:'start'});
   }};
+  activeReview={controller,getYear:()=>Number(getYear?.()||year),panel};
+  return controller;
  }
- window.CoraYearReview={mount,reviewChanges,validDate,byMonth};
+ function requestOpen(targetYear,month){
+  if(!activeReview||!document.contains(activeReview.panel)||
+     activeReview.getYear()!==Number(targetYear))return false;
+  activeReview.controller.open(Number.isInteger(month)?month:0);
+  return true;
+ }
+ window.CoraYearReview={mount,reviewChanges,validDate,byMonth,requestOpen};
 })();
