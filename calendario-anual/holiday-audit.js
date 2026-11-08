@@ -40,7 +40,7 @@
      const result=expected(e,year);
      if(!result||result.expected===e.date)return [];
      return [{...result,id:String(e.id||''),date:String(e.date||''),title:String(e.title||''),
-       imported:fromPriorYear(e,year),event:e}];
+       imported:fromPriorYear(e,year),schoolConfirmedDuplicate:year===2027&&Boolean(window.CoraSchoolCarnival2027?.isInvalidLegacy?.(e)),event:e}];
    });
  }
  let panel=null,working=false,scanData=null,fnApi=null,fnYear=null,notify=null;
@@ -52,7 +52,7 @@
    if(!panel||!scanData)return;
    const {year,remote,local,proposed,localProposed,manual}=scanData;
    const rows=arr=>arr.map(e=>'<li><strong>'+esc(format(e.date))+' · '+esc(e.title)+'</strong>'+
-     '<span>O calendário correto é '+esc(format(e.expected))+' ('+esc(e.kind)+').'+(e.imported?' Origem: importação anterior.':' Origem não confirmada; revisão manual.')+'</span></li>').join('');
+     '<span>O calendário correto é '+esc(format(e.expected))+' ('+esc(e.kind)+').'+(e.imported?' Origem: importação anterior.':e.schoolConfirmedDuplicate?' Carnaval 2027: data inválida confirmada pela escola.':' Origem não confirmada; revisão manual.')+'</span></li>').join('');
    $('#coraAuditDetails',panel).innerHTML='<p><strong>'+remote.length+'</strong> divergência(s) no calendário publicado; <strong>'+local.length+'</strong> nos registros deste navegador.</p>'+
       (remote.length?'<ul class="cora-audit-list">'+rows(remote)+'</ul>':'<p>Nenhuma divergência publicada encontrada para '+year+'.</p>')+
       (manual.length?'<p class="cora-audit-warning">'+manual.length+' registro(s) exigem edição manual. Não serão excluídos por esta ferramenta.</p>':'')+
@@ -71,9 +71,10 @@
      const publication=response.publication||{},remoteEvents=Array.isArray(publication.events)?publication.events:[];
      const localEvents=read(localKey(y),[]);
      const remote=findConflicts(remoteEvents,y),local=findConflicts(localEvents,y);
-     const proposed=remote.filter(e=>e.imported&&e.id);
-     const localProposed=local.filter(e=>e.imported&&e.id);
-     const manual=[...remote.filter(e=>!e.imported),...local.filter(e=>!e.imported)];
+     const eligible=e=>Boolean(e.id)&&(e.imported||e.schoolConfirmedDuplicate);
+     const proposed=remote.filter(eligible);
+     const localProposed=local.filter(eligible);
+     const manual=[...remote.filter(e=>!eligible(e)),...local.filter(e=>!eligible(e))];
      scanData={year:y,publication,remoteEvents,localEvents,remote,local,proposed,localProposed,manual,updatedAt:publication.updatedAt};
      renderResult();
      show(remote.length||local.length?'Auditoria concluída: confira as divergências abaixo.':'Nenhuma divergência de feriado móvel encontrada para '+y+'.');
@@ -98,7 +99,7 @@
    try{
      const latest=await fnApi('state',undefined,'year='+d.year);
      const currentPublication=latest.publication||{},currentEvents=Array.isArray(currentPublication.events)?currentPublication.events:[];
-     const fresh=findConflicts(currentEvents,d.year).filter(e=>e.imported&&e.id);
+     const fresh=findConflicts(currentEvents,d.year).filter(e=>e.id&&(e.imported||e.schoolConfirmedDuplicate));
      const old=new Set(d.proposed.map(e=>e.id+'|'+e.date));
      const same=fresh.length===d.proposed.length&&fresh.every(e=>old.has(e.id+'|'+e.date));
      if(!same||String(currentPublication.updatedAt||'')!==String(d.updatedAt||'')){
@@ -120,7 +121,7 @@
      }
      const own=read(localKey(d.year),[]);
      if(Array.isArray(own)){
-       const cleaned=own.filter(e=>!ids.has(String(e.id))&&!findConflicts([e],d.year).some(x=>x.imported));
+       const cleaned=own.filter(e=>!ids.has(String(e.id))&&!findConflicts([e],d.year).some(x=>x.imported||x.schoolConfirmedDuplicate));
        try{localStorage.setItem(localKey(d.year),JSON.stringify(cleaned))}catch{show('Servidor corrigido; não foi possível atualizar o armazenamento local deste navegador.')}
      }
      window.dispatchEvent(new CustomEvent('cora-data-changed',{detail:{year:d.year,source:'audit-movable-holidays'}}));
