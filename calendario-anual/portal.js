@@ -1108,8 +1108,15 @@
        paintText(g,day,cx+10,cy+29,25);
        const iso=year+'-'+String(month+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
        const dayEvents=events.filter(a=>a.date===iso);
-       dayEvents.slice(0,3).forEach((e,i)=>{const y=cy+55+i*23;g.fillStyle='#dcecfb';g.fillRect(cx+6,y-18,cw-12,22);paintText(g,ellipsis(g,e.title,cw-22),cx+10,y,15,'#204f7d')});
-       if(dayEvents.length>3)paintText(g,'+'+(dayEvents.length-3)+' atividades',cx+8,cy+118,13,'#5e7389');
+       const school=window.CoraSchoolCarnival2027?.status?.(iso);
+       if(school){
+        const active=school.kind==='aula',color=active?'#206846':'#963c2e';
+        g.fillStyle=active?'#e5f5e9':'#fff0e7';g.fillRect(cx+6,cy+34,cw-12,22);
+        const label=active?(iso==='2027-02-11'?'RETORNO · AULA NORMAL':'AULA NORMAL'):'SEM AULA';
+        paintText(g,label,cx+10,cy+50,13,color);
+       }
+       dayEvents.slice(0,school?2:3).forEach((e,i)=>{const y=cy+(school?79:55)+i*23;g.fillStyle='#dcecfb';g.fillRect(cx+6,y-18,cw-12,22);paintText(g,ellipsis(g,e.title,cw-22),cx+10,y,15,'#204f7d')});
+       if(dayEvents.length>(school?2:3))paintText(g,'+'+(dayEvents.length-(school?2:3))+' atividades',cx+8,cy+118,13,'#5e7389');
        const born=birthdayPeople.filter(p=>Number(p.day)===day);
        if(born.length){
         g.fillStyle='#ffebae';g.fillRect(cx+cw-84,cy+6,78,26);
