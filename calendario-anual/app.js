@@ -674,7 +674,7 @@
     window.addEventListener('cora-audience-changed',()=>render());
     window.addEventListener('cora-projects-changed',e=>{if(Number(e.detail?.year)===YEAR)render();});
     window.addEventListener('cora-stages-updated',e=>{if(Number(e.detail?.year)===YEAR)render();});
-    window.addEventListener('cora-data-changed',e=>{if(Number(e.detail.year)===YEAR){loadEvents();render();}});
+    window.addEventListener('cora-data-changed',e=>{if(Number(e.detail?.year)===YEAR){loadEvents();render();if(e.detail?.source==='holiday-file'&&database)void refreshFiles().then(render).catch(()=>{});}});
     window.addEventListener('cora-month-publication-updated',e=>{
      if(Number(e.detail?.year)===YEAR)renderPublicationStatus(eventsFor(selectedMonth));
     });
