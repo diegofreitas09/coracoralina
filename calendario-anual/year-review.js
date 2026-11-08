@@ -110,7 +110,7 @@
   window.addEventListener('cora-data-changed',onEvent);
   return {refresh:paint,open(m){
    if(Number.isInteger(m)&&m>=0&&m<12){month=m;$('#cpYearReviewMonth').value=String(m)}
-   panel.open=true;paint();panel.scrollIntoView({behavior:'smooth',block:'start'});
+   host.open=true;panel.open=true;paint();panel.scrollIntoView({behavior:'smooth',block:'start'});
   }};
  }
  window.CoraYearReview={mount,reviewChanges,validDate,byMonth};
