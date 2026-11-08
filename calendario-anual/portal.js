@@ -168,6 +168,7 @@
    '<button type="button" id="cpReviewImportedYear">Conferir atividades importadas</button>'+
    '<span id="cpSyncLastCheck" role="status"></span></div>'+
    '<div id="cpYearSyncGrid" class="cp-sync-year-grid" aria-live="polite"></div></details>');
+  window.CoraHolidays?.mountManager({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year,onPublish:publish});
   const reviewController=window.CoraYearReview?.mount({
    host:$('#cpYearSync'),getYear:()=>Number(window.CoraYears?.activeYear)||2026,
    onChange:(targetYear)=>void checkYearSync(targetYear),notify:toast
@@ -825,7 +826,7 @@
   const selectedMonthGrid=(assessmentOnly=false,pdf=false)=>sameYearView?.monthGrid?.(
    {...annualSource,events:assessmentOnly?assess:events,
     birthdays:assessmentOnly?[]:annualSource.birthdays,projects:assessmentOnly?[]:annualSource.projects},{pdf,assessmentsOnly:assessmentOnly})||'';
-  const sections=[['resumo','Visão Geral'],['calendario','Calendário '+year],['etapas','Etapas letivas'],['avaliacoes','Avaliações e Simulados'],['entregas','Prazos de entrega'],['aniversarios','🎂 Aniversariantes'],['avisos','Avisos'],['equipe','Equipe em números'],['correcao','Corretor de gabaritos'],['pdf','PDF Anual']];
+  const sections=[['resumo','Visão Geral'],['calendario','Calendário '+year],['feriados','Feriados e dias letivos'],['etapas','Etapas letivas'],['avaliacoes','Avaliações e Simulados'],['entregas','Prazos de entrega'],['aniversarios','🎂 Aniversariantes'],['avisos','Avisos'],['equipe','Equipe em números'],['correcao','Corretor de gabaritos'],['pdf','PDF Anual']];
   const tabs=`<div class="cp-tabs">${sections.map(([id,label])=>`<button class="${tab===id?'active':''}" data-cp-tab="${id}">${label}</button>`).join('')}</div>`;
   const alertPrompt=!showBell&&unread?'<button type="button" id="cpUnreadPrompt" class="cp-unread-banner">🔔 '+unread+' alerta(s) não lido(s) · Toque para ver os recados da Gestão</button>':'';
 
@@ -834,7 +835,7 @@
   const todayISO=dateStr(new Date());
   const currentStage=stageList.find(st=>st.start&&st.end&&todayISO>=st.start&&todayISO<=st.end);
   const closestStage=currentStage||stageList.find(st=>st.start&&st.start>todayISO)||stageList.find(st=>st.start);
-  const quickLinks=[['calendario','calendar','Calendário','Atividades e projetos'],['avaliacoes','check','Avaliações','Provas e simulados'],
+  const quickLinks=[['calendario','calendar','Calendário','Atividades e projetos'],['feriados','calendar','Feriados','Aulas e recessos'],['avaliacoes','check','Avaliações','Provas e simulados'],
     ['entregas','clock','Entregas','Prazos e e-mails'],['avisos','message','Comunicados','Orientações da Gestão'],['equipe','people','Equipe em números','Professores e acessos'],['correcao','check','Corretor de gabaritos','Captura e notas da turma'],['pdf','pdf','PDF anual','Documento completo']].map(item=>
     '<button type="button" class="cp-flow-link" data-cp-tab="'+item[0]+'"><span class="cp-flow-icon">'+cpTeamTileIcon(item[1])+'</span>'+
     '<span><strong>'+item[2]+'</strong><small>'+item[3]+'</small></span></button>').join('')+
@@ -901,6 +902,8 @@
    content=`<div class="cp-birthday-teaser"><div class="cp-main-heading"><h2>🎂 Aniversariantes de ${MONTHS[thisMonth-1]}</h2><button class="cp-btn soft" id="cpSeeBirthdays">Ver todos os meses</button></div>
    <div class="cp-list">${birthdayList.length?birthdayList.map(birthdayEntry).join(''):'<p class="cp-muted">Nenhum aniversariante publicado para este mês.</p>'}</div><div class="cp-birthday-next"><strong>Próximo mês · ${MONTHS[nextMonth-1]}</strong><div class="cp-birthday-preview">${nextBirthdays.length?nextBirthdays.map(p=>`<span>${safe(String(p.day).padStart(2,'0'))}/${safe(String(p.month).padStart(2,'0'))} · ${safe(p.name)}</span>`).join(''):'<span>Nenhum aniversariante cadastrado</span>'}</div></div></div>
    <h2 style="color:#12375e;margin-top:28px">Comunicados recentes</h2>${notes.slice(0,3).map(noticeHtml).join('')||'<p class="cp-muted">Sem avisos recentes.</p>'}`;
+  }else if(tab==='feriados'){
+   content=window.CoraHolidays?.teacherPanel?.(year,events,'all')||'<p>Calendário de feriados indisponível.</p>';
   }else if(tab==='calendario'||tab==='avaliacoes'){
    const arr=(tab==='avaliacoes'?assess:events).filter(e=>Number(e.date.slice(5,7))===month+1);
    const yearOverview=compactYearSummary();
