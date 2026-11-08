@@ -1,0 +1,172 @@
+/* Colégio Cora Coralina · painel limpo, com navegação por páginas. */
+.cora-route-hidden{display:none!important}
+.cora-exec svg,.cora-menu-toggle svg,#coraManageNav svg,#coraTeamDrawer svg{width:19px;height:19px;flex:0 0 19px;display:block}
+.cora-menu-toggle{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;min-width:44px;border-radius:12px;border:1px solid #cfdbeb;background:#fff;color:#123b62;cursor:pointer}
+.cora-menu-toggle:focus-visible,#coraManageNav button:focus-visible,#coraTeamDrawer button:focus-visible{outline:3px solid #e2b842;outline-offset:2px}
+#coraManagerMenu{display:none}
+body.cora-exec-manager #app .sidebar{width:252px!important;max-width:252px!important;min-width:252px!important;min-height:100vh!important;height:100vh!important;top:0!important;position:sticky!important;display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;grid-template-columns:none!important;align-items:stretch!important;gap:6px!important;padding:21px 13px 15px!important;overflow-y:auto;overflow-x:hidden}
+body.cora-exec-manager #app .sidebar .brand{display:flex!important;flex:0 0 auto;padding:2px 4px 16px!important;margin:0 0 8px!important}
+body.cora-exec-manager #app .sidebar .year-label{display:block!important;padding:10px 9px 2px!important;color:#b5c8df!important}
+body.cora-exec-manager #app .sidebar .year-block{display:flex!important;flex:0 0 auto;margin:0!important;padding:0 4px 7px!important}
+body.cora-exec-manager #app #monthNav{flex:0 0 auto!important;display:grid!important;overflow-y:visible!important;overflow-x:visible!important;max-height:none!important;grid-template-columns:1fr 1fr;gap:2px;padding:4px 0!important;min-width:0}
+body.cora-exec-manager #app #monthNav.cora-route-hidden{display:none!important}
+body.cora-exec-manager #app #monthNav button{min-width:0;min-height:32px;padding:6px!important;text-align:center;white-space:nowrap;display:block;font-size:11px}
+#coraManageNav{display:flex!important;flex:0 0 auto!important;flex-direction:column!important;align-items:stretch!important;gap:3px;padding:6px 0 0;margin:0;overflow:visible!important;min-width:0;max-width:100%}
+#coraManageNav .cora-nav-caption{padding:12px 12px 5px;font-size:9px;letter-spacing:1.15px;font-weight:850;color:#a5bcd5}
+#coraManageNav button{display:flex!important;align-items:center;gap:10px;width:100%;border:0!important;background:transparent!important;border-radius:10px;padding:11px 10px!important;color:#ccd9ea!important;text-align:left;font-size:12px;line-height:1.3;font-weight:700;cursor:pointer;min-height:39px}
+#coraManageNav button span{flex:1;min-width:0}
+#coraManageNav button svg:last-child{width:14px;height:14px;flex-basis:14px;opacity:.55}
+#coraManageNav button:hover{background:#ffffff16!important;color:#fff!important}
+#coraManageNav button.is-active{background:#2c557f!important;color:#fff!important;box-shadow:inset 3px 0 #e2b64b}
+body.cora-exec-manager #app .sidebar-foot{display:block!important;margin-top:auto;padding:14px 4px;color:#a8bdd6}
+.cora-route-title{display:flex;gap:7px;align-items:center;margin-bottom:18px;padding:10px 14px;border:1px solid #e2e9f2;background:#fff;border-radius:12px;font-size:12px}
+.cora-route-title span{font-weight:750;color:#8194a9}
+.cora-route-title strong{color:#123b61;font-weight:850}
+.cora-exec{margin:0 0 32px}
+.cora-exec-heading{display:flex;justify-content:space-between;gap:14px;align-items:center;margin:0 0 18px;background:linear-gradient(115deg,#102b4d,#1e527e);padding:26px 29px;border-radius:19px;color:#fff}
+.cora-exec-heading small{display:block;color:#ebc96d;font-size:10px;font-weight:850;letter-spacing:1.35px}
+.cora-exec-heading h2{color:#fff!important;margin:6px 0 4px;font-size:clamp(22px,2.6vw,31px);letter-spacing:-.7px}
+.cora-exec-heading p{color:#d6e4f0;margin:4px 0 0}
+.cora-exec-year{border:1px solid #ffffff60;padding:10px 14px;border-radius:11px;font-size:21px;font-weight:850;color:#f5d078}
+.cora-exec h3{margin:25px 0 13px;color:#173b60;font-size:16px;font-weight:850}
+.cora-exec-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.cora-exec-grid.cora-exec-week{grid-template-columns:repeat(7,minmax(0,1fr))}
+.cora-exec-card{min-width:0;background:#fff;color:#193957;border:1px solid #dce5ef;border-radius:15px;padding:16px;box-shadow:0 4px 20px #18395c08;display:flex;align-items:flex-start;flex-direction:column;min-height:125px}
+.cora-exec-icon{display:grid;place-items:center;width:37px;height:37px;border-radius:10px;background:#edf4fb;color:#1d659b;margin-bottom:12px}
+.cora-exec-card strong{color:#13395d;font-size:28px;line-height:1.05;letter-spacing:-.9px}
+.cora-exec-card span{font-size:12px;line-height:1.45;font-weight:800;margin-top:6px}
+.cora-exec-card small{display:block;font-size:10px;line-height:1.45;color:#718297;margin-top:5px}
+.cora-exec-week .cora-exec-card{padding:12px;min-height:112px}
+.cora-exec-week .cora-exec-card strong{font-size:24px}
+.cora-exec-note{margin:14px 2px 0;color:#6b7e92;font-size:12px;line-height:1.6}
+#coraPortal .cp-team #coraTeamMenu{background:#ffffff16;color:#fff;border-color:#ffffff50;width:41px;height:41px;min-width:41px}
+.cp-team{position:relative}
+#coraTeamDrawer{position:fixed;right:0;top:0;bottom:0;width:min(340px,88vw);max-width:100vw;padding:18px 15px 28px;background:linear-gradient(160deg,#0e294a,#123c65);z-index:2000;display:flex;flex-direction:column;gap:5px;overflow-y:auto;box-shadow:-18px 0 40px #071d3350;transform:translateX(106%);visibility:hidden;transition:transform .2s ease,visibility .2s}
+.cp-team.cora-team-drawer-open #coraTeamDrawer{transform:translateX(0);visibility:visible}
+.cp-team.cora-team-drawer-open::after{content:"";position:fixed;inset:0;background:#081a31a8;z-index:1900}
+.cora-team-drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;color:#fff;padding:5px}
+.cora-team-drawer-head strong{font-size:17px}
+#coraTeamDrawer button{display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;color:#d8e6f4;border-radius:11px;padding:11px;text-align:left;cursor:pointer;font-size:13px;font-weight:750;min-height:43px}
+#coraTeamDrawer button span{flex:1;min-width:0}
+#coraTeamDrawer button svg:last-child{width:14px;height:14px;flex:0 0 14px;opacity:.65}
+#coraTeamDrawer button.is-active,#coraTeamDrawer button:hover{background:#32628d;color:#fff}
+#coraTeamDrawer #coraTeamClose{width:40px;height:40px;justify-content:center;padding:8px}
+.cp-team #cpView>.cp-tabs,.cp-team #cpView>.cp-overview{display:none!important}
+.cp-team #cpView>.cp-quick-header,.cp-team #cpView>.cp-flow-links{display:none!important}
+.cp-team:not([data-cora-tools="yes"]) #cpView>.cp-teacher-tools{display:none!important}
+.cp-team[data-cora-tools="yes"] #cpView>:not(.cp-teacher-tools){display:none!important}
+.cp-team[data-cora-tools="yes"] #cpView>.cp-teacher-tools{display:block!important;margin-top:18px}
+.cora-tools-heading{padding-bottom:10px}
+.cora-tools-heading h2{margin:0 0 5px;color:#123e66}
+.cora-tools-heading p{color:#637c93;margin:0}
+#coraTeamExecutive .cora-exec{margin-top:12px}
+#coraTeamExecutive .cora-exec-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+#coraTeamExecutive .cora-exec-week{grid-template-columns:repeat(7,minmax(0,1fr))}
+@media(max-width:1180px){
+  .cora-exec-grid,.cora-exec-week,#coraTeamExecutive .cora-exec-grid,#coraTeamExecutive .cora-exec-week{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(max-width:900px){
+ #coraManagerMenu{display:flex}
+ body.cora-exec-manager #app .sidebar{position:fixed!important;left:0;top:0!important;bottom:0;height:100dvh!important;min-height:0!important;width:min(300px,86vw)!important;max-width:86vw!important;min-width:0!important;z-index:2010;transform:translateX(-108%);transition:transform .2s ease;box-shadow:15px 0 35px #061a2d50}
+ body.cora-nav-open #app .sidebar{transform:translateX(0)}
+ body.cora-nav-open::before{content:"";position:fixed;inset:0;background:#071b32a6;z-index:2005}
+ body.cora-exec-manager #app.layout{display:block!important}
+ body.cora-exec-manager #app .main-shell{width:100%;max-width:100%}
+ body.cora-exec-manager #app main.content{padding:18px clamp(12px,3vw,25px) 35px}
+ .cora-exec-grid,.cora-exec-week,#coraTeamExecutive .cora-exec-grid,#coraTeamExecutive .cora-exec-week{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:560px){
+ .cora-exec-heading{padding:19px 17px;align-items:flex-start}
+ .cora-exec-heading h2{font-size:22px}
+ .cora-exec-year{font-size:16px;padding:7px 9px}
+ .cora-exec h3{margin:18px 0 10px}
+ .cora-exec-grid{gap:8px}
+ .cora-exec-card{padding:12px;min-height:112px}
+ .cora-exec-card strong{font-size:23px}
+ .cora-exec-card span{font-size:11px}
+ .cora-exec-card small{font-size:9px}
+ .cora-exec-icon{width:33px;height:33px;margin-bottom:8px}
+ .cora-exec-icon svg{width:17px;height:17px}
+ .cora-route-title{margin-bottom:9px}
+ #coraPortal .cp-team #coraTeamMenu{width:38px;min-width:38px;height:38px}
+}
+@media(prefers-reduced-motion:reduce){#coraTeamDrawer,body.cora-exec-manager #app .sidebar{transition:none!important}}
+
+/* Resumo enxuto: indicadores acima, detalhes por mês e ferramentas em suas páginas. */
+.cp-team[data-cora-tab="resumo"] #cpView>.cp-flow-hero,
+.cp-team[data-cora-tab="resumo"] #cpView>.cy-summary,
+.cp-team[data-cora-tab="resumo"] #cpView>.cp-birthday-teaser{display:none!important}
+
+/* Auditoria de datas móveis, apenas na página de feriados da Gestão. */
+#coraHolidayAudit{border:1px solid #d9e5f0;border-radius:17px;background:#fff;margin:14px 0 20px;padding:21px;box-shadow:0 5px 22px #0c345315}
+#coraHolidayAudit .cora-audit-head small{display:block;color:#35739e;font-size:10px;letter-spacing:1.1px;font-weight:850}
+#coraHolidayAudit .cora-audit-head h3{margin:6px 0;color:#143956;font-size:18px}
+#coraHolidayAudit .cora-audit-head p{margin:4px 0 15px;color:#708295;font-size:13px;line-height:1.55}
+.cora-audit-buttons{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cora-audit-buttons button{display:inline-flex;align-items:center;justify-content:center;background:#184b75;color:#fff;border:1px solid #184b75;border-radius:10px;font-weight:800;padding:10px 14px;cursor:pointer;line-height:1.35}
+.cora-audit-buttons button[hidden]{display:none!important}
+.cora-audit-buttons button:disabled{opacity:.6;cursor:wait}
+.cora-audit-buttons #coraAuditBackup{color:#1b4b72;background:#f4f8fc;border-color:#cbdce9}
+.cora-audit-buttons #coraAuditFix{background:#7c2a28;border-color:#7c2a28}
+#coraAuditStatus{margin-top:14px;color:#446781;font-size:12px}
+.cora-audit-list{list-style:none;margin:13px 0;padding:0;display:grid;grid-template-columns:1fr;gap:8px}
+.cora-audit-list li{padding:11px 13px;background:#f7f9fc;border:1px solid #e0e8ef;border-radius:10px}
+.cora-audit-list li strong{display:block;color:#1d415b;font-size:13px}
+.cora-audit-list li span{display:block;color:#718397;font-size:12px;margin-top:3px}
+.cora-audit-warning{padding:10px 12px;background:#fff7e7;border-left:3px solid #c99728;color:#78561b}
+.cora-audit-good{padding:10px 12px;background:#ecf6f2;border-left:3px solid #23826d;color:#1b685b}
+@media(max-width:580px){#coraHolidayAudit{padding:15px 12px}.cora-audit-buttons{flex-direction:column;align-items:stretch}.cora-audit-buttons button{width:100%}}
+
+/* Proposta de replanejamento 2027: avaliações por etapa e ExpoCora. */
+#cora2027Replan{margin:18px 0 26px;padding:23px;border-radius:19px;background:#fff;border:1px solid #dfebf3;box-shadow:0 9px 22px #18395708}
+#cora2027Replan[hidden]{display:none!important}
+.cora-2027-replan-heading small{display:block;font-size:10px;letter-spacing:1px;color:#2c668f;font-weight:850}
+.cora-2027-replan-heading h2{margin:5px 0;font-size:clamp(21px,2vw,27px);color:#163a5b}
+.cora-2027-replan-heading p{color:#728499;margin:4px 0 16px;max-width:900px}
+.cora-2027-table-wrap{max-width:100%;overflow-x:auto;border:1px solid #dce7f1;border-radius:13px}
+.cora-2027-table-wrap table{border-collapse:collapse;table-layout:auto;min-width:610px;width:100%;font-size:12px}
+.cora-2027-table-wrap th,.cora-2027-table-wrap td{padding:12px 13px;text-align:left;border-bottom:1px solid #e5edf4;vertical-align:top}
+.cora-2027-table-wrap thead th{background:#ecf3f9;color:#17486f;font-size:11px}
+.cora-2027-table-wrap tbody th{background:#f8fbfe;color:#163f62;font-size:13px}
+.cora-2027-window{display:block;line-height:1.8;white-space:normal}
+.cora-2027-window b{display:inline-block;min-width:31px;color:#1f6496}
+.cora-2027-message{font-size:12px;color:#657d91;margin:11px 0;line-height:1.55}
+.cora-2027-actions{display:flex;flex-wrap:wrap;gap:9px;margin:15px 0 22px}
+.cora-2027-actions button{background:#215d91;color:#fff;border:1px solid #215d91;border-radius:10px;min-height:44px;padding:9px 15px;font-weight:800;cursor:pointer}
+.cora-2027-actions button:hover{background:#164770}
+.cora-2027-actions button:disabled{opacity:.6;cursor:not-allowed}
+#cora2027Replan h3{margin:26px 0 10px;font-size:17px;color:#184267}
+.cora-2027-fair{margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;list-style:none}
+.cora-2027-fair li{background:#f5f9fc;border:1px solid #e2ebf2;padding:12px;border-radius:11px;color:#21445f;font-size:12px;line-height:1.5}
+.cora-2027-fair li b{display:inline-block;color:#135f97;padding-right:7px}
+#cora2027ReplanStatus{color:#1b597e;font-weight:700;line-height:1.5}
+@media(max-width:680px){#cora2027Replan{padding:15px 12px}.cora-2027-fair{grid-template-columns:1fr}.cora-2027-actions button{width:100%}}
+
+/* Destaque do Simulado SAE calculado a partir da AD do bimestre. */
+.assess-sae-preview{margin:16px 0 7px;padding:17px 19px;border-radius:14px;background:#f0f6fc;border:1px solid #cfe0f0;color:#153e61;line-height:1.5}
+.assess-sae-preview strong{display:block;color:#164b75;font-size:15px}
+.assess-sae-preview p{margin:8px 0 4px}
+.assess-sae-preview b{color:#155c96;font-size:20px}
+.assess-sae-preview small{font-size:12px;color:#566f85}
+.assess-sae-preview .assess-sae-warning{color:#9a641a;background:#fff6e6;padding:10px;border-left:3px solid #c99027;border-radius:6px;font-size:12px}
+@media(max-width:560px){.assess-sae-preview{padding:12px 14px}.assess-sae-preview b{font-size:18px}}
+
+/* Carnaval 2027 · decisão institucional Cora Coralina (não é lista de feriados nacionais). */
+.ch-cora-carnival{margin:15px 0;padding:17px;border:1px solid #cfdeef;border-radius:14px;background:#f8fbff;color:#173c60}
+.ch-cora-carnival[hidden]{display:none!important}
+.ch-cora-carnival-head{display:flex;align-items:center;justify-content:space-between;gap:11px;flex-wrap:wrap}
+.ch-cora-carnival-head strong{font-size:15px}
+.ch-cora-carnival-head span{font-size:11px;font-weight:800;color:#246187}
+.ch-cora-carnival p{font-size:12px;line-height:1.6;margin:8px 0 14px}
+.ch-cora-carnival-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:10px 0 14px}
+.ch-cora-carnival-grid>div{padding:10px 9px;background:#fff;border:1px solid #e1eaf3;border-radius:10px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.ch-cora-carnival-grid time{font-size:12px;font-weight:900;color:#173f5d}
+.ch-cora-carnival-grid span{font-size:11px;font-weight:850}
+.ch-cora-carnival-grid span.is-closed{color:#9a4132}
+.ch-cora-carnival-grid span.is-class{color:#237459}
+.ch-cora-carnival-grid small{font-size:10px;line-height:1.4;color:#6a7f92}
+.ch-cora-carnival-foot{font-size:11px;color:#647d91}
+.ch-cora-team-info{margin:10px 0 15px;background:#edf6fc;border:1px solid #d4e5f1;border-radius:12px;padding:12px;font-size:12px;line-height:1.6;color:#174264}
+.ch-cora-team-info strong{display:block;margin-bottom:4px}
+@media(max-width:1080px){.ch-cora-carnival-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:550px){.ch-cora-carnival-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

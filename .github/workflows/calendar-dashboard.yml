@@ -1,0 +1,61 @@
+name: Verificar interface do Calendário Anual
+on:
+  pull_request:
+    paths:
+      - 'calendario-anual/**'
+  push:
+    branches:
+      - 'feat/dashboard-lateral-2027'
+    paths:
+      - 'calendario-anual/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir sintaxe dos scripts
+        run: |
+          node --check calendario-anual/executive-dashboard.js
+          node --check calendario-anual/portal.js
+          node --check calendario-anual/year-transfer.js
+          node --check calendario-anual/academic-2027-replan.js
+          node --check calendario-anual/calendar-integrity.js
+          node --check calendario-anual/school-carnival-2027.js
+          node --check calendario-anual/team-assessment-cards.js
+          node --check calendario-anual/assessment-deadlines.js
+          node --check calendario-anual/holiday-audit.js
+          node --check calendario-anual/app.js
+      - name: Testar feriados móveis e impedir duplicações
+        run: node calendario-anual/test-calendar-holidays.cjs
+      - name: Testar replanejamento de avaliações e ExpoCora 2027
+        run: node calendario-anual/test-academic-2027.cjs
+      - name: Testar Simulado SAE 2027 com feriados e datas de AD
+        run: node calendario-anual/test-sae-2027.cjs
+      - name: Verificar integridade do calendário no aplicativo e PDFs
+        run: node calendario-anual/test-calendar-integrity.cjs
+      - name: Verificar Carnaval 2027 do Cora sem dados duplicados
+        run: node calendario-anual/test-school-carnival-2027.cjs
+      - name: Verificar os cartões de avaliações por etapa da Equipe
+        run: node calendario-anual/test-team-assessment-cards.cjs
+      - name: Conferir recursos na página
+        run: |
+          node - <<'NODE'
+          const assert=require('node:assert/strict');
+          const fs=require('node:fs');
+          const html=fs.readFileSync('calendario-anual/index.html','utf8');
+          const css=fs.readFileSync('calendario-anual/executive-dashboard.css','utf8');
+          const js=fs.readFileSync('calendario-anual/executive-dashboard.js','utf8');
+          for(const f of ['executive-dashboard.css','executive-dashboard.js']){
+            assert.ok(html.includes(f),'Arquivo não carregado: '+f);
+          }
+          for(const id of ['coraManageNav','coraTeamDrawer','coraExecutiveSummary','coraTeamExecutive']){
+            assert.ok(js.includes(id),'Seção não encontrada: '+id);
+          }
+          assert.ok(css.includes('@media(max-width:900px)'),'Faltou responsividade');
+          assert.ok(fs.readFileSync('calendario-anual/portal.js','utf8').includes('CoraPortalSnapshot'));
+          console.log('Interface verificada.');
+          NODE

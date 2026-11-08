@@ -19,6 +19,8 @@
  let role='',chosen='gestao',data=null,year=Number(window.CoraYears?.activeYear)||2026,availableYears=[2026],month=new Date().getFullYear()===2026?new Date().getMonth():0,tab='resumo',selectedStage=0,managerNotices=[],leadDays=3,timer=null,showBell=false,teacherProfile=null,teacherSaving=false,individualRequired=false,pushChecked=false,pushConfirmed=false;
  const seenPublicationIds=new Map();
  let teamStats=null,teamStatsAt=0,teamStatsLoading=false,teamStatsError='';
+ // Exposição apenas de dados já autorizados à sessão; não altera permissões nem publica rascunhos.
+ window.CoraPortalSnapshot=()=>role==='equipe'?{role,year,tab,showBell,events:filteredEvents(),birthdays:publishedBirthdays(),notices:activeNotices(),teamStats}:{role,year};
  async function loadTeamStats(force=false){
   if(role!=='equipe'||teamStatsLoading||(!force&&teamStats&&Date.now()-teamStatsAt<120000))return;
   teamStatsLoading=true;teamStatsError='';
@@ -79,7 +81,7 @@
   const added=(window.CoraAssessments?.publicationEvents?.(targetYear)||[])
    .filter(e=>targetYear!==2026||e.assessmentDelivery);
   const ready=[...drafts.filter(e=>e.status!=='Em revisão'&&!e.needsReview&&
-    !/^cora-(entrega-avaliacoes|periodo-avaliacao)-/.test(String(e.id||''))),...added];
+    !/^cora-(entrega-avaliacoes|periodo-avaliacao|simulado-sae)-/.test(String(e.id||''))),...added];
   return {drafts,ready};
  }
  let syncRevision=0;
@@ -169,6 +171,7 @@
    '<span id="cpSyncLastCheck" role="status"></span></div>'+
    '<div id="cpYearSyncGrid" class="cp-sync-year-grid" aria-live="polite"></div></details>');
   window.CoraHolidays?.mountManager({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year,onPublish:publishHolidayDecisions});
+  window.CoraHolidayAudit?.mount({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year,api,toast});
   window.CoraCompliance?.mount({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year});
   window.CoraSinepe2027?.mount({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year});
   const reviewController=window.CoraYearReview?.mount({
@@ -490,6 +493,11 @@
   const pending=drafts.filter(e=>e.status==='Em revisão'||e.needsReview);
   const approved=drafts.filter(e=>e.status!=='Em revisão'&&!e.needsReview);
   const monthName=window.CoraMonthPublication?.MONTHS?.[m]||'mês selecionado';
+  const wrongHolidayDates=window.CoraHolidayAudit?.findConflicts?.(approved,y)||[];
+  if(wrongHolidayDates.length){
+   toast('Publicação interrompida: '+wrongHolidayDates.length+' data(s) de feriados móveis divergentes. Abra Feriados → Conferir divergências.');
+   return false;
+  }
   if(!approved.length){
    toast('Não há eventos aprovados em '+monthName+'. Confira as datas importadas primeiro.');
    window.CoraYearReview?.requestOpen?.(y,m);
@@ -528,6 +536,8 @@
  }
  async function publish(){
   const year=Number(window.CoraYears?.activeYear)||2026;const {drafts,ready:events}=publicationCandidates(year);
+  const wrongHolidayDates=window.CoraHolidayAudit?.findConflicts?.(events,year)||[];
+  if(wrongHolidayDates.length){toast('Publicação interrompida: '+wrongHolidayDates.length+' data(s) móveis incorretas. Confira a auditoria do Gestor de Feriados.');return;}
   const pending=drafts.filter(e=>e.status==='Em revisão'||e.needsReview);
   const btn=$('#cpPublishNow');if(!btn)return;
   if(pending.length&&!confirm('Atenção: '+pending.length+' evento(s) de '+year+' ainda estão em revisão e NÃO serão enviados à Equipe. Deseja publicar somente os eventos aprovados?'))return;
@@ -561,6 +571,8 @@
    const byId=new Map(unchanged.map(e=>[String(e.id),e]));
    for(const e of holidayDraft)byId.set(String(e.id),e);
    const merged=[...byId.values()].sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.title).localeCompare(String(b.title),'pt-BR'));
+   const wrongHolidayDates=window.CoraHolidayAudit?.findConflicts?.(merged,target)||[];
+   if(wrongHolidayDates.length)throw Error(wrongHolidayDates.length+' data(s) divergente(s) em feriados móveis. Abra Feriados → Conferir divergências antes de publicar.');
    const payload={
     year:target,events:merged,
     notices:Array.isArray(previous.notices)?previous.notices:[],
@@ -799,7 +811,7 @@
  }
  const isSecond=e=>/2[ªaº°]?\s*chamada|segunda\s+chamada/i.test(`${e.title} ${e.notes||''}`);
  const isAssessment=e=>/avaliaç|avaliação|simulado|sondagem|recomposiç|prova/i.test(`${e.title} ${e.type||''}`);
- function filteredEvents(){return (data?.events||[]).filter(e=>String(e.date||'').startsWith(year+'-')).sort((a,b)=>a.date.localeCompare(b.date))}
+ function filteredEvents(){const valid=window.CoraCalendarIntegrity?.filterEvents?.(data?.events||[])||data?.events||[];return valid.filter(e=>String(e.date||'').startsWith(year+'-')).sort((a,b)=>a.date.localeCompare(b.date))}
  function activeNotices(){const now=new Date();return (data?.notices||[]).filter(n=>{const start=n.publishAt?new Date(n.publishAt):null;const end=n.expiresAt?new Date(n.expiresAt):null;return (!start||start<=now)&&(!end||end>=now)}).sort((a,b)=>String(b.publishAt||'').localeCompare(String(a.publishAt||'')))}
 
  // Comunicados são mensagens imediatamente disponíveis. A antecedência cria lembretes extras.
@@ -924,7 +936,7 @@
   }else if(tab==='equipe'&&!showBell){
    content=teamStats?window.CoraTeamStats?.render(teamStats)||'<p class="cp-muted">Painel indisponível.</p>':
     '<section class="cp-team-metrics"><div class="cp-main-heading"><h2>Equipe em números</h2></div><p class="cp-muted">'+(teamStatsError?'Não foi possível carregar: '+safe(teamStatsError):'Consultando indicadores da equipe...')+'</p><button type="button" class="cp-btn soft" id="cpRetryTeamStats">Atualizar indicadores</button></section>';
-  }else if(!data){content='<div class="cp-paper"><h2>Nenhuma publicação disponível</h2><p class="cp-muted">A Gestão ainda não publicou o calendário e os comunicados para a equipe. O conteúdo ficará disponível aqui após a primeira publicação.</p></div>'}
+  }else if(!data&&tab!=='avaliacoes'){content='<div class="cp-paper"><h2>Nenhuma publicação disponível</h2><p class="cp-muted">A Gestão ainda não publicou o calendário e os comunicados para a equipe. O conteúdo ficará disponível aqui após a primeira publicação.</p></div>'}
   else if(showBell){content=`<div class="cp-bell-panel"><div class="cp-main-heading"><div class="cp-alert-heading-left"><button type="button" class="cp-btn soft cp-back-alert" id="cpBackFromBell" aria-label="Voltar à Equipe Pedagógica">← Voltar</button><h2>🔔 Central de alertas</h2></div><button class="cp-btn soft" id="cpMarkRead">Marcar como lidos</button></div>${alertList.length?alertList.map(a=>`<article class="cp-alert-entry ${a.unread?'unread':''}"><time>${safe(String(a.date||'').slice(0,10))}</time><div><small>${a.kind==='notice'?'Comunicado da Gestão':a.kind==='reminder'?'Lembrete programado':'Evento próximo'}</small><strong>${safe(a.title)}</strong><p>${safe(a.desc||'')}</p>${a.unread?'<span class="cp-tag cp-tag-new">Novo · não lido</span>':''}</div><button class="cp-btn soft" type="button" data-cp-read="${safe(a.id)}">✓ Lido</button></article>`).join(''):'<p class="cp-muted">Nenhuma atividade ou aviso exige atenção no período configurado.</p>'}</div>`;}
   else if(tab==='resumo'){
    const now=new Date();
@@ -937,8 +949,13 @@
    <h2 style="color:#12375e;margin-top:28px">Comunicados recentes</h2>${notes.slice(0,3).map(noticeHtml).join('')||'<p class="cp-muted">Sem avisos recentes.</p>'}`;
   }else if(tab==='feriados'){
    content=window.CoraHolidays?.teacherPanel?.(year,events,'all')||'<p>Calendário de feriados indisponível.</p>';
-  }else if(tab==='calendario'||tab==='avaliacoes'){
-   const arr=(tab==='avaliacoes'?assess:events).filter(e=>Number(e.date.slice(5,7))===month+1);
+  }else if(tab==='avaliacoes'){
+   // Os professores consultam quatro cartões por etapa; o seletor mensal pertence ao Calendário.
+   // A fonte continua sendo exclusivamente o calendário publicado pela Gestão.
+   content=window.CoraTeamAssessmentCards?.render?.({year,events,stages:annualSource.stages})||
+     '<section class="cp-paper"><h2>Avaliações por etapa</h2><p class="cp-muted">Não foi possível carregar os cartões. Atualize o aplicativo.</p></section>';
+  }else if(tab==='calendario'){
+   const arr=events.filter(e=>Number(e.date.slice(5,7))===month+1);
    const yearOverview=compactYearSummary();
 
    const annualBirthdays=tab==='calendario'
@@ -1096,8 +1113,15 @@
        paintText(g,day,cx+10,cy+29,25);
        const iso=year+'-'+String(month+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
        const dayEvents=events.filter(a=>a.date===iso);
-       dayEvents.slice(0,3).forEach((e,i)=>{const y=cy+55+i*23;g.fillStyle='#dcecfb';g.fillRect(cx+6,y-18,cw-12,22);paintText(g,ellipsis(g,e.title,cw-22),cx+10,y,15,'#204f7d')});
-       if(dayEvents.length>3)paintText(g,'+'+(dayEvents.length-3)+' atividades',cx+8,cy+118,13,'#5e7389');
+       const school=window.CoraSchoolCarnival2027?.status?.(iso);
+       if(school){
+        const active=school.kind==='aula',color=active?'#206846':'#963c2e';
+        g.fillStyle=active?'#e5f5e9':'#fff0e7';g.fillRect(cx+6,cy+34,cw-12,22);
+        const label=active?(iso==='2027-02-11'?'RETORNO · AULA NORMAL':'AULA NORMAL'):'SEM AULA';
+        paintText(g,label,cx+10,cy+50,13,color);
+       }
+       dayEvents.slice(0,school?2:3).forEach((e,i)=>{const y=cy+(school?79:55)+i*23;g.fillStyle='#dcecfb';g.fillRect(cx+6,y-18,cw-12,22);paintText(g,ellipsis(g,e.title,cw-22),cx+10,y,15,'#204f7d')});
+       if(dayEvents.length>(school?2:3))paintText(g,'+'+(dayEvents.length-(school?2:3))+' atividades',cx+8,cy+118,13,'#5e7389');
        const born=birthdayPeople.filter(p=>Number(p.day)===day);
        if(born.length){
         g.fillStyle='#ffebae';g.fillRect(cx+cw-84,cy+6,78,26);
