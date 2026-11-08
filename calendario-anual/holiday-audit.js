@@ -50,16 +50,16 @@
  function current(){return Number(fnYear?.()||2027)}
  function renderResult(){
    if(!panel||!scanData)return;
-   const {year,remote,local,proposed,manual}=scanData;
+   const {year,remote,local,proposed,localProposed,manual}=scanData;
    const rows=arr=>arr.map(e=>'<li><strong>'+esc(format(e.date))+' · '+esc(e.title)+'</strong>'+
      '<span>O calendário correto é '+esc(format(e.expected))+' ('+esc(e.kind)+').'+(e.imported?' Origem: importação anterior.':' Origem não confirmada; revisão manual.')+'</span></li>').join('');
    $('#coraAuditDetails',panel).innerHTML='<p><strong>'+remote.length+'</strong> divergência(s) no calendário publicado; <strong>'+local.length+'</strong> nos registros deste navegador.</p>'+
       (remote.length?'<ul class="cora-audit-list">'+rows(remote)+'</ul>':'<p>Nenhuma divergência publicada encontrada para '+year+'.</p>')+
       (manual.length?'<p class="cora-audit-warning">'+manual.length+' registro(s) exigem edição manual. Não serão excluídos por esta ferramenta.</p>':'')+
-      (proposed.length?'<p class="cora-audit-good">'+proposed.length+' evento(s) importado(s) poderão ser retirados após confirmação. As datas corretas e os demais eventos serão preservados.</p>':
+      (proposed.length||localProposed.length?'<p class="cora-audit-good">'+proposed.length+' evento(s) publicado(s) e '+localProposed.length+' rascunho(s) importado(s) poderão ser retirados após confirmação. As datas corretas e os demais eventos serão preservados.</p>':
         '<p>Não há exclusões automáticas autorizadas. Confira eventuais divergências manualmente na Gestão.</p>');
    $('#coraAuditBackup',panel).hidden=!remote.length;
-   $('#coraAuditFix',panel).hidden=!proposed.length;
+   $('#coraAuditFix',panel).hidden=!proposed.length&&!localProposed.length;
  }
  async function scan(){
    if(working||!panel)return;
@@ -72,8 +72,9 @@
      const localEvents=read(localKey(y),[]);
      const remote=findConflicts(remoteEvents,y),local=findConflicts(localEvents,y);
      const proposed=remote.filter(e=>e.imported&&e.id);
-     const manual=remote.filter(e=>!e.imported);
-     scanData={year:y,publication,remoteEvents,localEvents,remote,local,proposed,manual,updatedAt:publication.updatedAt};
+     const localProposed=local.filter(e=>e.imported&&e.id);
+     const manual=[...remote.filter(e=>!e.imported),...local.filter(e=>!e.imported)];
+     scanData={year:y,publication,remoteEvents,localEvents,remote,local,proposed,localProposed,manual,updatedAt:publication.updatedAt};
      renderResult();
      show(remote.length||local.length?'Auditoria concluída: confira as divergências abaixo.':'Nenhuma divergência de feriado móvel encontrada para '+y+'.');
    }catch(e){scanData=null;$('#coraAuditDetails',panel).textContent='';show('Não foi possível consultar a publicação: '+String(e.message||e))}
@@ -88,10 +89,10 @@
    setTimeout(()=>URL.revokeObjectURL(url),1500);
  }
  async function correct(){
-   if(working||!scanData||!scanData.proposed.length||current()!==scanData.year)return;
+   if(working||!scanData||(!scanData.proposed.length&&!scanData.localProposed.length)||current()!==scanData.year)return;
    const d=scanData;
-   const title=d.proposed.map(e=>format(e.date)+' — '+e.title).join('\n');
-   if(!confirm('CONFIRMAR A RETIRADA DE '+d.proposed.length+' DATA(S) IMPORTADA(S) INCORRETA(S) DE '+d.year+'?\n\n'+title+
+   const title=[...d.proposed,...d.localProposed].map(e=>format(e.date)+' — '+e.title).filter((v,i,a)=>a.indexOf(v)===i).join('\n');
+   if(!confirm('CONFIRMAR A RETIRADA DOS REGISTROS IMPORTADOS COM DATAS INCORRETAS DE '+d.year+'?\n\n'+title+
       '\n\nOutros registros, reuniões, feriados corretos, aniversariantes e avisos serão preservados. Faça o backup disponível antes de continuar.'))return;
    setBusy(true);show('Validando a versão publicada antes da correção...');
    try{
@@ -105,16 +106,18 @@
      }
      const ids=new Set(fresh.map(e=>e.id));
      const next=currentEvents.filter(e=>!ids.has(String(e.id)));
-     const config={...currentPublication.config};
-     await fnApi('publish',{year:d.year,events:next,
-       notices:Array.isArray(currentPublication.notices)?currentPublication.notices:[],
-       birthdays:Array.isArray(currentPublication.birthdays)?currentPublication.birthdays:[],
-       stages:Array.isArray(currentPublication.stages)?currentPublication.stages:[],
-       projects:Array.isArray(currentPublication.projects)?currentPublication.projects:[],
-       config});
-     const verified=await fnApi('state',undefined,'year='+d.year);
-     const still=(verified.publication?.events||[]).filter(e=>ids.has(String(e.id)));
-     if(still.length)throw Error('O servidor não confirmou todas as exclusões. Confira o calendário publicado.');
+     if(ids.size){
+       const config={...currentPublication.config};
+       await fnApi('publish',{year:d.year,events:next,
+         notices:Array.isArray(currentPublication.notices)?currentPublication.notices:[],
+         birthdays:Array.isArray(currentPublication.birthdays)?currentPublication.birthdays:[],
+         stages:Array.isArray(currentPublication.stages)?currentPublication.stages:[],
+         projects:Array.isArray(currentPublication.projects)?currentPublication.projects:[],
+         config});
+       const verified=await fnApi('state',undefined,'year='+d.year);
+       const still=(verified.publication?.events||[]).filter(e=>ids.has(String(e.id)));
+       if(still.length)throw Error('O servidor não confirmou todas as exclusões. Confira o calendário publicado.');
+     }
      const own=read(localKey(d.year),[]);
      if(Array.isArray(own)){
        const cleaned=own.filter(e=>!ids.has(String(e.id))&&!findConflicts([e],d.year).some(x=>x.imported));
@@ -122,9 +125,9 @@
      }
      window.dispatchEvent(new CustomEvent('cora-data-changed',{detail:{year:d.year,source:'audit-movable-holidays'}}));
      window.dispatchEvent(new CustomEvent('cora-events-updated',{detail:{year:d.year,source:'audit-movable-holidays'}}));
-     if(typeof notify==='function')notify('Calendário '+d.year+': '+d.proposed.length+' datas importadas incorretas retiradas da publicação.');
+     if(typeof notify==='function')notify('Calendário '+d.year+': '+d.proposed.length+' registros publicados corrigidos e rascunhos locais divergentes revisados.');
      scanData=null;$('#coraAuditDetails',panel).textContent='';
-     show('Correção confirmada no servidor. Confira as datas corretas no Gestor de Feriados e no aplicativo do professor.');
+     show(d.proposed.length?'Correção confirmada no servidor. Confira as datas corretas no Gestor de Feriados e no aplicativo do professor.':'Rascunhos incorretos deste navegador removidos. A publicação do servidor já estava correta.');
      $('#coraAuditFix',panel).hidden=true;$('#coraAuditBackup',panel).hidden=true;
    }catch(e){show('Correção não concluída: '+String(e.message||e)+'. Nenhuma exclusão local foi feita antes da confirmação no servidor.')}
    finally{setBusy(false)}
