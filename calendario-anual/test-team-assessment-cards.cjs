@@ -46,7 +46,7 @@ assert.equal(model.totals.periods,10);
 assert.equal(model.totals.simulados,4);
 assert.equal(model.totals.all,14);
 assert.equal(model.extras.length,0);
-assert.deepEqual(Array.from(model.stages,r=>r.items.filter(x=>x.simulado).map(x=>x.start)),[
+assert.deepEqual(JSON.parse(JSON.stringify(Array.from(model.stages,r=>r.items.filter(x=>x.simulado).map(x=>x.start)))),[
  ['2027-03-12'],['2027-06-11'],['2027-09-17'],['2027-11-19']
 ]);
 assert.equal(model.stages[1].items.filter(x=>x.label==='AD').length,1);
