@@ -29,7 +29,11 @@ const write=async(key,data)=>store().setJSON(key,data);
 const uid=x=>clean(x,160);
 const idFor=({stage,assessment,grade,subject})=>[stage,normalize(assessment),normalize(grade),normalize(subject)].join('|');
 const belongs=(assignments,x)=>assignments.some(a=>a.grade===x.grade&&normalize(a.subject)===normalize(x.subject));
-const identity=member=>({id:member.id,email:member.email,name:member.name,profile:member.profile,status:member.status});
+const identity=member=>({id:member.id,email:member.email,name:member.name,profile:member.profile,status:member.status,segments:member.segments||[]});
+const requiredSegment=grade=>grade.startsWith('Infantil')?'Educação Infantil':/^[1-5]º ano$/.test(grade)?'Ensino Fundamental I':
+ /^[6-9]º ano$/.test(grade)?'Ensino Fundamental II':'Ensino Médio';
+const permittedSegment=(teacher,grade)=>Array.isArray(teacher.segments)&&
+ (teacher.segments.includes('Todos')||teacher.segments.includes(requiredSegment(grade)));
 const roster=async()=>{const data=await listEmployees();return (data.members||[]).filter(m=>m.id&&m.email).map(identity);};
 async function assignmentOf(year,id){const obj=await read(assignmentsKey(year,id),{items:[]});return Array.isArray(obj.items)?obj.items:[]}
 async function docsOf(year,id){const obj=await read(docsKey(year,id),{items:[]});return Array.isArray(obj.items)?obj.items:[]}
@@ -117,6 +121,7 @@ export async function roteiroAction({role,member,request,url}){
   for(const item of proposed){
    const pair=normalizePair(item);
    if(!pair)return error('Série ou disciplina inválida.');
+   if(!permittedSegment(teacher,pair.grade))return error('O professor não está cadastrado no segmento desta série. Corrija os segmentos na Gestão.');
    const key=pair.grade+'|'+pair.subject;if(!seen.has(key)){items.push(pair);seen.add(key)}
   }
   const now=new Date().toISOString();
