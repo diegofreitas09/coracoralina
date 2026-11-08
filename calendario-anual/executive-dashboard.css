@@ -150,3 +150,23 @@ body.cora-exec-manager #app .sidebar-foot{display:block!important;margin-top:aut
 .assess-sae-preview small{font-size:12px;color:#566f85}
 .assess-sae-preview .assess-sae-warning{color:#9a641a;background:#fff6e6;padding:10px;border-left:3px solid #c99027;border-radius:6px;font-size:12px}
 @media(max-width:560px){.assess-sae-preview{padding:12px 14px}.assess-sae-preview b{font-size:18px}}
+
+/* Carnaval 2027 · decisão institucional Cora Coralina (não é lista de feriados nacionais). */
+.ch-cora-carnival{margin:15px 0;padding:17px;border:1px solid #cfdeef;border-radius:14px;background:#f8fbff;color:#173c60}
+.ch-cora-carnival[hidden]{display:none!important}
+.ch-cora-carnival-head{display:flex;align-items:center;justify-content:space-between;gap:11px;flex-wrap:wrap}
+.ch-cora-carnival-head strong{font-size:15px}
+.ch-cora-carnival-head span{font-size:11px;font-weight:800;color:#246187}
+.ch-cora-carnival p{font-size:12px;line-height:1.6;margin:8px 0 14px}
+.ch-cora-carnival-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:10px 0 14px}
+.ch-cora-carnival-grid>div{padding:10px 9px;background:#fff;border:1px solid #e1eaf3;border-radius:10px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.ch-cora-carnival-grid time{font-size:12px;font-weight:900;color:#173f5d}
+.ch-cora-carnival-grid span{font-size:11px;font-weight:850}
+.ch-cora-carnival-grid span.is-closed{color:#9a4132}
+.ch-cora-carnival-grid span.is-class{color:#237459}
+.ch-cora-carnival-grid small{font-size:10px;line-height:1.4;color:#6a7f92}
+.ch-cora-carnival-foot{font-size:11px;color:#647d91}
+.ch-cora-team-info{margin:10px 0 15px;background:#edf6fc;border:1px solid #d4e5f1;border-radius:12px;padding:12px;font-size:12px;line-height:1.6;color:#174264}
+.ch-cora-team-info strong{display:block;margin-bottom:4px}
+@media(max-width:1080px){.ch-cora-carnival-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:550px){.ch-cora-carnival-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
