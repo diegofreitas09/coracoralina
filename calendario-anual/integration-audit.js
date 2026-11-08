@@ -74,6 +74,13 @@
    absent.length+' evento(s) aprovados ausentes da publicação e '+changed.length+
    ' com título, data ou categoria alterados. Revise e publique apenas o que estiver aprovado.');
   else if(publication)pass.push('Todos os eventos aprovados neste dispositivo estão publicados com os mesmos títulos e datas.');
+  // Itens exclusivos do servidor podem ter sido incluídos por outro dispositivo
+  // ou podem ser publicações antigas. O módulo não assume que são descartáveis.
+  const localIds=new Set(ready.map(e=>String(e?.id||'')));
+  const serverOnly=remote.filter(e=>e?.id&&!localIds.has(String(e.id)));
+  if(publication&&serverOnly.length)problems('warning','remote-only','Eventos somente na publicação',
+   serverOnly.length+' evento(s) aparecem para os professores, mas não estão na lista de aprovados deste aparelho. '+
+   'Podem ter sido publicados por outro gestor ou permanecer de uma versão antiga. Confira antes de solicitar qualquer exclusão.');
   const stageList=Array.isArray(stages)?stages:[];
   const remoteStages=Array.isArray(publication?.stages)?publication.stages:[];
   if(publication&&remoteStages.length!==4)problems('warning','stages','Etapas não sincronizadas',
@@ -119,6 +126,7 @@
    year:y,updatedAt:publication?.updatedAt||null,
    metrics:{local:local.length,approved:ready.length,published:remoteValid.length,
     localDuplicates:localDuplicates.exact.length,changes:changed.length,missing:absent.length,
+    remoteOnly:serverOnly.length,
     publishedBirthdays:(publication?.birthdays||[]).length,stages:remoteStages.filter(s=>s?.start&&s.end).length,
     approvedStages:academic.length?Array.isArray(assessments.approvedStages)?assessments.approvedStages.length:(assessments.approved?4:0):0
    },issues,warnings,pass,
