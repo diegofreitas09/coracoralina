@@ -21,9 +21,16 @@ jobs:
           node --check calendario-anual/year-sync.js
           node --check calendario-anual/year-transfer.js
           node --check calendario-anual/assessment-deadlines.js
+          node --check calendario-anual/academic-2027-replan.js
+          node --check calendario-anual/team-assessment-cards.js
           node --check calendario-anual/calendar-integrity.js
           node --check calendario-anual/service-worker.js
       - name: Testar integracoes e reparos
         run: node calendario-anual/test-integration-audit.cjs
+      - name: Validar avaliações por etapa, Simulado SAE e calendário 2027
+        run: |
+          node calendario-anual/test-team-assessment-cards.cjs
+          node calendario-anual/test-sae-2027.cjs
+          node calendario-anual/test-academic-2027.cjs
       - name: Validar Carnaval e publicacao oficial
         run: node calendario-anual/test-fix-carnaval-2027.mjs
