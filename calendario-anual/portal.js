@@ -16,7 +16,7 @@
  const dateStr=(date)=>{const d=new Date(date);return Number.isNaN(d.getTime())?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
  const isoNow=()=>{const d=new Date();return `${dateStr(d)}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`};
  const app=$('#app'),root=document.createElement('div');root.id='coraPortal';document.body.prepend(root);
- let role='',chosen='gestao',data=null,year=Number(window.CoraYears?.activeYear)||2026,availableYears=[2026],month=new Date().getFullYear()===2026?new Date().getMonth():0,tab='resumo',selectedStage=0,managerNotices=[],leadDays=3,timer=null,showBell=false,teacherProfile=null,teacherSaving=false,individualRequired=false,pushChecked=false,pushConfirmed=false;
+ let role='',chosen='gestao',data=null,year=Number(window.CoraYears?.activeYear)||2026,availableYears=[2026],month=new Date().getFullYear()===2026?new Date().getMonth():0,tab='resumo',selectedStage=0,managerNotices=[],leadDays=3,timer=null,auditTimer=null,showBell=false,teacherProfile=null,teacherSaving=false,individualRequired=false,pushChecked=false,pushConfirmed=false;
  const seenPublicationIds=new Map();
  let teamStats=null,teamStatsAt=0,teamStatsLoading=false,teamStatsError='';
  async function loadTeamStats(force=false){
@@ -71,7 +71,7 @@
   };
    $('#cpLoginForm').onsubmit=async e=>{e.preventDefault();const btn=$('#cpLoginForm button[type=submit]');btn.disabled=true;try{const r=await api('login',{role:chosen,email:chosen==='equipe'&&!$('#cpUseLegacy').checked?$('#cpEmail').value.trim():'',password:$('#cpPassword').value});role=r.role;await enter();}catch(err){gateway((err.message||'Credenciais inválidas.')+' '+(err.status===503?'Contate a administração.':''));}finally{btn.disabled=false;}};
  }
- async function logout(){window.CoraHelpdesk?.teardown();teacherProfile=null;try{await api('logout',{})}catch{}clearInterval(timer);timer=null;gateway();}
+ async function logout(){clearInterval(auditTimer);auditTimer=null;window.CoraHelpdesk?.teardown();teacherProfile=null;try{await api('logout',{})}catch{}clearInterval(timer);timer=null;gateway();}
  async function enter(){if(role==='gestao')manager();else await team();}
 
  function publicationCandidates(targetYear){
@@ -98,6 +98,9 @@
     projects:window.CoraYears?.getProjects?.(targetYear)||[],
     birthdaysLocal:window.CoraBirthdays?.all?.()||[],
     stages:window.CoraStages?.get?.(targetYear)||[]
+   });
+   window.CoraIntegrationAudit?.update?.({
+    role:'gestao',year:targetYear,publication:reply.publication,localEvents:ready
    });
    window.CoraMonthlyPublication={year:targetYear,
     updatedAt:reply.publication?.updatedAt||null,
@@ -128,7 +131,8 @@
     '. Rascunhos e datas importadas precisam ser revisados na Gestão antes da publicação.':
     'Este ano ainda não foi publicado para a Equipe. Confira os meses antes de usar “Publicar para equipe”.';
   }catch(e){
-   if(current===syncRevision){status.textContent='Não foi possível conferir a sincronização';area.textContent=e.message||'Falha de conexão';}
+   if(current===syncRevision){status.textContent='Não foi possível conferir a sincronização';area.textContent=e.message||'Falha de conexão';
+    window.CoraIntegrationAudit?.failed?.('gestao',targetYear,e);}
   }
  }
  function manager(){
@@ -168,6 +172,9 @@
    '<button type="button" id="cpReviewImportedYear">Conferir atividades importadas</button>'+
    '<span id="cpSyncLastCheck" role="status"></span></div>'+
    '<div id="cpYearSyncGrid" class="cp-sync-year-grid" aria-live="polite"></div></details>');
+  window.CoraIntegrationAudit?.mount?.('gestao',root);
+  clearInterval(auditTimer);
+  auditTimer=setInterval(()=>{if(role==='gestao'&&!document.hidden)void checkYearSync();},90000);
   window.CoraHolidays?.mountManager({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year,onPublish:publishHolidayDecisions});
   window.CoraCompliance?.mount({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year});
   window.CoraSinepe2027?.mount({host:root,getYear:()=>Number(window.CoraYears?.activeYear)||year});
@@ -650,8 +657,9 @@
   $('#cpWelcomeEnablePush')?.addEventListener('click',enableLocalNotifications);
   $('#cpWelcomeInstallIOS')?.addEventListener('click',showAppInstallGuide);
  }
- async function team(){teamStats=null;teamStatsAt=0;teamStatsLoading=false;teamStatsError='';teacherProfile=null;pushChecked=false;pushConfirmed=false;const deep=new URLSearchParams(location.search);year=Number(deep.get('ano'))||2026;if(deep.get('avisos')==='1')showBell=true;document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><section id="cpWelcome" class="cp-welcome" aria-label="Boas-vindas e notificações"></section><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpEnableAlerts').onclick=enableLocalNotifications;$('#cpInstallApp').onclick=showAppInstallGuide;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};$('#cpTeamYear').onchange=e=>{year=Number(e.target.value)||2026;month=0;showBell=false;tab='resumo';refresh()};window.CoraHelpdesk?.mount('equipe',root);await refresh();void confirmDevicePush();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},30000);}
+ async function team(){clearInterval(auditTimer);auditTimer=null;teamStats=null;teamStatsAt=0;teamStatsLoading=false;teamStatsError='';teacherProfile=null;pushChecked=false;pushConfirmed=false;const deep=new URLSearchParams(location.search);year=Number(deep.get('ano'))||2026;if(deep.get('avisos')==='1')showBell=true;document.body.classList.add('portal-locked');document.body.classList.remove('portal-loading');root.innerHTML=`<div class="cp-team">${teamNav()}<div class="cp-team-main"><section id="cpWelcome" class="cp-welcome" aria-label="Boas-vindas e notificações"></section><div id="cpView"><p class="cp-muted">Carregando publicações da Gestão...</p></div></div></div>`;window.CoraIntegrationAudit?.mount?.('equipe',root);$('#cpTeamLogo').src=logo();$('#cpTeamLogout').onclick=logout;$('#cpRefresh').onclick=refresh;$('#cpEnableAlerts').onclick=enableLocalNotifications;$('#cpInstallApp').onclick=showAppInstallGuide;$('#cpBell').onclick=()=>{showBell=!showBell;drawTeam()};$('#cpTeamYear').onchange=e=>{year=Number(e.target.value)||2026;month=0;showBell=false;tab='resumo';refresh()};window.CoraHelpdesk?.mount('equipe',root);await refresh();void confirmDevicePush();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},30000);}
  async function refresh(){try{const [result,identity]=await Promise.all([api('state',undefined,'year='+year),api('delivery-profile',undefined,'year='+year).catch(()=>({identified:false,statuses:{}}))]);teacherProfile=identity.identified?identity:null;availableYears=Array.isArray(result.availableYears)?result.availableYears:[2026];data=result.publication;
+    window.CoraIntegrationAudit?.update?.({role:'equipe',year,publication:data});
     const newNoticeIds=new Set(activeNotices().map(n=>String(n.id)));
     const knownIds=seenPublicationIds.get(year);
     if(knownIds){
@@ -662,7 +670,7 @@
       }
     }
     seenPublicationIds.set(year,newNoticeIds);
-    const picker=$('#cpTeamYear');if(picker){picker.innerHTML=availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('');picker.value=String(year)}renderTeamWelcome();drawTeam();if(tab==='equipe')void loadTeamStats();checkLocalNotifications()}catch(e){if(e.status===401){clearInterval(timer);gateway('Sessão expirada. Entre novamente.');return;}toast('Falha ao atualizar: '+e.message);}}
+    const picker=$('#cpTeamYear');if(picker){picker.innerHTML=availableYears.map(y=>`<option value="${y}" ${year===y?'selected':''}>${y}</option>`).join('');picker.value=String(year)}renderTeamWelcome();drawTeam();if(tab==='equipe')void loadTeamStats();checkLocalNotifications()}catch(e){if(e.status===401){clearInterval(timer);gateway('Sessão expirada. Entre novamente.');return;}window.CoraIntegrationAudit?.failed?.('equipe',year,e);toast('Falha ao atualizar: '+e.message);}}
 
 
  // Marcadores de leitura são separados das notificações entregues ao aparelho.
@@ -1180,7 +1188,7 @@
    if(s.role){role=s.role;await enter()}else gateway();
   }catch(e){unavailable(e);}
  }
- document.addEventListener('visibilitychange',()=>{if(!document.hidden&&role==='equipe')refresh()});
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&role==='equipe')refresh();else if(!document.hidden&&role==='gestao')void checkYearSync();});
  window.addEventListener('focus',()=>{if(role==='equipe'&&!document.hidden)refresh()});
  if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',event=>{
    if(event.data?.type==='cora-open-alerts'&&role==='equipe'){showBell=true;drawTeam()}
