@@ -25,6 +25,7 @@ jobs:
           node --check calendario-anual/academic-2027-replan.js
           node --check calendario-anual/calendar-integrity.js
           node --check calendario-anual/school-carnival-2027.js
+          node --check calendario-anual/team-assessment-cards.js
           node --check calendario-anual/assessment-deadlines.js
           node --check calendario-anual/holiday-audit.js
           node --check calendario-anual/app.js
@@ -38,6 +39,8 @@ jobs:
         run: node calendario-anual/test-calendar-integrity.cjs
       - name: Verificar Carnaval 2027 do Cora sem dados duplicados
         run: node calendario-anual/test-school-carnival-2027.cjs
+      - name: Verificar os cartões de avaliações por etapa da Equipe
+        run: node calendario-anual/test-team-assessment-cards.cjs
       - name: Conferir recursos na página
         run: |
           node - <<'NODE'
