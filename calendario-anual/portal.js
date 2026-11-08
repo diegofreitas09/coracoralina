@@ -163,6 +163,11 @@
    host:$('#cpYearSync'),getYear:()=>Number(window.CoraYears?.activeYear)||2026,
    onChange:(targetYear)=>void checkYearSync(targetYear),notify:toast
   });
+  if(window.CoraYearReview)window.CoraYearReview.requestOpen=(requestedYear,requestedMonth)=>{
+   if(role!=='gestao'||Number(window.CoraYears?.activeYear)!==Number(requestedYear)||!reviewController)return false;
+   reviewController.open(requestedMonth);
+   return true;
+  };
   $('#cpSyncReload')?.addEventListener('click',()=>void checkYearSync());
   $('#cpReviewImportedYear')?.addEventListener('click',()=>{
    reviewController?.open();
