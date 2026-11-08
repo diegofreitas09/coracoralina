@@ -37,25 +37,51 @@
    for(const e of local)combined.set(e.id,e);
    return [...combined.values()].filter(e=>Number(String(e.date||'').slice(5,7))===month+1);
  };
+ // Feriados móveis são calculados pela Páscoa do novo ano, jamais pelo mesmo dia da semana.
+ function easterISO(y){
+   const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),f=Math.floor((b+8)/25),
+     g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),
+     k=c%4,l=(32+2*(b%4)+2*i-h-k+7)%7,
+     m=Math.floor((a+11*h+22*l)/451),
+     month=Math.floor((h+l-7*m+114)/31),day=(h+l-7*m+114)%31+1;
+   return fmt(y,month,day);
+ }
+ const offsetDate=(iso,delta)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+delta);return d.toISOString().slice(0,10)};
  function targetDate(iso,year,type,title){
    const [origin,month,day]=String(iso).split('-').map(Number);
    if(!origin||!month||!day)return null;
    const last=new Date(Date.UTC(year,month,0)).getUTCDate();
-   const moving=/carnaval|páscoa|pascoa|corpus christi|cinzas|semana santa|sexta-feira santa|pentecostes/i.test(title||'');
+   const text=String(title||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+   const fromWeekday=new Date(Date.UTC(origin,month-1,day)).getUTCDay();
+   const moving=/carnaval|pascoa|corpus christi|cinzas|semana santa|sexta-feira santa|sexta-feira da paixao|paixao de cristo|pentecostes/.test(text);
+   const holiday=String(type||'').toLowerCase()==='feriado'||/sem aula|ponto facultativo|feriado/.test(text);
+   if(moving&&holiday){
+     const easter=easterISO(year);
+     let delta=null;
+     if(/cinzas/.test(text))delta=-46;
+     else if(/carnaval/.test(text)){
+       if(fromWeekday===1)delta=-48;
+       else if(fromWeekday===2)delta=-47;
+     }else if(/corpus christi/.test(text))delta=60;
+     else if(/pentecostes/.test(text))delta=49;
+     else if(/sexta-feira santa|sexta-feira da paixao|paixao de cristo/.test(text))delta=-2;
+     else if(/pascoa/.test(text))delta=0;
+     if(delta===null)return {date:'',rule:'Feriado móvel sem dia específico · definir na Gestão',verify:true};
+     return {date:offsetDate(easter,delta),rule:'Recalculado pela Páscoa · conferir funcionamento',verify:true};
+   }
    const fixed=type==='Feriado'&&!moving;
-   if(fixed)return {date:fmt(year,month,Math.min(last,day)),rule:'Data fixa',verify:day>last};
-   const week=new Date(Date.UTC(origin,month-1,day)).getUTCDay();
-   const nth=Math.ceil(day/7);
-   const first=new Date(Date.UTC(year,month-1,1)).getUTCDay();
-   let calculated=1+(week-first+7)%7+(nth-1)*7;
+   if(fixed)return {date:fmt(year,month,Math.min(last,day)),rule:'Data fixa · confirmar calendário local',verify:day>last};
+   const nth=Math.ceil(day/7),first=new Date(Date.UTC(year,month-1,1)).getUTCDay();
+   let calculated=1+(fromWeekday-first+7)%7+(nth-1)*7;
    if(calculated>last)calculated-=7;
-   return {date:fmt(year,month,calculated),rule:moving?'Feriado móvel · confirmar':'Mesmo dia da semana',verify:moving};
+   return {date:fmt(year,month,calculated),rule:moving?'Atividade temática · revisar data':'Mesmo dia da semana',verify:moving};
  }
  function fmt(y,m,d){return String(y)+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0')}
  function fmtBR(s){const [y,m,d]=String(s).split('-');return d+'/'+m+'/'+y;}
 
  // Sugestões anuais: conserva cadastros existentes; novas datas exigem validação.
- const managedAssessmentEvent=e=>/^cora-(?:entrega-avaliacoes|periodo-avaliacao)-/.test(String(e?.id||''));
+ const managedAssessmentEvent=e=>/^cora-(?:entrega-avaliacoes|periodo-avaliacao|simulado-sae)-/.test(String(e?.id||''));
+ const managedHolidayEvent=e=>String(e?.type||'').toLowerCase()==='feriado'||e?.holidayManaged===true;
  const suggestedDate=(value,from,to,title='Atividade escolar')=>String(value||'').startsWith(from+'-')?(targetDate(value,to,'Pedagógico',title)?.date||''):'';
  function suggestedRange(start,end,from,to,title){
    const moved=suggestedDate(start,from,to,title);
@@ -76,6 +102,9 @@
  function copyAcademicSuggestions(from,to,{stages=true,assessments=true}={}){
    const result={stages:0,assessments:0,warnings:[]};
    if(!Number.isInteger(from)||!Number.isInteger(to)||from>=to)return {...result,warnings:['Selecione anos válidos.']};
+  if(to===2027&&from===2026){
+   return {...result,warnings:['O calendário 2027 segue a referência SINEPE-CE e o recesso da Copa. Etapas, avaliações e entregas devem ser definidas e validadas pela Gestão; não serão copiadas automaticamente de 2026.']};
+  }
    if(stages&&window.CoraStages){
      const earlier=window.CoraStages.get(from),next=window.CoraStages.get(to);
      for(let i=0;i<4;i++){
@@ -218,7 +247,7 @@
    openKey=year+'-'+month;
    const caption='Planejar '+MONTHS[month]+' de '+year;
    chooser.innerHTML='<form method="dialog" class="year-carry-head"><div><small>GESTÃO · INICIAR NOVO ANO</small><h2>'+esc(caption)+'</h2><p>Aproveite o mês de outro ano e confira as novas datas antes de importar.</p></div><button type="submit" aria-label="Fechar">✕</button></form>'+
-    '<div class="year-carry-body"><div class="year-carry-options"><label>Usar como referência <select id="carrySourceYear">'+years.map(y=>'<option value="'+y+'">'+y+'</option>').join('')+'</select></label><div class="year-carry-policy"><strong>Como as datas são ajustadas?</strong><span>Datas fixas permanecem no mesmo dia; atividades escolares usam o mesmo dia da semana e a mesma posição no mês. Feriados móveis exigem conferência.</span></div></div>'+
+    '<div class="year-carry-body"><div class="year-carry-options"><label>Usar como referência <select id="carrySourceYear">'+years.map(y=>'<option value="'+y+'">'+y+'</option>').join('')+'</select></label><div class="year-carry-policy"><strong>Como as datas são ajustadas?</strong><span>Datas fixas permanecem no mesmo dia; atividades escolares usam o mesmo dia da semana e a mesma posição no mês. Feriados e Simulados SAE não são copiados: consulte o Gestor de Feriados e as avaliações de cada novo ano.</span></div></div>'+
     '<div id="carrySummary" class="year-carry-summary"></div><div id="carryPreview" class="year-carry-preview"></div>'+
     '<label class="year-carry-project"><input id="carryProjects" type="checkbox" checked /> Copiar também os projetos do mês</label>'+
     '<label class="year-carry-project"><input id="carryPlanning" type="checkbox" checked /> Reaproveitar planejamento pedagógico, quando existir (revisar datas)</label>'+ 
@@ -235,7 +264,7 @@
    refreshPreview();
  }
  function refreshPreview(){
-   preview=readEvents(sourceYear,targetMonth).filter(e=>!managedAssessmentEvent(e)).map(e=>({...e,adjusted:targetDate(e.date,targetYear,e.type,e.title)}));
+   preview=readEvents(sourceYear,targetMonth).filter(e=>!managedAssessmentEvent(e)&&!managedHolidayEvent(e)).map(e=>({...e,adjusted:targetDate(e.date,targetYear,e.type,e.title)}));
    const count=preview.length;
    const projects=getProjects(sourceYear)[targetMonth]||[];
    const srcPlan=stored(PLAN_KEY(sourceYear),{})[targetMonth];
@@ -290,7 +319,7 @@
  }
 
  function copyYearMonth(from,to,month,includeProjects,includePlan){
-   const events=readEvents(from,month).filter(e=>!managedAssessmentEvent(e)),key=EVENT_KEY(to),existing=stored(key,[]);
+   const events=readEvents(from,month).filter(e=>!managedAssessmentEvent(e)&&!managedHolidayEvent(e)),key=EVENT_KEY(to),existing=stored(key,[]);
    const next=Array.isArray(existing)?[...existing]:[];
    let added=0,duplicates=0;
    for(const event of events){
