@@ -1,0 +1,29 @@
+name: Auditoria Gestao e Equipe
+on:
+  pull_request:
+    paths:
+      - 'calendario-anual/**'
+      - 'netlify/functions/**'
+  push:
+    branches: [fix/auditoria-integracoes-calendario-2027]
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir sintaxe das integracoes
+        run: |
+          node --check calendario-anual/integration-audit.js
+          node --check calendario-anual/portal.js
+          node --check calendario-anual/year-sync.js
+          node --check calendario-anual/year-transfer.js
+          node --check calendario-anual/assessment-deadlines.js
+          node --check calendario-anual/calendar-integrity.js
+          node --check calendario-anual/service-worker.js
+      - name: Testar integracoes e reparos
+        run: node calendario-anual/test-integration-audit.cjs
+      - name: Validar Carnaval e publicacao oficial
+        run: node calendario-anual/test-fix-carnaval-2027.mjs
