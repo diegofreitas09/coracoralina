@@ -27,7 +27,18 @@ jobs:
           node --check calendario-anual/team-calendar-view.js
           node --check calendario-anual/calendar-pdf-activities.js
           node --check calendario-anual/service-worker.js
+          node --check calendario-anual/integration-audit.js
+          node --check calendario-anual/year-sync.js
+          node --check calendario-anual/team-assessment-cards.js
+          node --check calendario-anual/academic-2027-replan.js
+          node --check calendario-anual/assessment-deadlines.js
+          node --check calendario-anual/year-transfer.js
           node --check netlify/functions/lib/cora-carnaval-2027.mjs
           node --check netlify/functions/cora-portal.mjs
       - name: Validar datas, leitura, PDFs, backup e bloqueio de republicação
-        run: node calendario-anual/test-fix-carnaval-2027.mjs
+        run: |
+          node calendario-anual/test-fix-carnaval-2027.mjs
+          node calendario-anual/test-integration-audit.cjs
+          node calendario-anual/test-team-assessment-cards.cjs
+          node calendario-anual/test-sae-2027.cjs
+          node calendario-anual/test-academic-2027.cjs
