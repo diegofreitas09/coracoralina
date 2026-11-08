@@ -140,7 +140,8 @@
   function newPage(){
    const page=createCanvas();
    header(page.g,{year:y,month:m,logo,title:'ATIVIDADES COMPLETAS DO MÊS',
-    subtitle:items.length+' atividade(s) publicadas · datas, títulos e informações completas'});
+    subtitle:items.length+' atividade(s) publicadas · datas, títulos e informações completas'+
+     (y===2027&&m===1?' · Carnaval: 06–10 sem aula; retorno normal 11/02':'')});
    pages.push(page);
    return page;
   }
