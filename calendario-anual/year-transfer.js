@@ -80,7 +80,7 @@
  function fmtBR(s){const [y,m,d]=String(s).split('-');return d+'/'+m+'/'+y;}
 
  // Sugestões anuais: conserva cadastros existentes; novas datas exigem validação.
- const managedAssessmentEvent=e=>/^cora-(?:entrega-avaliacoes|periodo-avaliacao)-/.test(String(e?.id||''));
+ const managedAssessmentEvent=e=>/^cora-(?:entrega-avaliacoes|periodo-avaliacao|simulado-sae)-/.test(String(e?.id||''));
  const managedHolidayEvent=e=>String(e?.type||'').toLowerCase()==='feriado'||e?.holidayManaged===true;
  const suggestedDate=(value,from,to,title='Atividade escolar')=>String(value||'').startsWith(from+'-')?(targetDate(value,to,'Pedagógico',title)?.date||''):'';
  function suggestedRange(start,end,from,to,title){
