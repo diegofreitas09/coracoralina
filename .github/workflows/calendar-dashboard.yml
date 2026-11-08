@@ -21,7 +21,11 @@ jobs:
         run: |
           node --check calendario-anual/executive-dashboard.js
           node --check calendario-anual/portal.js
+          node --check calendario-anual/year-transfer.js
+          node --check calendario-anual/holiday-audit.js
           node --check calendario-anual/app.js
+      - name: Testar feriados móveis e impedir duplicações
+        run: node calendario-anual/test-calendar-holidays.cjs
       - name: Conferir recursos na página
         run: |
           node - <<'NODE'
