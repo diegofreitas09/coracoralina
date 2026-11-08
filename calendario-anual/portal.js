@@ -917,7 +917,7 @@
    ${arr.length?'<details class="cp-calendar-agenda" open><summary>'+ (tab==='avaliacoes'?'Avaliações e simulados':'Compromissos do mês')+' · '+arr.length+'</summary><div class="cp-list">'+arr.map(eventHtml).join('')+'</div></details>':
      '<p class="cp-calendar-empty-note">'+(tab==='avaliacoes'?'Nenhuma avaliação aprovada e publicada em '+MONTHS[month]+' de '+year+'.':
       'Nenhuma atividade pedagógica aprovada e publicada em '+MONTHS[month]+' de '+year+'. Os projetos e aniversariantes já aparecem no próprio calendário. A Gestão pode ter eventos aguardando revisão.')+'</p>'}
-   ${tab==='calendario'?'<div class="cg-toolbar"><button class="cp-btn gold" id="cpDownloadMonth" type="button">↓ Baixar calendário de '+safe(MONTHS[month])+' (PDF)</button></div>':''}${yearOverview}${annualBirthdays}`;
+   ${tab==='calendario'?'<div class="cg-toolbar"><button class="cp-btn gold" id="cpDownloadMonth" type="button">↓ PDF completo de '+safe(MONTHS[month])+'</button></div>':''}${yearOverview}${annualBirthdays}`;
   }else if(tab==='entregas'){
     const rows=events.filter(e=>e.assessmentDelivery).sort((a,b)=>Number(a.stageNumber)-Number(b.stageNumber));
     const contents=events.filter(e=>e.type==='Entrega de conteúdo').sort((a,b)=>a.date.localeCompare(b.date));
@@ -974,10 +974,10 @@
   }else if(tab==='avisos')content=`<div class="cp-main-heading"><h2>Avisos da Gestão</h2></div>${notes.length?notes.map(noticeHtml).join(''):'<p class="cp-muted">Ainda não há avisos para a equipe.</p>'}`;
   else if(year===2026) content=`<div class="cp-main-heading"><h2>Calendário anual oficial 2026</h2><select id="cpMonthPicker" aria-label="Mês do PDF">${MONTHS.map((m,i)=>`<option value="${i}" ${month===i?'selected':''}>${m} de ${year}</option>`).join('')}</select></div><div class="cp-pdf-sample"><div class="cp-paper"><img class="cp-pdf-image" id="cpPdfMonth" alt="Página do calendário oficial do mês selecionado"><p class="cp-muted">Visualização do documento institucional; conteúdo somente para consulta.</p></div><div class="cp-paper"><h3>Calendário oficial para download</h3><p class="cp-muted">Arquivo com capa, 12 meses e anotações, em formato PDF. Selecione o mês para visualizar a página correspondente.</p><button class="cp-btn gold" id="cpDownloadOfficial">↓ Baixar calendário completo (PDF)</button><p class="cp-status" id="cpPdfProgress"></p></div></div>`;
   else content=`<div class="cp-main-heading"><h2>Calendário anual ${year}</h2><select id="cpMonthPicker" aria-label="Mês da prévia do calendário">${MONTHS.map((m,i)=>`<option value="${i}" ${month===i?'selected':''}>${m} de ${year}</option>`).join('')}</select></div>
-   <div class="cp-paper"><h3>Prévia mensal · ${MONTHS[month]} de ${year}</h3><p class="cp-muted">Visualização do conteúdo publicado para o mês. A disposição gráfica do PDF baixado pode variar; as datas e informações vêm da mesma publicação da Gestão.</p>
+   <div class="cp-paper"><h3>Prévia mensal · ${MONTHS[month]} de ${year}</h3><p class="cp-muted">Visualização do conteúdo publicado para o mês. O PDF inclui a grade do calendário e a relação completa das atividades, com títulos, datas e observações disponíveis. Os dados vêm da publicação da Gestão.</p>
    ${selectedMonthGrid(false,true)}
-   <div class="cg-toolbar"><button class="cp-btn gold" id="cpDownloadMonth" type="button">↓ Baixar este mês (PDF)</button>
-    <button class="cp-btn gold" id="cpDownloadPublished" type="button">↓ Baixar os 12 meses (PDF)</button></div>
+   <div class="cg-toolbar"><button class="cp-btn gold" id="cpDownloadMonth" type="button">↓ PDF mensal completo</button>
+    <button class="cp-btn gold" id="cpDownloadPublished" type="button">↓ PDF anual completo</button></div>
    <p class="cp-status" id="cpPdfProgress"></p></div>${compactYearSummary()}`;
 
   here.innerHTML=`${showBell?'':`<div class="cp-overview"><div class="cp-metric"><small>Atividades publicadas</small><strong>${events.length}</strong></div><div class="cp-metric"><small>Avaliações e simulados</small><strong>${assess.length}</strong></div><div class="cp-metric"><small>Avisos disponíveis</small><strong>${notes.length}</strong></div></div>${tabs}`}${flowHeader}${alertPrompt}${content}<p class="cp-updated">Última publicação da Gestão: ${data?new Date(data.updatedAt).toLocaleString('pt-BR'):'ainda não publicada'} · Atualização automática enquanto o aplicativo estiver aberto.</p>`;
