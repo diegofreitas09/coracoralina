@@ -91,3 +91,8 @@ body.cora-exec-manager #app .sidebar-foot{display:block!important;margin-top:aut
  #coraPortal .cp-team #coraTeamMenu{width:38px;min-width:38px;height:38px}
 }
 @media(prefers-reduced-motion:reduce){#coraTeamDrawer,body.cora-exec-manager #app .sidebar{transition:none!important}}
+
+/* Resumo enxuto: indicadores acima, detalhes por mês e ferramentas em suas páginas. */
+.cp-team[data-cora-tab="resumo"] #cpView>.cp-flow-hero,
+.cp-team[data-cora-tab="resumo"] #cpView>.cy-summary,
+.cp-team[data-cora-tab="resumo"] #cpView>.cp-birthday-teaser{display:none!important}
