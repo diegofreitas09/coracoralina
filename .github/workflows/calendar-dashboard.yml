@@ -30,6 +30,8 @@ jobs:
         run: node calendario-anual/test-calendar-holidays.cjs
       - name: Testar replanejamento de avaliações e ExpoCora 2027
         run: node calendario-anual/test-academic-2027.cjs
+      - name: Testar Simulado SAE 2027 com feriados e datas de AD
+        run: node calendario-anual/test-sae-2027.cjs
       - name: Conferir recursos na página
         run: |
           node - <<'NODE'
