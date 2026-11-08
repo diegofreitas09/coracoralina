@@ -60,13 +60,13 @@
   print(g,subtitle,805,1310,17,BLUE,'600');
   print(g,'PÁGINA '+page+' DE '+total,1460,1310,16,MUTED,'700');
  }
- function eventLines(g,item){
-  const lines=[],width=WIDTH-338;
+ function eventLines(g,item,maxWidth,scale=1){
+  const lines=[];
   const add=(value,size,color,weight,spacing)=>{
-   for(const content of wrapText(g,value,width,font(size,weight)))
-    lines.push({text:content,size,color,weight,height:spacing});
+   for(const content of wrapText(g,value,maxWidth,font(size*scale,weight)))
+    lines.push({text:content,size:size*scale,color,weight,height:spacing*scale});
   };
-  add(item.title||'Atividade sem título',28,INK,'700',37);
+  add(item.title||'Atividade sem título',23,INK,'700',30);
   const meta=[
    item.type?'Categoria: '+str(item.type):'',
    item.time?'Horário: '+str(item.time):'',
@@ -76,60 +76,135 @@
    item.duration?'Duração: '+Number(item.duration)+' minutos':'',
    item.stageNumber?'Etapa: '+Number(item.stageNumber)+'ª':''
   ].filter(Boolean).join('  ·  ');
-  if(meta)add(meta,20,BLUE,'600',28);
-  if(str(item.deliveryTypes))add('Avaliações previstas: '+str(item.deliveryTypes),20,MUTED,'400',29);
-  if(str(item.notes))add('Observações: '+str(item.notes),20,MUTED,'400',29);
-  if(str(item.meet))add('Acesso on-line: '+str(item.meet),19,MUTED,'400',27);
+  if(meta)add(meta,16.5,BLUE,'600',22);
+  if(str(item.deliveryTypes))add('Avaliações previstas: '+str(item.deliveryTypes),16,MUTED,'400',22);
+  if(str(item.notes))add('Observações: '+str(item.notes),16,MUTED,'400',22);
+  if(str(item.meet))add('Acesso on-line: '+str(item.meet),15.5,MUTED,'400',21);
   return lines;
+ }
+ function makeCards(g,items,width,scale){
+  const textWidth=width-116*scale;
+  return items.map((item,index)=>{
+   const lines=eventLines(g,item,textWidth,scale);
+   const height=Math.max(77*scale,lines.reduce((n,line)=>n+line.height,0)+26*scale);
+   return {item,index,lines,height,continued:false};
+  });
+ }
+ // Mantém a ordem cronológica: primeiro a coluna da esquerda, depois a da direita.
+ // A partição minimiza a altura da coluna mais longa (evita páginas extras).
+ function balancedColumns(cards,count,gap){
+  const n=cards.length,k=Math.min(count,n);
+  const prefix=[0];cards.forEach(c=>prefix.push(prefix[prefix.length-1]+c.height));
+  const extent=(a,b)=>prefix[b]-prefix[a]+Math.max(0,b-a-1)*gap;
+  const dp=Array.from({length:k+1},()=>Array(n+1).fill(Infinity));
+  const prev=Array.from({length:k+1},()=>Array(n+1).fill(-1));
+  dp[0][0]=0;
+  for(let col=1;col<=k;col++){
+   for(let i=col;i<=n;i++){
+    for(let j=col-1;j<i;j++){
+     const height=Math.max(dp[col-1][j],extent(j,i));
+     if(height<dp[col][i]){dp[col][i]=height;prev[col][i]=j;}
+    }
+   }
+  }
+  const groups=Array(k);let at=n;
+  for(let col=k;col>=1;col--){
+   const from=prev[col][at];groups[col-1]=cards.slice(from,at);at=from;
+  }
+  return {groups,height:dp[k][n]};
  }
  function detailPages({year,month,events,logo}={}){
   const y=Number(year),m=Number(month);
   if(!Number.isInteger(y)||y<2027||y>2099||!Number.isInteger(m)||m<0||m>11)
-    throw Error('Ano e mês inválidos para exportação.');
+   throw Error('Ano e mês inválidos para exportação.');
   const items=eventsOfMonth(events,m,y);
   if(!items.length)return [];
-  const pages=[];let active=null,top=303;
-  function newPage(){
-   const {canvas,g}=createCanvas();
-   header(g,{year:y,month:m,logo,title:'ATIVIDADES COMPLETAS DO MÊS',
-     subtitle:items.length+' atividade(s) publicadas · títulos e informações sem abreviação'});
-   active={canvas,g};pages.push(active);top=310;
-  }
-  newPage();
-  const bottom=1253,cardLeft=70,cardWidth=WIDTH-140,innerX=224;
-  items.forEach((item,index)=>{
-   const lines=eventLines(active.g,item);
-   let position=0,part=0;
-   while(position<lines.length){
-    if(top>bottom-120)newPage();
-    const available=bottom-top-56;
-    let taken=[],used=0;
-    while(position<lines.length&&used+lines[position].height<=available){
-     const row=lines[position++];taken.push(row);used+=row.height;
-    }
-    if(!taken.length){newPage();continue}
-    const height=Math.max(93,used+43);
-    const g=active.g;
-    g.fillStyle=part%2?'#f6f9fd':'#f1f6fb';g.fillRect(cardLeft,top,cardWidth,height);
-    g.strokeStyle='#dce6f1';g.lineWidth=1;g.strokeRect(cardLeft,top,cardWidth,height);
-    const day=String(item.date).slice(8,10),mm=String(m+1).padStart(2,'0');
-    g.fillStyle='#dfeefd';g.fillRect(cardLeft+13,top+15,124,54);
-    print(g,day+'/'+mm,cardLeft+24,top+51,25,NAVY,'800');
-    print(g,String(index+1).padStart(2,'0')+'/'+String(items.length).padStart(2,'0'),
-      cardLeft+24,top+84,15,MUTED,'600');
-    if(part>0)print(g,'CONTINUAÇÃO',innerX,top+18,14,'#a25b26','800');
-    let lineTop=top+24;
-    for(const line of taken){
-     lineTop+=line.height;
-     print(g,line.text,innerX,lineTop-11,line.size,line.color,line.weight);
-    }
-    top+=height+15;
-    part++;
-    if(position<lines.length)newPage();
+  const TOP=306,BOTTOM=1250,AVAILABLE=BOTTOM-TOP,GAP=11;
+  const pages=[];
+  const measurement=createCanvas().g;
+  const options=[
+   {columns:2,scale:1},{columns:3,scale:1},
+   {columns:2,scale:.94},{columns:3,scale:.94},
+   {columns:2,scale:.89},{columns:3,scale:.89}
+  ];
+  let chosen=null;
+  for(const option of options){
+   const colGap=option.columns===2?24:19;
+   const colWidth=(WIDTH-140-colGap*(option.columns-1))/option.columns;
+   const cards=makeCards(measurement,items,colWidth,option.scale);
+   const layout=balancedColumns(cards,option.columns,GAP);
+   if(layout.height<=AVAILABLE){
+    chosen={...option,colGap,colWidth,groups:layout.groups};break;
    }
-  });
+  }
+  function newPage(){
+   const page=createCanvas();
+   header(page.g,{year:y,month:m,logo,title:'ATIVIDADES COMPLETAS DO MÊS',
+    subtitle:items.length+' atividade(s) publicadas · datas, títulos e informações completas'});
+   pages.push(page);
+   return page;
+  }
+  function drawCard(g,card,x,top,width,scale){
+   const {item,lines,index,continued}=card;
+   g.fillStyle=index%2?'#f7fafc':'#edf4fb';
+   g.fillRect(x,top,width,card.height);
+   g.strokeStyle='#dce7f1';g.lineWidth=1;g.strokeRect(x,top,width,card.height);
+   const badgeW=81*scale;
+   g.fillStyle='#dfeefd';g.fillRect(x+9*scale,top+10*scale,badgeW,49*scale);
+   const mm=String(m+1).padStart(2,'0');
+   print(g,String(item.date).slice(8,10)+'/'+mm,x+16*scale,top+38*scale,20*scale,NAVY,'800');
+   print(g,String(index+1).padStart(2,'0')+'/'+String(items.length).padStart(2,'0'),
+    x+17*scale,top+73*scale,12*scale,MUTED,'600');
+   const textX=x+103*scale;
+   let textTop=top+9*scale;
+   if(continued){
+    print(g,'CONTINUAÇÃO',textX,textTop+14*scale,12*scale,'#a25b26','800');
+    textTop+=18*scale;
+   }
+   for(const line of lines){
+    textTop+=line.height;
+    print(g,line.text,textX,textTop-7*scale,line.size,line.color,line.weight);
+   }
+  }
+  if(chosen){
+   const page=newPage();
+   chosen.groups.forEach((group,col)=>{
+    let top=TOP;
+    const left=70+col*(chosen.colWidth+chosen.colGap);
+    group.forEach(card=>{drawCard(page.g,card,left,top,chosen.colWidth,chosen.scale);top+=card.height+GAP;});
+   });
+  }else{
+   // Meses excepcionalmente extensos continuam em outras páginas sem cortar atividades.
+   const scale=.94,columns=2,colGap=24,colWidth=(WIDTH-140-colGap)/columns;
+   const measured=makeCards(measurement,items,colWidth,scale);
+   const fragments=[];
+   for(const card of measured){
+    if(card.height<=AVAILABLE){fragments.push(card);continue;}
+    let part=[],used=0,first=true;
+    const finish=()=>{
+     if(!part.length)return;
+     fragments.push({...card,lines:part,height:used+26*scale+(first?0:18*scale),continued:!first});
+     part=[];used=0;first=false;
+    };
+    for(const line of card.lines){
+     const reserve=26*scale+(first?0:18*scale);
+     if(part.length&&used+line.height+reserve>AVAILABLE)finish();
+     part.push(line);used+=line.height;
+    }
+    finish();
+   }
+   let page=newPage(),col=0,top=TOP;
+   for(const card of fragments){
+    if(top+card.height>BOTTOM){
+     col++;top=TOP;
+     if(col===columns){page=newPage();col=0;}
+    }
+    drawCard(page.g,card,70+col*(colWidth+colGap),top,colWidth,scale);
+    top+=card.height+GAP;
+   }
+  }
   pages.forEach(({g},i)=>footer(g,MONTHS[m]+' '+y,i+1,pages.length));
-  return pages.map(x=>x.canvas);
+  return pages.map(page=>page.canvas);
  }
  function annualCover({year,events=[],stages=[],projects=[],birthdays=[],logo}={}){
   const y=Number(year);if(!Number.isInteger(y)||y<2027||y>2099)throw Error('Ano letivo inválido');
