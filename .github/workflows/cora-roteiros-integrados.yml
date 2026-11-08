@@ -1,0 +1,34 @@
+name: Roteiros integrados Gestao e Equipe
+on:
+  pull_request:
+    paths:
+      - 'calendario-anual/roteiros-integrados*'
+      - 'calendario-anual/test-roteiros-integrados.mjs'
+      - 'calendario-anual/portal.js'
+      - 'calendario-anual/index.html'
+      - 'netlify/functions/**'
+  push:
+    branches: [main]
+    paths:
+      - 'calendario-anual/roteiros-integrados*'
+      - 'netlify/functions/lib/cora-roteiros*'
+jobs:
+  roteiros:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Dependências do backend
+        run: npm install --ignore-scripts --no-package-lock --omit=dev
+      - name: Conferir sintaxe
+        run: |
+          node --check netlify/functions/cora-portal.mjs
+          node --check netlify/functions/lib/cora-roteiros.mjs
+          node --check netlify/functions/lib/cora-roteiros-legacy-2026.mjs
+          node --check calendario-anual/roteiros-integrados.js
+          node --check calendario-anual/portal.js
+          node --check calendario-anual/service-worker.js
+      - name: Testar vínculos, autoria, fonte legada, calendário e exportação
+        run: node calendario-anual/test-roteiros-integrados.mjs
