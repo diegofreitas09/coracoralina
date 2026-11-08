@@ -100,9 +100,42 @@
   if(y>2026)out.push('Confira feriados municipais, recessos, sábados letivos, carga horária e mínimo legal de 200 dias antes da publicação.');
   return [...new Set(out)];
  }
+ // Simulado SAE: 2º ano do EF à 3ª série do EM, na sexta anterior à AD.
+ // Em Fortaleza, 19/03/2027 é feriado municipal, então a opção é 12/03.
+ const SAE_SCOPE='2º ano do Ensino Fundamental à 3ª série do Ensino Médio';
+ const isDiagnostic=a=>/diagnostic|\bad\b/.test(String(a?.title||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());
+ const previousFriday=date=>{
+  const d=new Date(String(date)+'T12:00:00Z');if(!Number.isFinite(d.getTime()))return '';
+  d.setUTCDate(d.getUTCDate()-(((d.getUTCDay()-5+7)%7)||7));return d.toISOString().slice(0,10);
+ };
+ const fridayBlocked=(date,y)=>{
+  if(y===2027&&HOLIDAYS_2027[date])return HOLIDAYS_2027[date];
+  let events=[];try{events=JSON.parse(localStorage.getItem('cora_calendario_eventos_'+y+'_v1')||'[]')}catch{}
+  const conflict=Array.isArray(events)?events.find(e=>e?.date===date&&(
+   e.holidayManaged===true&&e.holidayDecision==='sem'||
+   e.type==='Feriado'&&!e.holidayManaged||
+   /sem aula|recesso escolar|suspens[aã]o de aula/i.test(String(e.title||'')))):null;
+  return conflict?.title||'';
+ };
+ function saeSchedule(data=get(activeYear())){
+  if(Number(data?.year)!==2027||!Array.isArray(data.items))return [];
+  return data.items.flatMap(row=>{
+   const ad=(row.items||[]).find(isDiagnostic);
+   if(!ad?.start||!iso(ad.start))return [];
+   const expected=previousFriday(ad.start);let day=expected,blocked='';
+   for(let k=0;k<10&&day;k++){
+    const why=fridayBlocked(day,Number(data.year));if(!why)break;
+    if(!blocked)blocked=why;day=previousFriday(day);
+   }
+   if(!day||!day.startsWith(data.year+'-'))return [];
+   const exception=expected!==day?'Sexta-feira '+display(expected)+' indisponível ('+blocked+'). Antecipado para '+display(day)+'.':'';
+   return [{stage:row.stage,date:day,adStart:ad.start,expected,exception,scope:SAE_SCOPE}];
+  });
+ }
  function publicationEvents(y=activeYear()){
   const data=get(y);
   const result=[];
+  const simulados=saeSchedule(data);
   for(const row of data.items){
    if(!isStageApproved(data,row.stage))continue;
    const label=row.stage+'ª etapa';
@@ -113,6 +146,14 @@
     stageNumber:row.stage,leadDays:5,deliveryTypes:row.deliveryTypes,
     fundamentalEmail:FUND,medioEmail:MED,
     notes:'Prazo de entrega: '+(row.deliveryTypes||'Avaliações')+'. Ensino Fundamental: '+FUND+'. Ensino Médio: '+MED+'. Lembrete 5 dias antes.',
+    source:SCHOOL+' · Cronograma pedagógico '+y
+   });
+   const sae=simulados.find(x=>x.stage===row.stage);
+   if(sae)result.push({
+    id:'cora-simulado-sae-'+y+'-'+row.stage,date:sae.date,
+    title:'Simulado SAE — 2º ano EF à 3ª série EM — '+label,
+    type:'Avaliação',status:'Publicado',audience:'Alunos e professores',
+    notes:'Simulado SAE do '+SAE_SCOPE+'. Sexta-feira anterior às Avaliações Diagnósticas (AD), que começam em '+display(sae.adStart)+'. '+sae.exception,
     source:SCHOOL+' · Cronograma pedagógico '+y
    });
    for(const [i,item] of row.items.entries()){
@@ -137,7 +178,7 @@
   const key='cora_calendario_eventos_'+y+'_v1';
   let existing=[];try{existing=JSON.parse(localStorage.getItem(key)||'[]')}catch{}
   if(!Array.isArray(existing))existing=[];
-  const clean=existing.filter(e=>!/^cora-(entrega-avaliacoes|periodo-avaliacao)-/.test(String(e.id||'')));
+  const clean=existing.filter(e=>!/^cora-(entrega-avaliacoes|periodo-avaliacao|simulado-sae)-/.test(String(e.id||'')));
   const next=clean.concat(approved);
   if(JSON.stringify(next)!==JSON.stringify(existing)){
    try{localStorage.setItem(key,JSON.stringify(next));window.dispatchEvent(new CustomEvent('cora-data-changed',{detail:{year:y}}));}catch{}
@@ -148,6 +189,15 @@
   const y=activeYear(),data=get(y),row=data.items[selectedStage-1],valid=isStageApproved(data,selectedStage);
   if(!row)return '';
   const alertItems=issues(data,selectedStage);
+  const sae=y===2027?saeSchedule(data).find(x=>x.stage===selectedStage):null;
+  const saePreview=y!==2027?'':sae
+   ?'<section class="assess-sae-preview"><strong>Simulado SAE · '+selectedStage+'ª etapa</strong>'+
+     '<p><b>'+display(sae.date)+'</b> · sexta-feira anterior à AD de '+display(sae.adStart)+'</p>'+
+     '<small>Participantes: '+esc(SAE_SCOPE)+'. A data acompanha automaticamente a AD desta etapa.</small>'+
+     (sae.exception?'<p class="assess-sae-warning">Atenção: '+esc(sae.exception)+'</p>':'')+
+     '<p><small>Visível aos professores após validação e publicação pela Gestão.</small></p></section>'
+   :'<section class="assess-sae-preview"><strong>Simulado SAE · '+selectedStage+'ª etapa</strong>'+
+     '<p>Cadastre a AD para gerar a data do Simulado SAE.</p></section>';
   const windows=row.items.map((item,i)=>'<div data-assessment-item class="assess-eval-item">'+
    '<div class="assess-eval-title"><span class="assess-eval-index">'+String(i+1).padStart(2,'0')+'</span>'+
    '<input aria-label="Nome da avaliação '+(i+1)+'" data-assessment-title value="'+esc(item.title)+'" placeholder="Nome da avaliação"></div>'+
@@ -163,7 +213,7 @@
    '<div class="assess-item-list">'+windows+'</div><button type="button" class="assess-add" data-add-assessment>+ Adicionar avaliação</button></details>'+
    '<div class="assess-notes"><strong>Conferência desta etapa</strong><div>'+
      (alertItems.length?alertItems.slice(0,9).map(t=>'<p>• '+esc(t)+'</p>').join(''):'<p>Nenhum conflito automático identificado para a etapa selecionada.</p>')+
-   '</div></div></div>';
+   '</div></div>'+saePreview+'</div>';
  }
  function readSelected(){
   const host=document.getElementById('coraAssessmentPanel');
@@ -288,5 +338,5 @@
   window.addEventListener('cora-year-changed',()=>{selectedStage=1;syncToCalendar(activeYear());render()});
   window.addEventListener('cora-stages-updated',render);
  });
- window.CoraAssessments={get,save,draftFrom,issues,publicationEvents,isStageApproved,display,FUND,MED};
+ window.CoraAssessments={get,save,draftFrom,issues,publicationEvents,isStageApproved,saeSchedule,display,FUND,MED};
 })();
