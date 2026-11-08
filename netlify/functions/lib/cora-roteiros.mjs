@@ -174,3 +174,4 @@ export async function roteiroAction({role,member,request,url}){
  return error('Operação desconhecida.');
 }
 export const roteiroConfig=supported;
+export const roteiroRules={gradeOf,subjectOf,testOf,validDate,idFor,permittedSegment,cleanDoc,normalizePair};
