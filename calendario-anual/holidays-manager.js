@@ -73,6 +73,25 @@
   rows.filter(r=>currentDecision(r).status==='antecipado'&&valid(currentDecision(r).movedTo,activeYear)).forEach(r=>closed.add(currentDecision(r).movedTo));
   const potential=weekdays.filter(d=>{const day=d.getUTCDay(),str=d.toISOString().slice(0,10);return ((day>0&&day<6)||extra.has(str))&&!closed.has(str)}).length;
   host.querySelector('#chMetrics').innerHTML='<span><strong>'+rows.length+'</strong> datas apresentadas</span><span><strong>'+confirmed+'</strong> feriados identificados na base</span><span><strong>'+total+'</strong> decisões preenchidas</span><span><strong>'+potential+'</strong> dias úteis potenciais*</span>';
+  const schoolCarnaval=host.querySelector('#chSchoolCarnaval2027');
+  const school=window.CoraSchoolCarnival2027;
+  if(schoolCarnaval){
+   const on=activeYear===2027&&record.uf==='CE'&&school;
+   schoolCarnaval.hidden=!on;
+   if(on){
+    const confirmedDates=rows.filter(r=>['2027-02-08','2027-02-09','2027-02-10'].includes(r.date)&&currentDecision(r).status==='sem').length;
+    schoolCarnaval.innerHTML='<div class="ch-cora-carnival-head"><strong>Carnaval 2027 · funcionamento do Cora Coralina</strong>'+
+     '<span>'+confirmedDates+'/3 dias úteis marcados sem aula</span></div>'+
+     '<p><b>06 a 10/02:</b> sem aula. Os dias 6 e 7 são sábado e domingo, sem aulas regulares. '+
+      '<b>11/02:</b> retorno com aula normal. Aulas normais também nos dias <b>12, 15, 16 e 17/02.</b></p>'+
+     '<div class="ch-cora-carnival-grid">'+school.days.map(d=>
+      '<div><time>'+esc(printable(d.date))+'</time><span class="'+(d.kind==='aula'?'is-class':'is-closed')+'">'+esc(d.status)+'</span>'+
+      '<small>'+esc(d.description)+'</small></div>').join('')+'</div>'+
+     '<button type="button" class="ch-outline" id="chCoraCarnavalApply">Definir 08, 09 e 10/02 como SEM AULA</button>'+
+     '<p class="ch-cora-carnival-foot">Regra exclusiva deste calendário escolar. Os dias 15, 16 e 17/02 não são Carnaval. '+
+      'Depois de marcar, use “Salvar e publicar para a equipe”. Registros antigos devem ser conferidos na auditoria.</p>';
+   }
+  }
   const area=host.querySelector('#chRows');
   const data=monthRows();
   area.innerHTML=data.length?data.map(r=>{
@@ -190,7 +209,7 @@
    '<label>Município (IBGE)<select id="chCitySelect"><option>Carregando...</option></select></label>'+
    '<label>Ou digite o município<input id="chCityText" type="text" maxlength="110" value="'+esc(record.city)+'" placeholder="Ex.: Fortaleza"></label>'+
    '<label>Exibir<select id="chMonth"><option value="all">Ano inteiro · 12 meses</option>'+MONTHS.map((m,i)=>'<option value="'+i+'">'+m+'</option>').join('')+'</select></label></div>'+
-   '<div id="chMetrics" class="ch-metrics"></div>'+
+   '<div id="chMetrics" class="ch-metrics"></div><div id="chSchoolCarnaval2027" class="ch-cora-carnival" hidden></div>'+
    '<div class="ch-actions"><button type="button" id="chAllNo" class="ch-outline">Marcar sem aula · período exibido</button><button type="button" id="chAllKeep" class="ch-outline">Manter programação · período exibido</button><button type="button" id="chClear" class="ch-outline">Voltar para A definir</button></div>'+
    '<div id="chRows" class="ch-rows"></div>'+
    '<form id="chExtra" class="ch-extra"><strong>Adicionar feriado, recesso ou dia especial</strong><input type="date" id="chExtraDate" min="'+y+'-01-01" max="'+y+'-12-31" required><input type="text" id="chExtraName" placeholder="Descrição da data" maxlength="140" required><button type="submit" class="ch-outline">Adicionar data</button></form>'+
@@ -218,6 +237,15 @@
   wrapper.querySelector('#chAllNo').onclick=()=>{monthRows().forEach(r=>applyDecision(r.id,'sem'));saved();render()};
   wrapper.querySelector('#chAllKeep').onclick=()=>{monthRows().forEach(r=>applyDecision(r.id,'manter'));saved();render()};
   wrapper.querySelector('#chClear').onclick=()=>{monthRows().forEach(r=>applyDecision(r.id,'pendente'));saved();render()};
+  wrapper.querySelector('#chSchoolCarnaval2027').addEventListener('click',event=>{
+   if(!event.target.closest('#chCoraCarnavalApply')||activeYear!==2027||record.uf!=='CE')return;
+   const days=new Set(['2027-02-08','2027-02-09','2027-02-10']);
+   const targets=rows.filter(r=>days.has(r.date)&&/carnaval|cinzas/i.test(r.title)&&r.scope==='Ponto facultativo');
+   if(targets.length!==3){notice('O período não foi encontrado na base de feriados. Confira as configurações antes de aplicar.');return;}
+   targets.forEach(r=>applyDecision(r.id,'sem',''));
+   saved();render();
+   notice('Carnaval 2027: 08, 09 e 10/02 marcados SEM AULA. Sábado 06 e domingo 07 já são não letivos. Retorno em 11/02. Clique em Salvar e publicar para a equipe.');
+  });
   wrapper.querySelector('#chExtra').onsubmit=e=>{e.preventDefault();try{addCustom(wrapper.querySelector('#chExtraDate').value,wrapper.querySelector('#chExtraName').value);wrapper.querySelector('#chExtraName').value='';notice('Data cadastrada. Escolha o funcionamento e salve.')}catch(error){notice(error.message)}};
   wrapper.querySelector('#chSave').onclick=()=>saveAndPublish(null);
   wrapper.querySelector('#chPublish').onclick=()=>saveAndPublish(onPublish);
