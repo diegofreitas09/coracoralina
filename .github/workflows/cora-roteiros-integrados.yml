@@ -4,6 +4,7 @@ on:
     paths:
       - 'calendario-anual/roteiros-integrados*'
       - 'calendario-anual/test-roteiros-integrados.mjs'
+      - 'calendario-anual/test-roteiros-canva-cadastros.mjs'
       - 'calendario-anual/portal.js'
       - 'calendario-anual/index.html'
       - 'netlify/functions/**'
@@ -27,8 +28,12 @@ jobs:
           node --check netlify/functions/cora-portal.mjs
           node --check netlify/functions/lib/cora-roteiros.mjs
           node --check netlify/functions/lib/cora-roteiros-legacy-2026.mjs
+          node --check netlify/functions/lib/cora-roteiros-canva-2026.mjs
+          node --check netlify/functions/lib/cora-roteiros-professores-2026.mjs
           node --check calendario-anual/roteiros-integrados.js
           node --check calendario-anual/portal.js
           node --check calendario-anual/service-worker.js
       - name: Testar vínculos, autoria, fonte legada, calendário e exportação
-        run: node calendario-anual/test-roteiros-integrados.mjs
+        run: |
+          node calendario-anual/test-roteiros-integrados.mjs
+          node calendario-anual/test-roteiros-canva-cadastros.mjs

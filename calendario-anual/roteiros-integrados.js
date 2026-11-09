@@ -22,12 +22,14 @@
  async function fetchData(s){const answer=await api(s,undefined);
   s.types=answer.types;s.people=answer.people||[];s.assignments=answer.assignments||[];s.documents=answer.documents||[];
   s.schedule=answer.schedule||[];s.composite=answer.composite||[];s.loaded=true;
+  s.templates=answer.templates||[];s.teacherLinks=answer.teacherLinks||[];
+  s.canvaReport=answer.canvaReport||null;s.canvaSource=answer.canvaSource||null;
   if(!s.grade)s.grade=s.role==='equipe'&&s.assignments.length?s.assignments[0].grade:'6º ano';
   s.subject=currentSubject(s);
  }
  function statusBadge(status){
   const txt={rascunho:'Rascunho',enviado:'Aguardando Gestão',aprovado:'Aprovado',devolvido:'Devolvido',
-   'referencia-historica':'Referência 2026'}[status]||'Não iniciado';
+   'referencia-historica':'Referência 2026','modelo-canva-pendente':'Modelo Canva para revisar'}[status]||'Não iniciado';
   return '<span class="cr-status '+esc(status||'')+'">'+esc(txt)+'</span>';
  }
  const alert=s=>s.message?'<div class="cr-feedback" role="status">'+esc(s.message)+'</div>':'';
@@ -41,15 +43,22 @@
   const subs=unique(s.assignments.filter(a=>a.grade===chosen).map(a=>a.subject)),subject=subs.includes(s.subject)?s.subject:subs[0];s.subject=subject;
   const id=idFor({grade:chosen,subject,assessment:s.assessment||'AP2',stage:s.stage||1});
   const doc=s.documents.find(x=>idFor(x)===id)||null;
+  const template=s.templates.find(x=>idFor(x)===id)||null;
   const parts=s.editorParts||doc?.blocks||[blank()];
+  const original=s.editorSourceText??doc?.sourceText??template?.rawText??'';
   const list=s.documents.slice().sort((a,b)=>Number(a.stage)-Number(b.stage)||a.grade.localeCompare(b.grade));
-  return '<div class="cr-grid"><section class="cr-card"><h3>Digitar roteiro individual</h3><p class="cr-help">O formulário já limita as opções às disciplinas autorizadas pela Gestão. Para enviar, preencha os cinco campos de cada bloco.</p>'+
+  return '<div class="cr-grid"><section class="cr-card"><h3>Verificar e editar roteiro</h3><p class="cr-help">O roteiro de 2026 vem do Canva original para revisão. Escolha a etapa, o modelo da prova e confira o texto antes de enviar. Os campos abaixo permitem detalhar livro, unidade, capítulo, temas e páginas.</p>'+
    '<form id="crEditorForm"><div class="cr-fields">'+
    '<label>Série/turma<select id="crGrade">'+opt(grades,chosen)+'</select></label>'+
    '<label>Disciplina<select id="crSubject">'+opt(subs,subject)+'</select></label>'+
    '<label>Etapa<select id="crStage">'+stageSelect(s.stage||1)+'</select></label>'+
    '<label>Modelo de avaliação<select id="crAssessment">'+opt(s.types?.tests||types,s.assessment||'AP2')+'</select></label></div>'+
-   '<div class="cr-editor-title"><h4>Conteúdos que serão avaliados</h4><button type="button" class="cr-small" id="crAddBlock">+ Acrescentar capítulo</button></div>'+
+   '<div class="cr-canva-source"><div class="cr-source-heading"><strong>Roteiro original do Canva</strong>'+
+   (template?'<small>Modelo localizado · página '+template.sourcePage+' · '+s.year+'</small>':
+    '<small>Não há modelo preenchido do Canva para esta combinação. Comece um roteiro novo.</small>')+
+   '</div><label>Texto completo para conferência e edição<textarea id="crCanvaText" rows="9" maxlength="9000" placeholder="O roteiro do Canva aparecerá aqui quando existir nesta etapa e disciplina.">'+esc(original)+'</textarea></label>'+
+   '<p>Não é necessário reescrever o texto. Confira e ajuste o roteiro herdado; ele não será enviado automaticamente.</p></div>'+
+   '<div class="cr-editor-title"><h4>Detalhamento por unidade/capítulo (opcional para o texto original revisado)</h4><button type="button" class="cr-small" id="crAddBlock">+ Acrescentar capítulo</button></div>'+
    '<div id="crBlocks">'+parts.map((b,i)=>'<fieldset class="cr-block"><legend>Item '+(i+1)+'</legend>'+
    '<label>1. Livro ou material didático<input name="book" maxlength="100" value="'+esc(b.book)+'" placeholder="Ex.: Livro 1 · SAE Digital"></label>'+
    '<label>2. Unidade<input name="unit" maxlength="160" value="'+esc(b.unit)+'" placeholder="Ex.: Unidade 2 — Ciências humanas"></label>'+
@@ -58,9 +67,11 @@
    '<label>5. Páginas<input name="pages" maxlength="150" value="'+esc(b.pages)+'" placeholder="Ex.: páginas 18 a 26; exercícios 1 a 8"></label>'+
    '<button class="cr-remove" type="button" data-remove-block="'+i+'">Remover este item</button></fieldset>').join('')+'</div>'+
    '<label>Observação adicional (opcional)<textarea name="instructions" id="crInstructions" rows="2" maxlength="1800">'+esc(s.editorInstructions??doc?.instructions??'')+'</textarea></label>'+
+   '<label class="cr-source-confirm"><input type="checkbox" id="crConfirmCanva"> Conferi o conteúdo, as páginas e a etapa e autorizo o envio deste roteiro à Gestão.</label>'+
    '<div class="cr-actions"><button class="cr-btn" id="crSaveDraft" type="submit" data-submit-status="rascunho">Salvar rascunho</button>'+
    '<button class="cr-btn primary" type="submit" data-submit-status="enviado">Enviar para Gestão</button></div>'+
-   '<p class="cr-help">Status atual: '+statusBadge(doc?.status||'')+' · Enviado só aparece como definitivo após aprovação da Gestão.</p></form>'+
+   '<p class="cr-help">Status atual: '+statusBadge(doc?.status||(template?'modelo-canva-pendente':''))+
+   ' · O conteúdo do Canva é uma proposta de roteiro até o professor salvar, enviar e a Gestão aprovar.</p></form>'+
    '<div class="cr-source"><button type="button" id="crLoadLegacy" class="cr-small">Consultar modelo histórico de 2026</button>'+
    '<p>A referência antiga não substitui o conteúdo revisado. A autoria de 2026 não está identificada na planilha.</p><div id="crLegacyView"></div></div></section>'+
    '<section class="cr-card"><h3>Meus roteiros</h3><div class="cr-mini-list">'+(list.length?list.map(x=>
@@ -107,6 +118,7 @@
     '<details><summary>Ver roteiro completo</summary>'+d.blocks.map(b=>
      '<div class="cr-doc-block"><b>Livro:</b> '+esc(b.book)+'<p><b>Unidade:</b> '+esc(b.unit)+'</p>'+
      '<p><b>Capítulo:</b> '+esc(b.chapter)+'</p><p><b>Temas:</b> '+esc(b.theme)+'</p><p><b>Páginas:</b> '+esc(b.pages)+'</p></div>').join('')+
+    (d.sourceText?'<div class="cr-doc-block"><b>Texto do roteiro revisado:</b><pre class="cr-legacy">'+esc(d.sourceText)+'</pre></div>':'')+
     (d.instructions?'<p>Observações: '+esc(d.instructions)+'</p>':'')+'</details>'+
     '<div class="cr-actions">'+(d.status==='enviado'?'<button data-review="aprovado" data-author="'+esc(d.authorId)+'" data-doc="'+esc(d.id)+'" data-revision="'+d.revision+'" class="cr-btn primary">Aprovar</button>':'')+
     (d.status==='enviado'||d.status==='aprovado'?'<button data-review="devolvido" data-author="'+esc(d.authorId)+'" data-doc="'+esc(d.id)+'" data-revision="'+d.revision+'" class="cr-btn">Devolver</button>':'')+'</div></article>').join('')+'</div>':'<div class="cr-empty">Ainda não há roteiros digitados por professores neste ano.</div>')+
@@ -120,16 +132,27 @@
    '<p class="cr-help">'+list.length+' disciplina(s) programada(s) · '+pending.length+' pendência(s). Os arquivos com pendências terão a marca PRÉVIA PARA CONFERÊNCIA.</p>'+ref+
    '<div class="cr-preview-list">'+(list.length?list.slice().sort(byDate).map(row=>
     '<article class="cr-preview-item"><div><time>'+fmt(row.date)+'</time><strong>'+esc(row.grade)+' · '+esc(row.subject)+'</strong><span>'+esc(row.assessment)+' · '+row.stage+'ª etapa</span></div>'+
-     statusBadge(row.roteiro?.status||row.legacy?.status||'')+
-     (row.roteiro?.blocks?.length?'<div class="cr-preview-text">'+row.roteiro.blocks.map(b=>
+     statusBadge(row.roteiro?.status||(row.template?'modelo-canva-pendente':row.legacy?.status)||'')+
+     (row.roteiro?.sourceText?'<pre class="cr-legacy">'+esc(row.roteiro.sourceText)+'</pre>':
+      row.roteiro?.blocks?.length?'<div class="cr-preview-text">'+row.roteiro.blocks.map(b=>
       '<p><b>Livro:</b> '+esc(b.book)+' | <b>Unidade:</b> '+esc(b.unit)+' | <b>Capítulo:</b> '+esc(b.chapter)+
       '<br><b>Temas:</b> '+esc(b.theme)+' | <b>Páginas:</b> '+esc(b.pages)+'</p>').join('')+'</div>':
+      row.template?'<div class="cr-preview-text"><b>Modelo Canva · página '+row.template.sourcePage+' · aguardando revisão</b>'+
+       '<pre class="cr-legacy">'+esc(row.template.rawText)+'</pre></div>':
       row.legacy?'<pre class="cr-legacy">'+esc(row.legacy.legacyText)+'</pre>':
       '<p class="cr-missing">Aguardando envio e aprovação do professor vinculado à disciplina.</p>')+
     '</article>').join(''):'<div class="cr-empty">Cadastre o cronograma acima para formar os roteiros automaticamente.</div>')+'</div>'+
     '</section>';
  }
- function managerForm(s){return '<div class="cr-grid">'+assignmentEditor(s)+documentList(s)+scheduleEditor(s)+composeView(s)+'</div>'}
+ function teacherRoster(s){
+ const rows=s.teacherLinks||[],pending=rows.filter(x=>x.status==='pendente'||x.status==='segmento-nao-autorizado');
+ return '<section class="cr-card cr-full"><div class="cr-editor-title"><h3>Professores e disciplinas vinculadas</h3>'+
+  '<button class="cr-btn" type="button" id="crApplyTeacherPlan">Conferir/aplicar os 15 cadastros</button></div>'+
+  '<p class="cr-help">'+rows.length+' profissionais previstos · '+pending.length+' precisam de cadastro ou ajuste de segmento. Os vínculos são por e-mail institucional já cadastrado, sem criação de contas falsas.</p>'+
+  '<div class="cr-roster-grid">'+rows.map(x=>'<div><strong>'+esc(x.person)+'</strong><small>'+esc(x.teacher?.name||x.reason||'Aguardando cadastro')+
+  '</small><span>'+x.linked+' combinações vinculadas</span></div>').join('')+'</div></section>';
+}
+function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignmentEditor(s)+documentList(s)+scheduleEditor(s)+composeView(s)+'</div>'}
  function render(s){
   s.host.innerHTML=header(s)+alert(s)+(s.role==='gestao'?managerForm(s):teacherForm(s))+
    '<footer class="cr-footer"><button type="button" id="crReload" class="cr-small">Atualizar dados</button>'+
@@ -142,6 +165,7 @@
  })}
  function readPartForm(s){const el=s.host.querySelector('#crEditorForm');if(!el)return;
   s.editorParts=readBlocks(el);s.editorInstructions=el.querySelector('#crInstructions')?.value||'';
+  s.editorSourceText=el.querySelector('#crCanvaText')?.value||'';
  }
  function changeGrade(s,key,subKey){const select=s.host.querySelector('#'+key);if(!select)return;
   s.grade=select.value;s.subject=subjectList(s)[0]||'';
@@ -149,16 +173,16 @@
   if(other)other.innerHTML=opt(subjectList(s),s.subject);
  }
  function send(s,operation,body){return api(s,{operation,...body})}
- async function reload(s){s.message='';await fetchData(s);s.pendingAssignments=null;s.pendingSchedule=null;s.editorParts=null;s.editorInstructions=null;render(s)}
+ async function reload(s){s.message='';await fetchData(s);s.pendingAssignments=null;s.pendingSchedule=null;s.editorParts=null;s.editorInstructions=null;s.editorSourceText=null;render(s)}
  function err(s,error){s.message=error?.message||'Não foi possível salvar os dados.';render(s)}
  function bind(s){
   const $=q=>s.host.querySelector(q);
   $('#crReload')?.addEventListener('click',()=>void reload(s).catch(e=>err(s,e)));
   if(s.role==='equipe'){
-   $('#crGrade')?.addEventListener('change',()=>{readPartForm(s);s.grade=$('#crGrade').value;s.subject='';s.editorParts=null;s.editorInstructions=null;render(s)});
-   $('#crSubject')?.addEventListener('change',()=>{s.subject=$('#crSubject').value;s.editorParts=null;s.editorInstructions=null;render(s)});
-   $('#crStage')?.addEventListener('change',()=>{s.stage=Number($('#crStage').value);s.editorParts=null;s.editorInstructions=null;render(s)});
-   $('#crAssessment')?.addEventListener('change',()=>{s.assessment=$('#crAssessment').value;s.editorParts=null;s.editorInstructions=null;render(s)});
+   $('#crGrade')?.addEventListener('change',()=>{readPartForm(s);s.grade=$('#crGrade').value;s.subject='';s.editorParts=null;s.editorInstructions=null;s.editorSourceText=null;render(s)});
+   $('#crSubject')?.addEventListener('change',()=>{s.subject=$('#crSubject').value;s.editorParts=null;s.editorInstructions=null;s.editorSourceText=null;render(s)});
+   $('#crStage')?.addEventListener('change',()=>{s.stage=Number($('#crStage').value);s.editorParts=null;s.editorInstructions=null;s.editorSourceText=null;render(s)});
+   $('#crAssessment')?.addEventListener('change',()=>{s.assessment=$('#crAssessment').value;s.editorParts=null;s.editorInstructions=null;s.editorSourceText=null;render(s)});
    $('#crAddBlock')?.addEventListener('click',()=>{readPartForm(s);s.editorParts.push(blank());render(s)});
    s.host.querySelectorAll('[data-remove-block]').forEach(b=>b.onclick=()=>{
     readPartForm(s);if(s.editorParts.length>1)s.editorParts.splice(Number(b.dataset.removeBlock),1);render(s);
@@ -167,11 +191,17 @@
    if(form)form.querySelectorAll('[data-submit-status]').forEach(btn=>btn.onclick=()=>{form.dataset.status=btn.dataset.submitStatus});
    form?.addEventListener('submit',async event=>{
     event.preventDefault();const button=event.submitter,status=button?.dataset.submitStatus||form.dataset.status||'rascunho';
-    readPartForm(s);const input={year:s.year,grade:s.grade,subject:s.subject,assessment:s.assessment||'AP2',stage:s.stage||1,
-     blocks:s.editorParts,instructions:s.editorInstructions,status};
+    const confirmed=s.host.querySelector('#crConfirmCanva')?.checked===true;
+    readPartForm(s);
+    if(status==='enviado'&&!confirmed){
+     s.message='Antes de encaminhar, confirme que revisou o roteiro e suas páginas.';render(s);return;
+    }
+    const input={year:s.year,grade:s.grade,subject:s.subject,assessment:s.assessment||'AP2',stage:s.stage||1,
+     blocks:s.editorParts,instructions:s.editorInstructions,sourceText:s.editorSourceText,
+     confirmed:status==='enviado'&&confirmed,status};
     const old=s.documents.find(x=>idFor(x)===idFor(input));input.revision=old?.revision||0;
     try{await send(s,'save',{document:input});s.message=status==='enviado'?'Roteiro enviado à Gestão. Aguarde a conferência.':'Rascunho salvo na sua conta.';
-     await fetchData(s);s.editorParts=null;s.editorInstructions=null;render(s);}
+     await fetchData(s);s.editorParts=null;s.editorInstructions=null;s.editorSourceText=null;render(s);}
     catch(e){s.message=e.message;render(s)}
    });
    $('#crLoadLegacy')?.addEventListener('click',async()=>{
@@ -190,6 +220,17 @@
     }catch(e){s.message=e.message;render(s)}
    });
   }else{
+   $('#crApplyTeacherPlan')?.addEventListener('click',async()=>{
+    try{
+     const preview=await send(s,'applyTeacherPlan',{dryRun:true});
+     const matched=(preview.preview||[]).filter(x=>x.items).length,pending=(preview.preview||[]).filter(x=>!x.items);
+     if(!confirm('Vincular os '+matched+' professores encontrados e preservar atribuições manuais existentes? '+
+       pending.length+' cadastro(s) ainda precisam de conferência.'))return;
+     const applied=await send(s,'applyTeacherPlan',{dryRun:false,confirm:true,replaceExisting:false});
+     s.message='Vínculos conferidos: '+(applied.applied||[]).filter(x=>x.status==='aplicado').length+
+       ' aplicados; vínculos manuais anteriores preservados.';await fetchData(s);render(s);
+    }catch(e){err(s,e)}
+   });
    $('#crTeacher')?.addEventListener('change',()=>{s.teacherEmail=$('#crTeacher').value;s.pendingAssignments=null;render(s)});
    $('#crAssignGrade')?.addEventListener('change',()=>changeGrade(s,'crAssignGrade','crAssignSubject'));
    $('#crScheduleGrade')?.addEventListener('change',()=>changeGrade(s,'crScheduleGrade','crScheduleSubject'));
@@ -277,7 +318,9 @@
     line('DATA: '+fmt(row.date),25,true,'#144f7b',12);y+=15;
    }
    ensure(108);line(row.grade.toUpperCase()+' · '+row.subject,24,true);line(row.assessment+' · '+row.stage+'ª ETAPA',17,true,'#698098');y+=10;
-   if(row.roteiro?.blocks?.length){
+   if(row.roteiro?.sourceText){
+     line(row.roteiro.sourceText,19,false,'#163e60');
+   }else if(row.roteiro?.blocks?.length){
     for(const b of row.roteiro.blocks){
      line('LIVRO / MATERIAL: '+b.book,19,false);
      line('UNIDADE: '+b.unit,19,false);
@@ -286,6 +329,9 @@
      line('PÁGINAS: '+b.pages,19,false);
      y+=12;
     }
+   }else if(row.template){
+    line('MODELO DO CANVA · PENDENTE DE REVISÃO E APROVAÇÃO',18,true,'#a46b1f');
+    line(row.template.rawText,18,false,'#324b61');
    }else if(row.legacy){
     line('REFERÊNCIA HISTÓRICA 2026 · REVISÃO OBRIGATÓRIA',18,true,'#a46b1f');
     line(row.legacy.legacyText,18,false,'#324b61');
@@ -322,7 +368,7 @@
   if(!host||typeof callApi!=='function')return;
   if(inst.get(host)?.year===year&&inst.get(host)?.loaded)return;
   const s={role,host,year,api:callApi,grade:'',subject:'',stage:1,assessment:'AP2',message:'',loaded:false,
-   assignments:[],documents:[],schedule:[],composite:[],people:[]};inst.set(host,s);
+   assignments:[],documents:[],schedule:[],composite:[],people:[],templates:[],teacherLinks:[],editorSourceText:null};inst.set(host,s);
   host.innerHTML='<div class="cr-loading">Carregando roteiros e vínculos pedagógicos...</div>';
   try{await fetchData(s);render(s);}catch(e){host.innerHTML='<div class="cr-error">Não foi possível acessar os roteiros: '+esc(e.message)+
    '<p>Confirme seu login individual e atualize a página.</p></div>'}
