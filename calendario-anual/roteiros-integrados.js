@@ -191,12 +191,14 @@ function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignme
    if(form)form.querySelectorAll('[data-submit-status]').forEach(btn=>btn.onclick=()=>{form.dataset.status=btn.dataset.submitStatus});
    form?.addEventListener('submit',async event=>{
     event.preventDefault();const button=event.submitter,status=button?.dataset.submitStatus||form.dataset.status||'rascunho';
-    if(status==='enviado'&&!s.host.querySelector('#crConfirmCanva')?.checked){
+    const confirmed=s.host.querySelector('#crConfirmCanva')?.checked===true;
+    readPartForm(s);
+    if(status==='enviado'&&!confirmed){
      s.message='Antes de encaminhar, confirme que revisou o roteiro e suas páginas.';render(s);return;
     }
-    readPartForm(s);const input={year:s.year,grade:s.grade,subject:s.subject,assessment:s.assessment||'AP2',stage:s.stage||1,
+    const input={year:s.year,grade:s.grade,subject:s.subject,assessment:s.assessment||'AP2',stage:s.stage||1,
      blocks:s.editorParts,instructions:s.editorInstructions,sourceText:s.editorSourceText,
-     confirmed:status==='enviado',status};
+     confirmed:status==='enviado'&&confirmed,status};
     const old=s.documents.find(x=>idFor(x)===idFor(input));input.revision=old?.revision||0;
     try{await send(s,'save',{document:input});s.message=status==='enviado'?'Roteiro enviado à Gestão. Aguarde a conferência.':'Rascunho salvo na sua conta.';
      await fetchData(s);s.editorParts=null;s.editorInstructions=null;s.editorSourceText=null;render(s);}
