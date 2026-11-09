@@ -10,7 +10,7 @@
  const label=(name,value,type='text',required=false)=>'<label>'+esc(name)+'<input name="'+esc(value)+'" type="'+type+'" '+(required?'required ':'')+'maxlength="180"></label>';
  const blank=()=>({book:'',unit:'',chapter:'',theme:'',pages:''});
  const idFor=x=>[x.stage,String(x.assessment).toUpperCase(),String(x.grade).toUpperCase(),String(x.subject).toUpperCase()].join('|');
- const byDate=(a,b)=>a.date.localeCompare(b.date)||a.grade.localeCompare(b.grade,'pt-BR');
+ const byDate=(a,b)=>a.date.localeCompare(b.date)||a.grade.localeCompare(b.grade,'pt-BR')||(a.order||0)-(b.order||0);
  const safeFileName=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'').slice(0,70);
  const sourceUrl='https://docs.google.com/spreadsheets/d/1Jiy-g9kC7BJ6lR5Hh5cfgBJSAHmdZDS2BwjqIr0WOOc/edit';
  function currentGrade(s){return s.grade||s.types?.grades?.[10]||'6º ano'}
@@ -35,10 +35,17 @@
  const alert=s=>s.message?'<div class="cr-feedback" role="status">'+esc(s.message)+'</div>':'';
  function header(s){return '<header class="cr-heading"><div><small>COLÉGIO CORA CORALINA · '+(s.role==='gestao'?'GESTÃO':'EQUIPE PEDAGÓGICA')+'</small>'+
    '<h2>Roteiros das avaliações</h2><p>Livro → Unidade → Capítulo → Temas → Páginas. Organização anual integrada.</p></div>'+
-   '<span class="cr-year">'+s.year+'</span></header>'}
+   '<label class="cr-year">Ano do roteiro<select id="crWorkYear">'+opt(Array.from({length:10},(_,i)=>String(2026+i)),String(s.year))+'</select></label></header>'}
+ function selfAssignmentForm(s){
+  const items=s.selfPending||s.assignments,grade=s.selfGrade||'6º ano',subs=s.types.subjectsByGrade[grade]||[];
+  return '<section class="cr-card"><h3>Minhas séries e disciplinas · '+s.year+'</h3><p>Cadastre as turmas em que você leciona. Ao salvar, os roteiros disponíveis serão vinculados à sua conta para revisão.</p>'+
+   '<label>Série<select id="crSelfGrade">'+opt(s.types.grades,grade)+'</select></label><label>Disciplina<select id="crSelfSubject">'+opt(subs,s.selfSubject||subs[0])+'</select></label>'+
+   '<button type="button" id="crSelfAdd" class="cr-btn">Adicionar série e disciplina</button><div>'+items.map((x,i)=>'<p>'+esc(x.grade)+' · '+esc(x.subject)+' <button type="button" data-self-remove="'+i+'">Retirar</button></p>').join('')+'</div>'+
+   '<button type="button" id="crSelfSave" class="cr-btn primary">Confirmar minhas turmas e carregar roteiros</button></section>';
+ }
  function teacherForm(s){
   const grades=unique(s.assignments.map(x=>x.grade)),chosen=grades.includes(s.grade)?s.grade:grades[0];
-  if(!chosen)return '<div class="cr-empty"><strong>Você ainda não possui turmas e disciplinas vinculadas.</strong><p>Solicite à Gestão a associação de suas séries e disciplinas no cadastro de professores. O acesso individual já está preparado.</p></div>';
+  if(!chosen)return '<div class="cr-empty"><strong>Você ainda não possui turmas e disciplinas vinculadas.</strong><p>Cadastre suas séries e disciplinas acima para começar.</p></div>';
   s.grade=chosen;
   const subs=unique(s.assignments.filter(a=>a.grade===chosen).map(a=>a.subject)),subject=subs.includes(s.subject)?s.subject:subs[0];s.subject=subject;
   const id=idFor({grade:chosen,subject,assessment:s.assessment||'AP2',stage:s.stage||1});
@@ -47,14 +54,14 @@
   const parts=s.editorParts||doc?.blocks||[blank()];
   const original=s.editorSourceText??doc?.sourceText??template?.rawText??'';
   const list=s.documents.slice().sort((a,b)=>Number(a.stage)-Number(b.stage)||a.grade.localeCompare(b.grade));
-  return '<div class="cr-grid"><section class="cr-card"><h3>Verificar e editar roteiro</h3><p class="cr-help">O roteiro de 2026 vem do Canva original para revisão. Escolha a etapa, o modelo da prova e confira o texto antes de enviar. Os campos abaixo permitem detalhar livro, unidade, capítulo, temas e páginas.</p>'+
-   '<form id="crEditorForm"><div class="cr-fields">'+
+  return '<div class="cr-grid"><section class="cr-card"><h3>Verificar e editar roteiro</h3><p class="cr-help">Os roteiros do ano anterior e do acervo Canva são referências para revisão. Escolha a etapa, o modelo da prova e confira o texto antes de enviar. Os campos abaixo permitem detalhar livro, unidade, capítulo, temas e páginas.</p>'+
+   '<div class="cr-actions">'+[1,2,3,4].map(n=>'<button type="button" data-choose-stage="'+n+'" class="cr-btn '+(Number(s.stage)===n?'primary':'')+'">'+n+'ª etapa</button>').join('')+'</div><form id="crEditorForm"><div class="cr-fields">'+
    '<label>Série/turma<select id="crGrade">'+opt(grades,chosen)+'</select></label>'+
    '<label>Disciplina<select id="crSubject">'+opt(subs,subject)+'</select></label>'+
    '<label>Etapa<select id="crStage">'+stageSelect(s.stage||1)+'</select></label>'+
    '<label>Modelo de avaliação<select id="crAssessment">'+opt(s.types?.tests||types,s.assessment||'AP2')+'</select></label></div>'+
    '<div class="cr-canva-source"><div class="cr-source-heading"><strong>Roteiro original do Canva</strong>'+
-   (template?'<small>Modelo localizado · página '+template.sourcePage+' · '+s.year+'</small>':
+   (template?'<small>Referência de '+(template.sourceYear||template.year||2026)+(template.sourcePage?' · página '+template.sourcePage:'')+' · revisar para '+s.year+'</small>':
     '<small>Não há modelo preenchido do Canva para esta combinação. Comece um roteiro novo.</small>')+
    '</div><label>Texto completo para conferência e edição<textarea id="crCanvaText" rows="9" maxlength="9000" placeholder="O roteiro do Canva aparecerá aqui quando existir nesta etapa e disciplina.">'+esc(original)+'</textarea></label>'+
    '<p>Não é necessário reescrever o texto. Confira e ajuste o roteiro herdado; ele não será enviado automaticamente.</p></div>'+
@@ -106,7 +113,7 @@
    '<button id="crAddSchedule" class="cr-small" type="button">+ Incluir disciplina nesta data</button>'+
    '<div class="cr-schedule-list">'+(rows.length?rows.slice().sort(byDate).map((r,i)=>{
     const original=rows.indexOf(r);return '<div><time>'+fmt(r.date)+'</time><span>'+esc(r.grade)+' · '+esc(r.subject)+' · '+esc(r.assessment)+' · '+r.stage+'ª etapa</span>'+
-      '<button class="cr-remove" type="button" data-remove-schedule="'+original+'">Retirar</button></div>';}).join(''):'<p>Nenhuma data programada.</p>')+'</div>'+
+      '<button type="button" data-move-schedule="'+original+'" data-direction="-1">↑</button><button type="button" data-move-schedule="'+original+'" data-direction="1">↓</button><button class="cr-remove" type="button" data-remove-schedule="'+original+'">Retirar</button></div>';}).join(''):'<p>Nenhuma data programada.</p>')+'</div>'+
    '<button class="cr-btn primary" id="crSaveSchedule" type="button">Salvar cronograma de avaliações</button></section>';
  }
  function documentList(s){
@@ -147,14 +154,14 @@
  function teacherRoster(s){
  const rows=s.teacherLinks||[],pending=rows.filter(x=>x.status==='pendente'||x.status==='segmento-nao-autorizado');
  return '<section class="cr-card cr-full"><div class="cr-editor-title"><h3>Professores e disciplinas vinculadas</h3>'+
-  '<button class="cr-btn" type="button" id="crApplyTeacherPlan">Conferir/aplicar os 15 cadastros</button></div>'+
+  '<button class="cr-btn" type="button" id="crApplyTeacherPlan">Conferir/aplicar cadastros iniciais</button></div>'+
   '<p class="cr-help">'+rows.length+' profissionais previstos · '+pending.length+' precisam de cadastro ou ajuste de segmento. Os vínculos são por e-mail institucional já cadastrado, sem criação de contas falsas.</p>'+
   '<div class="cr-roster-grid">'+rows.map(x=>'<div><strong>'+esc(x.person)+'</strong><small>'+esc(x.teacher?.name||x.reason||'Aguardando cadastro')+
   '</small><span>'+x.linked+' combinações vinculadas</span></div>').join('')+'</div></section>';
 }
 function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignmentEditor(s)+documentList(s)+scheduleEditor(s)+composeView(s)+'</div>'}
  function render(s){
-  s.host.innerHTML=header(s)+alert(s)+(s.role==='gestao'?managerForm(s):teacherForm(s))+
+  s.host.innerHTML=header(s)+alert(s)+(s.role==='gestao'?managerForm(s):selfAssignmentForm(s)+teacherForm(s))+
    '<footer class="cr-footer"><button type="button" id="crReload" class="cr-small">Atualizar dados</button>'+
    '<small>Acesso restrito · salvamento no servidor · fontes históricas somente para conferência.</small></footer>';
   bind(s);
@@ -178,7 +185,22 @@ function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignme
  function bind(s){
   const $=q=>s.host.querySelector(q);
   $('#crReload')?.addEventListener('click',()=>void reload(s).catch(e=>err(s,e)));
+  $('#crWorkYear')?.addEventListener('change',async e=>{
+   s.year=Number(e.target.value);s.loaded=false;s.grade='';s.subject='';s.selfPending=null;s.pendingSchedule=null;s.pendingAssignments=null;s.editorParts=null;s.editorSourceText=null;s.editorInstructions=null;
+   try{await fetchData(s);render(s)}catch(e){err(s,e)}
+  });
   if(s.role==='equipe'){
+   $('#crSelfGrade')?.addEventListener('change',e=>{readPartForm(s);s.selfGrade=e.target.value;s.selfSubject='';render(s)});
+   $('#crSelfAdd')?.addEventListener('click',()=>{
+    readPartForm(s);const grade=$('#crSelfGrade').value,subject=$('#crSelfSubject').value;
+    if(!grade||!subject)return;const items=s.selfPending||[...s.assignments];
+    if(!items.some(x=>x.grade===grade&&x.subject===subject))items.push({grade,subject});s.selfPending=items;render(s);
+   });
+   s.host.querySelectorAll('[data-self-remove]').forEach(btn=>btn.onclick=()=>{readPartForm(s);s.selfPending=(s.selfPending||s.assignments).filter((_,i)=>i!==Number(btn.dataset.selfRemove));render(s)});
+   $('#crSelfSave')?.addEventListener('click',async()=>{
+    try{await send(s,'selfAssign',{items:s.selfPending||s.assignments});s.selfPending=null;s.editorParts=null;s.editorSourceText=null;s.editorInstructions=null;await fetchData(s);s.message='Turmas cadastradas. Escolha uma das quatro etapas para revisar e encaminhar seus roteiros.';render(s)}catch(e){err(s,e)}
+   });
+   s.host.querySelectorAll('[data-choose-stage]').forEach(btn=>btn.onclick=()=>{s.stage=Number(btn.dataset.chooseStage);s.editorParts=null;s.editorInstructions=null;s.editorSourceText=null;render(s)});
    $('#crGrade')?.addEventListener('change',()=>{readPartForm(s);s.grade=$('#crGrade').value;s.subject='';s.editorParts=null;s.editorInstructions=null;s.editorSourceText=null;render(s)});
    $('#crSubject')?.addEventListener('change',()=>{s.subject=$('#crSubject').value;s.editorParts=null;s.editorInstructions=null;s.editorSourceText=null;render(s)});
    $('#crStage')?.addEventListener('change',()=>{s.stage=Number($('#crStage').value);s.editorParts=null;s.editorInstructions=null;s.editorSourceText=null;render(s)});
@@ -200,7 +222,7 @@ function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignme
      blocks:s.editorParts,instructions:s.editorInstructions,sourceText:s.editorSourceText,
      confirmed:status==='enviado'&&confirmed,status};
     const old=s.documents.find(x=>idFor(x)===idFor(input));input.revision=old?.revision||0;
-    try{await send(s,'save',{document:input});s.message=status==='enviado'?'Roteiro enviado à Gestão. Aguarde a conferência.':'Rascunho salvo na sua conta.';
+    try{await send(s,'save',{document:input});s.message=status==='enviado'?'Roteiro encaminhado com sucesso à Gestão, identificado com seu nome. Aguarde a conferência.':'Rascunho salvo na sua conta.';
      await fetchData(s);s.editorParts=null;s.editorInstructions=null;s.editorSourceText=null;render(s);}
     catch(e){s.message=e.message;render(s)}
    });
@@ -271,6 +293,11 @@ function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignme
    s.host.querySelectorAll('[data-remove-schedule]').forEach(btn=>btn.onclick=()=>{
     const list=s.pendingSchedule||[...s.schedule];s.pendingSchedule=list.filter((_,i)=>i!==Number(btn.dataset.removeSchedule));render(s);
    });
+   s.host.querySelectorAll('[data-move-schedule]').forEach(btn=>btn.onclick=()=>{
+    const list=[...(s.pendingSchedule||s.schedule)],i=Number(btn.dataset.moveSchedule),direction=Number(btn.dataset.direction);
+    let j=i+direction;while(j>=0&&j<list.length&&(list[j].date!==list[i].date||list[j].grade!==list[i].grade))j+=direction;
+    if(j<0||j>=list.length)return;[list[i],list[j]]=[list[j],list[i]];s.pendingSchedule=list.map((x,order)=>({...x,order}));render(s);
+   });
    $('#crSaveSchedule')?.addEventListener('click',async()=>{
     try{await send(s,'schedule',{items:s.pendingSchedule||s.schedule});s.message='Cronograma salvo. Os roteiros aprovados serão associados automaticamente às datas.';await fetchData(s);s.pendingSchedule=null;render(s)}
     catch(e){err(s,e)}
@@ -290,7 +317,7 @@ function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignme
   }return lines;
  }
  function makePages(s){
-  const rows=s.composite.slice().sort(byDate),pages=[],W=1190,H=1684,margin=72,maxX=W-margin;
+  const rows=s.composite.slice().sort((a,b)=>a.grade.localeCompare(b.grade,'pt-BR')||byDate(a,b)),pages=[],W=1190,H=1684,margin=72,maxX=W-margin;
   let canvas,ctx,y;
   const addPage=()=>{
    canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;ctx=canvas.getContext('2d');
@@ -311,8 +338,18 @@ function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignme
   addPage();
   const entries=rows.filter(x=>x.date);
   if(!entries.length){line('Nenhuma avaliação programada neste ano.',28);}
-  let currentDate='';
+  let currentDate='',currentGrade='';
   for(const row of entries){
+   if(row.grade!==currentGrade){
+    if(currentGrade)addPage();currentGrade=row.grade;currentDate='';
+    line('ROTEIRO DE AVALIAÇÃO · '+row.grade.toUpperCase(),28,true);y+=16;
+    line('CRONOGRAMA DAS AVALIAÇÕES',22,true);
+    const summary=new Map();for(const r of entries.filter(x=>x.grade===currentGrade)){
+     const subjects=summary.get(r.date)||[];subjects.push(r.subject+' ('+r.assessment+' · '+r.stage+'ª etapa)');summary.set(r.date,subjects);
+    }
+    for(const [date,subjects] of summary)line(fmt(date)+' — '+subjects.join(' / '),18);
+    y+=28;
+   }
    if(row.date!==currentDate){
     currentDate=row.date;ensure(82);ctx.fillStyle='#dbeaf4';ctx.fillRect(margin,y-26,W-2*margin,56);
     line('DATA: '+fmt(row.date),25,true,'#144f7b',12);y+=15;
@@ -336,6 +373,7 @@ function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignme
     line('REFERÊNCIA HISTÓRICA 2026 · REVISÃO OBRIGATÓRIA',18,true,'#a46b1f');
     line(row.legacy.legacyText,18,false,'#324b61');
    }else line('ROTEIRO AINDA NÃO APROVADO / NÃO CADASTRADO',20,true,'#a34836');
+   if(row.roteiro?.instructions){line('ORIENTAÇÕES: '+row.roteiro.instructions,18);}
    if(row.condition!=='aprovado'){ensure(34);line('PRÉVIA PARA CONFERÊNCIA · NÃO DISTRIBUIR',17,true,'#aa6645')}
    y+=18;ensure(30);ctx.fillStyle='#e2e8f0';ctx.fillRect(margin,y-16,W-2*margin,2);
   }

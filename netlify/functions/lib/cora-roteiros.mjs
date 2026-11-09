@@ -120,7 +120,7 @@ export function composition({schedule=[],documents=[],year=2027,legacy=[],templa
    template:!ready&&!awaiting?template||null:null,
    legacy:!ready&&!awaiting&&!template?historical||null:null,
    condition:ready?'aprovado':awaiting?'aguardando-conferencia':template?'modelo-canva-pendente':historical?'referencia-2026':'sem-roteiro'};
- }).sort((a,b)=>a.date.localeCompare(b.date)||a.grade.localeCompare(b.grade,'pt-BR')||a.subject.localeCompare(b.subject,'pt-BR'));
+ }).sort((a,b)=>a.date.localeCompare(b.date)||a.grade.localeCompare(b.grade,'pt-BR')||(a.order||0)-(b.order||0));
 }
 async function fullDocuments(year,people){
  const result=await Promise.all(people.map(async p=>(await docsOf(year,p.id))));
@@ -139,8 +139,16 @@ export async function roteiroAction({role,member,request,url}){
    ?(await Promise.all(people.map(async p=>({teacher:p,items:await assignmentOf(year,p.id)})))).filter(x=>x.items.length)
    :await assignmentOf(year,member.id);
   const documents=isManager?await fullDocuments(year,people):await docsOf(year,member.id);
-  const templates=year===2026?(isManager?CANVA_ROTEIROS:
-   CANVA_ROTEIROS.filter(item=>belongs(assignments,item))):[];
+  const templates=isManager?(year===2026?CANVA_ROTEIROS:[]):
+   CANVA_ROTEIROS.filter(item=>belongs(assignments,item));
+  if(!isManager&&year>2026){
+   const previous=await docsOf(year-1,member.id);
+   for(const doc of previous.filter(d=>belongs(assignments,d)&&['enviado','aprovado'].includes(d.status))){
+    const index=templates.findIndex(t=>idFor(t)===idFor(doc));
+    const model={...doc,rawText:doc.sourceText||doc.blocks.map(b=>[b.book,b.unit,b.chapter,b.theme,b.pages].filter(Boolean).join(' — ')).join('\n'),sourceYear:year-1,sourceType:'ano-anterior'};
+    if(index>=0)templates[index]=model;else templates.push(model);
+   }
+  }
   const allSchedule=await read(scheduleKey(year),{items:[]});
   const schedule=isManager?(allSchedule.items||[]):(allSchedule.items||[]).filter(item=>belongs(assignments,item));
   if(url.searchParams.get('mode')==='template'){
@@ -160,7 +168,7 @@ export async function roteiroAction({role,member,request,url}){
    return {year,source:legacy2026Source,types:supported,
     legacyCounts:year===2026?legacy2026.length:0,canvaCount:templates.length,
     canvaReport:isManager&&year===2026?CANVA_IMPORT_REPORT:null,
-    teacherLinks:isManager?teacherLinks:[],people:isManager?people:[],assignments};
+    teacherLinks:isManager?teacherLinks:[],people:isManager?people:[],assignments,selfConfirmed:!isManager&&(await read(assignmentsKey(year,member.id),{})).source==='autocadastro-professor'};
   }
   return {year,types:supported,people:isManager?people:[],assignments,documents,schedule,
    templates:isManager?[]:templates,
@@ -198,6 +206,15 @@ export async function roteiroAction({role,member,request,url}){
   }
   return {ok:true,applied};
  }
+ if(operation==='selfAssign'){
+  if(isManager||!member||!['Professor','Coordenação'].includes(member.profile))return error('Entre com sua conta individual de professor.',403);
+  if(!Array.isArray(body.items)||!body.items.length||body.items.length>40)return error('Escolha de 1 a 40 combinações de série e disciplina.');
+  const items=body.items.map(normalizePair);
+  if(items.some(x=>!x))return error('Série ou disciplina inválida.');
+  const unique=items.filter((x,i)=>items.findIndex(y=>y.grade===x.grade&&y.subject===x.subject)===i);
+  await write(assignmentsKey(year,member.id),{year,teacherId:member.id,items:unique,source:'autocadastro-professor',supplementArtsPhysics2026:true,updatedAt:new Date().toISOString()});
+  return {ok:true,items:unique};
+ }
  if(operation==='assign'){
   if(!isManager)return error('Somente a Gestão pode vincular disciplinas aos professores.',403);
   const email=clean(body.email,180).toLowerCase(),people=await roster(),teacher=people.find(p=>p.email.toLowerCase()===email);
@@ -218,11 +235,11 @@ export async function roteiroAction({role,member,request,url}){
  if(operation==='save'){
   if(isManager||!member)return error('O roteiro deve ser salvo pela conta individual do professor.',403);
   const items=await assignmentOf(year,member.id),input=body.document||{},grade=gradeOf(input.grade),subject=subjectOf(grade,input.subject);
-  if(!belongs(items,{grade,subject}))return error('A Gestão ainda não vinculou esta série e disciplina à sua conta.',403);
+  if(!belongs(items,{grade,subject}))return error('Cadastre esta série e disciplina em Minhas séries e disciplinas antes de enviar.',403);
   const docs=await docsOf(year,member.id),id=idFor({...input,grade,subject}),old=docs.find(e=>e.id===id);
   if(old?.status==='aprovado')return error('Roteiro aprovado. Solicite à Gestão a devolução para editar.',409);
   if(old&&Number(input.revision)!==Number(old.revision))return error('Outra atualização deste roteiro foi salva. Atualize os dados antes de editar.',409);
-  if(!old&&docs.length>=180)return error('Limite de roteiros do professor atingido.');
+  if(!old&&docs.length>=400)return error('Limite de roteiros do professor atingido.');
   const template=year===2026?CANVA_ROTEIROS.find(e=>e.grade===grade&&e.subject===subject&&
     e.stage===Number(input.stage)&&e.assessment===testOf(input.assessment)):null;
   const doc=cleanDoc({...input,grade,subject,sourcePage:template?.sourcePage||null},old,member,year);
@@ -254,7 +271,7 @@ export async function roteiroAction({role,member,request,url}){
    if(!grade||!subject||!assessment||!Number.isInteger(stage)||stage<1||stage>4||!validDate(date,year))return error('Confira data, série, disciplina, etapa e avaliação.');
    const key=[date,grade,subject,assessment,stage].join('|');
    if(ids.has(key))return error('A mesma disciplina, avaliação e data aparece duas vezes.');ids.add(key);
-   items.push({id:clean(input.id,60)||randomUUID(),date,grade,subject,assessment,stage});
+   items.push({id:clean(input.id,60)||randomUUID(),date,grade,subject,assessment,stage,order:items.length});
   }
   const saved={year,items,updatedAt:new Date().toISOString()};
   await write(scheduleKey(year),saved);

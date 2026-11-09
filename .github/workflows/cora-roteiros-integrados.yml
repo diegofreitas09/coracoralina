@@ -4,6 +4,7 @@ on:
     paths:
       - 'calendario-anual/roteiros-integrados*'
       - 'calendario-anual/test-roteiros-integrados.mjs'
+      - 'calendario-anual/test-roteiros-autocadastro.mjs'
       - 'calendario-anual/test-roteiros-canva-cadastros.mjs'
       - 'calendario-anual/portal.js'
       - 'calendario-anual/index.html'
@@ -37,3 +38,4 @@ jobs:
         run: |
           node calendario-anual/test-roteiros-integrados.mjs
           node calendario-anual/test-roteiros-canva-cadastros.mjs
+          node --experimental-test-module-mocks calendario-anual/test-roteiros-autocadastro.mjs
