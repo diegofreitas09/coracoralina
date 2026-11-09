@@ -16,8 +16,11 @@ assert.equal(CANVA_IMPORT_REPORT.notFound.includes('3-AP2'),true,'Não inventar 
 const f=(grade,stage,assessment,subject)=>CANVA_ROTEIROS.find(x=>x.grade===grade&&x.stage===stage&&x.assessment===assessment&&x.subject===subject);
 assert.ok(f('6º ano',4,'AD','GRAMÁTICA')?.rawText.includes('Concordância verbal'));
 assert.ok(f('3ª série',4,'AD','SOCIOLOGIA')?.rawText.includes('Ciência Política'));
-assert.equal(f('8º ano',4,'AP2','MATEMÁTICA'),undefined,'Não forçar um assunto que não está no Canva');
-assert.equal(f('1ª série',1,'AP2','INGLÊS'),undefined,'Conferir lacuna do Canva');
+assert.ok(f('8º ano',4,'AP2','MATEMÁTICA')?.rawText.includes('Plano Cartesiano'));
+assert.ok(f('8º ano',2,'AP2','MATEMÁTICA')?.rawText.includes('Expressões algébricas'));
+assert.ok(f('8º ano',1,'AP2','MATEMÁTICA')?.rawText.includes('Conjuntos numéricos'));
+assert.ok(f('1ª série',1,'AP2','INGLÊS')?.rawText.includes('Dreams, goals'));
+assert.ok(CANVA_IMPORT_REPORT.unmatchedLabels.length>=4,'Sinalizar rótulos sem corpo mesmo que o conteúdo esteja em outra caixa');
 assert.equal(TEACHER_PLAN.length,15);
 const sample=TEACHER_PLAN.map((x,i)=>({
  id:'p-'+i,email:'p'+i+'@escola.test',name:x.person==='Breno'?'Alysson Breno Bezerra da Silva':
