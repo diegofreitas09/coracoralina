@@ -126,6 +126,28 @@ async function fullDocuments(year,people){
  const result=await Promise.all(people.map(async p=>(await docsOf(year,p.id))));
  return result.flat();
 }
+function scheduleBundle(raw={items:[]}){
+ const plans=[...(raw.plans||[])],items=(raw.items||[]).map(x=>({...x}));
+ for(const row of items.filter(x=>!x.planId)){
+  row.planId='legacy-'+idFor({...row,subject:''});
+  let plan=plans.find(x=>x.id===row.planId);
+  if(!plan){plan={id:row.planId,grade:row.grade,assessment:row.assessment,stage:row.stage,start:row.date,end:row.date};plans.push(plan);}
+  if(row.date<plan.start)plan.start=row.date;if(row.date>plan.end)plan.end=row.date;
+ }
+ return {...raw,plans,items};
+}
+function cleanPlan(input,year){
+ const grade=gradeOf(input?.grade),assessment=testOf(input?.assessment),stage=Number(input?.stage),start=clean(input?.start,10),end=clean(input?.end,10);
+ if(!grade||!assessment||!Number.isInteger(stage)||stage<1||stage>4||!validDate(start,year)||!validDate(end,year)||end<start||(Date.parse(end)-Date.parse(start))/86400000>61)return null;
+ if(!Array.isArray(input.items)||!input.items.length||input.items.length>200)return null;
+ const items=[],seen=new Set();
+ for(const row of input.items){
+  const subject=subjectOf(grade,row.subject),date=clean(row.date,10),key=date+'|'+subject;
+  if(!subject||!validDate(date,year)||date<start||date>end||seen.has(key))return null;
+  seen.add(key);items.push({date,subject,grade,assessment,stage,order:items.length});
+ }
+ return {grade,assessment,stage,start,end,items};
+}
 const segments={'Educação Infantil':grades.slice(0,5),'Ensino Fundamental I':grades.slice(5,10),'Ensino Fundamental II':grades.slice(10,14),'Ensino Médio':grades.slice(14)};
 const supported={segments,grades,subjectsByGrade:Object.fromEntries(grades.map(g=>[g,subjectsFor(g)])),tests};
 export async function roteiroAction({role,member,request,url}){
@@ -150,7 +172,7 @@ export async function roteiroAction({role,member,request,url}){
     if(index>=0)templates[index]=model;else templates.push(model);
    }
   }
-  const allSchedule=await read(scheduleKey(year),{items:[]});
+  const allSchedule=scheduleBundle(await read(scheduleKey(year),{items:[]}));
   const schedule=isManager?(allSchedule.items||[]):(allSchedule.items||[]).filter(item=>belongs(assignments,item));
   if(url.searchParams.get('mode')==='template'){
    const grade=gradeOf(url.searchParams.get('grade')),subject=subjectOf(grade,url.searchParams.get('subject')),
@@ -171,7 +193,7 @@ export async function roteiroAction({role,member,request,url}){
     canvaReport:isManager&&year===2026?CANVA_IMPORT_REPORT:null,
     teacherLinks:isManager?teacherLinks:[],people:isManager?people:[],assignments,selfConfirmed:!isManager&&(await read(assignmentsKey(year,member.id),{})).source==='autocadastro-professor'};
   }
-  return {year,types:supported,profileSegments:isManager?[]:(await read(assignmentsKey(year,member.id),{})).segments||member.segments||[],people:isManager?people:[],assignments,documents,schedule,
+  return {year,types:supported,profileSegments:isManager?[]:(await read(assignmentsKey(year,member.id),{})).segments||member.segments||[],people:isManager?people:[],assignments,documents,schedule,plans:isManager?allSchedule.plans:[],scheduleRevision:allSchedule.updatedAt||'',
    templates:isManager?[]:templates,
    canvaReport:isManager&&year===2026?CANVA_IMPORT_REPORT:null,
    teacherLinks:isManager?teacherLinks:[],
@@ -206,6 +228,20 @@ export async function roteiroAction({role,member,request,url}){
     applied.push({person:row.person,status:'aplicado',items:row.items.length});
   }
   return {ok:true,applied};
+ }
+ if(operation==='savePlan'){
+  if(!isManager)return error('Somente a Gestão organiza os cronogramas.',403);
+  const plan=cleanPlan(body.plan,year);if(!plan)return error('Confira série, modalidade, etapa, período (até 62 dias) e disciplinas de cada data.');
+  const saved=scheduleBundle(await read(scheduleKey(year),{items:[]}));
+  if(String(body.baseRevision||'')!==String(saved.updatedAt||''))return error('O cronograma foi atualizado em outra sessão. Atualize os dados antes de salvar.',409);
+  const id=clean(body.plan.id,160)||randomUUID(),previous=saved.plans.find(p=>p.id===id);
+  if(body.plan.id&&!previous)return error('Roteiro não encontrado. Atualize os dados.',404);
+  const rows=plan.items.map(row=>({...row,id:randomUUID(),planId:id}));
+  const rest=saved.items.filter(row=>row.planId!==id);
+  if(rest.some(row=>rows.some(r=>idFor(r)===idFor(row)&&r.date===row.date)))return error('Uma avaliação igual já está em outro roteiro. Edite o roteiro existente.');
+  const {items,...metadata}=plan;
+  const result={year,plans:[...saved.plans.filter(p=>p.id!==id),{...metadata,id}],items:[...rest,...rows],updatedAt:new Date().toISOString()};
+  await write(scheduleKey(year),result);return {ok:true,planId:id};
  }
  if(operation==='selfAssign'){
   if(isManager||!member||!['Professor','Coordenação'].includes(member.profile))return error('Entre com sua conta individual de professor.',403);
@@ -283,4 +319,4 @@ export async function roteiroAction({role,member,request,url}){
  return error('Operação desconhecida.');
 }
 export const roteiroConfig=supported;
-export const roteiroRules={gradeOf,subjectOf,testOf,validDate,idFor,permittedSegment,cleanDoc,normalizePair,bootstrapTeacherLinks,effectiveAssignments,assignmentSupplement};
+export const roteiroRules={gradeOf,subjectOf,testOf,validDate,idFor,permittedSegment,cleanDoc,normalizePair,bootstrapTeacherLinks,effectiveAssignments,assignmentSupplement,cleanPlan,scheduleBundle};

@@ -84,7 +84,7 @@ assert.equal(future[0].condition,'sem-roteiro','Não reutilizar conteúdo 2026 e
 const UI=fs.readFileSync(root+'roteiros-integrados.js','utf8');
 const API=fs.readFileSync(root+'../netlify/functions/cora-portal.mjs','utf8');
 assert.ok(UI.includes("CoraRoteiros")&&UI.includes('crCanvaText'));
-assert.ok(UI.includes('crConfirmCanva')&&UI.includes('applyTeacherPlan'));
+assert.ok(UI.includes('crConfirmCanva')&&UI.includes('crSavePlan'));
 assert.ok(UI.includes("row.template.rawText")&&UI.includes("CoraPDF.fromCanvases("));
 assert.ok(API.includes("if(action==='roteiros'"));
 assert.ok(roteiroConfig.subjectsByGrade['8º ano'].includes('SOCIOLOGIA'));

@@ -44,3 +44,56 @@ assert.equal((await call({...multi,items:[{grade:'7º ano',subject:'BIOLOGIA'}]}
 assert.equal(multiSaved.types.segments['Ensino Médio'].length,3);
 assert.equal(multiSaved.types.segments['Ensino Fundamental II'].length,4);
 console.log('PASSOU: dois segmentos, múltiplas turmas, disciplinas distintas e rejeição de combinação incompatível.');
+// Gestão cria grupos independentes, mantém cronogramas antigos e protege edições concorrentes.
+await call({operation:'selfAssign',segments:['Ensino Fundamental II'],items:[{grade:'6º ano',subject:'GRAMÁTICA'},{grade:'6º ano',subject:'MATEMÁTICA'}]},'equipe',2029);
+const plan={grade:'6º ano',assessment:'AD',stage:4,start:'2029-11-19',end:'2029-11-23',items:[{date:'2029-11-19',subject:'MATEMÁTICA'},{date:'2029-11-19',subject:'GRAMÁTICA'}]};
+assert.equal((await call({operation:'savePlan',plan},'equipe',2029)).status,403);
+assert.equal((await call({operation:'savePlan',plan:{...plan,end:'2029-11-18'}},'gestao',2029)).status,400);
+assert.equal((await call({operation:'savePlan',plan:{...plan,items:[{date:'2029-11-24',subject:'GRAMÁTICA'}]}},'gestao',2029)).status,400);
+const created=await call({operation:'savePlan',plan,baseRevision:''},'gestao',2029);
+assert.equal(created.ok,true);
+let manager=await call(undefined,'gestao',2029);
+assert.equal(manager.plans.length,1);
+assert.equal(manager.composite[0].subject,'MATEMÁTICA');
+assert.equal(manager.composite[0].planId,created.planId);
+assert.equal((await call({operation:'savePlan',plan:{...plan,id:created.planId},baseRevision:''},'gestao',2029)).status,409);
+const second={...plan,grade:'7º ano',items:[{date:'2029-11-20',subject:'CIÊNCIAS'}]};
+assert.equal((await call({operation:'savePlan',plan:second,baseRevision:manager.scheduleRevision},'gestao',2029)).ok,true);
+manager=await call(undefined,'gestao',2029);
+assert.equal(manager.plans.length,2);
+assert.equal(manager.schedule.length,3,'Um roteiro não pode apagar o de outra série');
+import fs from 'node:fs';
+import vm from 'node:vm';
+const window={},written=[];
+const ctx={fillRect(){},fillText(text,x,y){written.push({text,x,y})},measureText(t){return {width:String(t).length*10}}};
+const document={hidden:false,createElement:()=>({getContext:()=>ctx})};
+vm.runInNewContext(fs.readFileSync(new URL('./roteiros-integrados.js',import.meta.url),'utf8'),{window,document,console,setInterval:()=>1,clearInterval(){}});
+const ui={...manager,planId:created.planId};
+let progress=window.CoraRoteiros.progressData(ui);
+assert.equal(progress.teachers,1,'Contar professor uma vez mesmo com duas disciplinas pendentes');
+assert.equal(progress.pending.length,2);
+assert.equal(progress.unassigned.length,0);
+const source='Conteúdo de estudo revisado e confirmado para o roteiro da avaliação.';
+for(const subject of ['MATEMÁTICA','GRAMÁTICA']){
+ const result=await call({operation:'save',document:{grade:'6º ano',subject,stage:4,assessment:'AD',blocks:[{}],sourceText:source,confirmed:true,status:'enviado'}},'equipe',2029);
+ assert.equal(result.ok,true);
+ if(subject==='MATEMÁTICA'){
+  const before=await call(undefined,'gestao',2029);
+  assert.equal(window.CoraRoteiros.progressData({...before,planId:created.planId}).pending.length,1);
+ }
+ await call({operation:'review',authorId:teacher.id,documentId:result.document.id,revision:result.document.revision,status:'aprovado'},'gestao',2029);
+}
+manager=await call(undefined,'gestao',2029);progress=window.CoraRoteiros.progressData({...manager,planId:created.planId});
+assert.equal(progress.pending.length,0);assert.equal(progress.rows.every(r=>r.condition==='aprovado'),true);
+const otherId=manager.plans.find(p=>p.id!==created.planId).id;
+assert.equal(window.CoraRoteiros.progressData({...manager,planId:otherId}).unassigned.length,1);
+window.CoraRoteiros.makePages({year:2029,outputPlan:manager.plans.find(p=>p.id===created.planId),composite:progress.rows});
+assert.ok(written.some(x=>x.text==='DATA / DISCIPLINAS'));
+assert.ok(written.some(x=>x.text.includes('PERÍODO: 19/11/2029 A 23/11/2029')));
+assert.ok(!written.some(x=>x.text.includes('7º ANO')),'Exportação selecionada não inclui outra série');
+const host={innerHTML:'',querySelector:()=>null,querySelectorAll:()=>[]};
+await window.CoraRoteiros.mount({role:'gestao',host,year:2029,api:async()=>manager});
+assert.ok(host.innerHTML.includes('Criar novo roteiro'));
+assert.ok(host.innerHTML.includes('Professores com envio pendente'));
+assert.ok(!host.innerHTML.includes('crSaveAssignments'));
+console.log('PASSOU: criação por período, cronogramas independentes, concorrência, dashboard por professor, pendências sem vínculo, aprovação e exportação exclusiva por série.');

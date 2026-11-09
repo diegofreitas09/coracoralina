@@ -77,3 +77,5 @@
 @media(max-width:560px){.cr-canva-source{padding:10px}.cr-roster-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .cr-segments{border:1px solid #91a9bd;border-radius:12px;padding:16px;margin:16px 0;display:flex;flex-wrap:wrap;gap:12px}.cr-segments legend{font-weight:700}.cr-segments p{flex-basis:100%;margin:4px 0}.cr-segments label{display:flex;gap:8px;align-items:center}.cr-segments input[type=checkbox]{width:20px;min-width:20px;height:20px;margin:0}.cr-segments select{max-width:100%;min-width:160px}
+
+.cr-progress-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px}.cr-progress-grid>div{padding:16px;border:1px solid #9bb6ca;border-radius:12px}.cr-progress-grid strong{display:block;font-size:30px}.cr-progress-grid span{display:block;font-size:14px}.cr-day-list{flex-basis:100%;padding-left:24px}.cr-day-list li{padding:8px}.cr-preview-text,.cr-doc-block,.cr-legacy{text-align:justify}.cr-card{margin-bottom:18px}

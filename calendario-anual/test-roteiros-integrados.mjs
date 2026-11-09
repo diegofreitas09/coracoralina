@@ -59,7 +59,7 @@ assert.ok(sw.includes('roteiros-integrados.js')&&sw.includes('roteiros-integrado
 const script=fs.readFileSync(folder+'roteiros-integrados.js','utf8');
 assert.ok(script.includes('CoraPDF.fromCanvases('));
 assert.ok(script.includes("toBlob(blob=>"));
-assert.ok(script.includes('crSaveAssignments')&&script.includes('crSaveSchedule'));
+assert.ok(script.includes('crSelfSave')&&script.includes('crSavePlan'));
 assert.ok(script.includes('crEditorForm')&&script.includes('crBlocks'));
 assert.ok(script.includes('crExportPNG')&&script.includes('crExportPDF'));
 assert.ok(script.includes('PRÉVIA PARA CONFERÊNCIA'));

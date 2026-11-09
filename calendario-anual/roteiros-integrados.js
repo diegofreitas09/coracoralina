@@ -21,7 +21,7 @@
  function api(s,body,params=''){return s.api('roteiros',body,'year='+s.year+(params?'&'+params:''))}
  async function fetchData(s){const answer=await api(s,undefined);
   s.types=answer.types;s.profileSegments=answer.profileSegments||[];s.people=answer.people||[];s.assignments=answer.assignments||[];s.documents=answer.documents||[];
-  s.schedule=answer.schedule||[];s.composite=answer.composite||[];s.loaded=true;
+  s.plans=answer.plans||[];s.scheduleRevision=answer.scheduleRevision||'';if(!s.planId&&s.plans.length)s.planId=s.plans[0].id;s.schedule=answer.schedule||[];s.composite=answer.composite||[];s.loaded=true;
   s.templates=answer.templates||[];s.teacherLinks=answer.teacherLinks||[];
   s.canvaReport=answer.canvaReport||null;s.canvaSource=answer.canvaSource||null;
   if(!s.grade)s.grade=s.role==='equipe'&&s.assignments.length?s.assignments[0].grade:'6º ano';
@@ -96,39 +96,48 @@
     '<div><strong>'+esc(x.grade)+' · '+esc(x.subject)+'</strong><small>'+x.stage+'ª etapa · '+esc(x.assessment)+' · '+fmt(x.updatedAt?.slice(0,10))+'</small>'+statusBadge(x.status)+'</div>').join(''):'<p>Nenhum roteiro salvo. Comece pelo formulário.</p>')+
     '</div><div class="cr-notice">A Coordenação recebe automaticamente o roteiro enviado. Se precisar fazer ajustes depois da aprovação, solicite a devolução pela Gestão.</div></section></div>';
  }
- function assignmentEditor(s){
-  const teachers=s.people.filter(p=>p.profile==='Professor'||p.profile==='Coordenação'),email=s.teacherEmail||teachers[0]?.email||'';
-  s.teacherEmail=email;
-  const owner=s.assignments.find(a=>a.teacher?.email===email),items=s.pendingAssignments||owner?.items||[];
-  const grade=currentGrade(s),subject=currentSubject(s);
-  return '<section class="cr-card"><h3>1. Vincular professor, séries e disciplinas</h3>'+
-    '<p class="cr-help">O e-mail vem dos colaboradores cadastrados na Gestão. Cada professor terá acesso somente às turmas autorizadas.</p>'+
-    '<label>Professor<select id="crTeacher">'+opt(teachers.map(t=>t.email),email,'Escolha um professor')+'</select></label>'+
-    '<div class="cr-fields"><label>Série<select id="crAssignGrade">'+gradeOptions(s)+'</select></label>'+
-    '<label>Disciplina<select id="crAssignSubject">'+opt(subjectList(s),subject)+'</select></label></div>'+
-    '<button id="crAddAssignment" class="cr-small" type="button">+ Adicionar associação</button>'+
-    '<div class="cr-assignment-list">'+items.map((x,i)=>'<div><strong>'+esc(x.grade)+'</strong> · '+esc(x.subject)+
-       '<button type="button" class="cr-remove" data-unassign="'+i+'">Retirar</button></div>').join('')+'</div>'+
-    '<button id="crSaveAssignments" class="cr-btn primary" type="button">Salvar atribuições deste professor</button></section>';
+ function activePlan(s){return (s.plans||[]).find(p=>p.id===s.planId)}
+ function planRows(s){return (s.composite||[]).filter(r=>r.planId===s.planId)}
+ function planDays(start,end){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(start||'')||!/^\d{4}-\d{2}-\d{2}$/.test(end||'')||end<start)return [];
+  const dates=[];for(let d=Date.parse(start+'T12:00:00Z');d<=Date.parse(end+'T12:00:00Z')&&dates.length<62;d+=86400000)dates.push(new Date(d).toISOString().slice(0,10));return dates;
  }
- function scheduleEditor(s){
-  const grade=currentGrade(s),subject=currentSubject(s);
-  const rows=s.pendingSchedule||s.schedule||[];
-  return '<section class="cr-card"><h3>3. Programar datas das avaliações</h3>'+
-   '<p class="cr-help">Escolha o dia e as disciplinas. Os roteiros enviados e aprovados serão vinculados automaticamente à programação.</p>'+
-   '<div class="cr-fields"><label>Data<input id="crScheduleDate" type="date" value="'+esc(s.scheduleDate||'')+'" min="'+s.year+'-01-01" max="'+s.year+'-12-31"></label>'+
-   '<label>Série<select id="crScheduleGrade">'+gradeOptions(s)+'</select></label>'+
-   '<label>Disciplina<select id="crScheduleSubject">'+opt(subjectList(s),subject)+'</select></label>'+
-   '<label>Modelo<select id="crScheduleTest">'+opt(s.types?.tests||types,'AD')+'</select></label>'+
-   '<label>Etapa<select id="crScheduleStage">'+stageSelect(s.stage||1)+'</select></label></div>'+
-   '<button id="crAddSchedule" class="cr-small" type="button">+ Incluir disciplina nesta data</button>'+
-   '<div class="cr-schedule-list">'+(rows.length?rows.slice().sort(byDate).map((r,i)=>{
-    const original=rows.indexOf(r);return '<div><time>'+fmt(r.date)+'</time><span>'+esc(r.grade)+' · '+esc(r.subject)+' · '+esc(r.assessment)+' · '+r.stage+'ª etapa</span>'+
-      '<button type="button" data-move-schedule="'+original+'" data-direction="-1">↑</button><button type="button" data-move-schedule="'+original+'" data-direction="1">↓</button><button class="cr-remove" type="button" data-remove-schedule="'+original+'">Retirar</button></div>';}).join(''):'<p>Nenhuma data programada.</p>')+'</div>'+
-   '<button class="cr-btn primary" id="crSaveSchedule" type="button">Salvar cronograma de avaliações</button></section>';
+ function planBuilder(s){
+  const d=s.planDraft;
+  const selection='<section class="cr-card"><div class="cr-actions"><h3>Cronogramas por série</h3><button id="crNewPlan" class="cr-btn primary">Criar novo roteiro</button></div><label>Roteiro em acompanhamento<select id="crPlanSelect">'+
+   '<option value="">Selecione</option>'+(s.plans||[]).map(p=>'<option value="'+esc(p.id)+'" '+(p.id===s.planId?'selected':'')+'>'+esc(p.grade+' · '+p.assessment+' · '+p.stage+'ª etapa · '+fmt(p.start)+' a '+fmt(p.end))+'</option>').join('')+'</select></label>'+
+   (activePlan(s)?'<button id="crEditPlan" class="cr-btn">Editar período e disciplinas</button>':'')+'</section>';
+  if(!d)return selection;
+  const dates=planDays(d.start,d.end),subjects=s.types.subjectsByGrade[d.grade]||[];
+  return selection+'<section class="cr-card"><h3>'+ (d.id?'Editar':'Criar novo')+' roteiro</h3><div class="cr-fields">'+
+   '<label>Série<select id="crPlanGrade">'+opt(s.types.grades,d.grade)+'</select></label><label>Modalidade de prova<select id="crPlanTest">'+opt(s.types.tests,d.assessment)+'</select></label><label>Etapa<select id="crPlanStage">'+stageSelect(d.stage)+'</select></label>'+
+   '<label>Início<input id="crPlanStart" type="date" min="'+s.year+'-01-01" max="'+s.year+'-12-31" value="'+esc(d.start)+'"></label><label>Fim<input id="crPlanEnd" type="date" min="'+s.year+'-01-01" max="'+s.year+'-12-31" value="'+esc(d.end)+'"></label></div>'+
+   '<p>Distribua as disciplinas na ordem das provas. Datas sem disciplinas ficam fora do documento.</p>'+dates.map((date,i)=>'<fieldset class="cr-segments"><legend>Dia '+(i+1)+' · '+fmt(date)+'</legend><select data-day-subject="'+date+'">'+opt(subjects,'')+'</select><button data-day-add="'+date+'" class="cr-btn">Adicionar disciplina</button><ol class="cr-day-list">'+d.items.map((r,index)=>r.date===date?'<li>'+esc(r.subject)+' <button data-plan-move="'+index+'" data-dir="-1" aria-label="Subir disciplina">↑</button> <button data-plan-move="'+index+'" data-dir="1" aria-label="Descer disciplina">↓</button> <button data-plan-remove="'+index+'">Retirar</button></li>':'').join('')+'</ol></fieldset>').join('')+
+   '<div class="cr-actions"><button id="crSavePlan" class="cr-btn primary">Salvar cronograma e acompanhar envios</button><button id="crCancelPlan" class="cr-btn">Cancelar edição</button></div></section>';
+ }
+ function progressData(s){
+  const rows=planRows(s),tasks=[],seen=new Set(),unassigned=[];
+  for(const row of rows){
+   const owners=(s.assignments||[]).filter(a=>a.items.some(x=>x.grade===row.grade&&x.subject===row.subject));
+   if(!owners.length&&!unassigned.some(x=>idFor(x)===idFor(row)))unassigned.push(row);
+   for(const owner of owners){
+    const key=owner.teacher.id+'|'+idFor(row);if(seen.has(key))continue;seen.add(key);
+    const doc=s.documents.find(d=>d.authorId===owner.teacher.id&&idFor(d)===idFor(row));
+    tasks.push({teacher:owner.teacher,row,status:doc?.status||'nao-enviado'});
+   }
+  }
+  const pending=tasks.filter(x=>!['enviado','aprovado'].includes(x.status));
+  return {rows,tasks,unassigned,pending,teachers:unique(pending.map(x=>x.teacher.id)).length};
+ }
+ function progressView(s){
+  if(!activePlan(s))return '<section class="cr-card">Crie ou selecione um roteiro para acompanhar os professores.</section>';
+  const p=progressData(s),ready=p.rows.length&&p.rows.every(x=>x.condition==='aprovado')&&!p.pending.length&&!p.unassigned.length;
+  return '<section class="cr-card"><h3>Andamento dos roteiros</h3><div class="cr-progress-grid">'+[
+   [p.tasks.length,'Entregas previstas'],[p.teachers,'Professores com envio pendente'],[p.tasks.filter(x=>x.status==='enviado').length,'Aguardando análise'],[p.tasks.filter(x=>x.status==='aprovado').length,'Aprovados'],[p.unassigned.length,'Disciplinas sem professor vinculado']].map(([n,t])=>'<div><strong>'+n+'</strong><span>'+t+'</span></div>').join('')+'</div><p>'+(ready?'Tudo organizado: roteiro liberado para baixar.':'Acompanhe abaixo os envios e as correções pendentes.')+'</p>'+
+   '<ul>'+p.pending.map(x=>'<li><b>'+esc(x.teacher.name)+'</b> · '+esc(x.row.subject)+' · '+(x.status==='devolvido'?'Devolvido para correção':x.status==='rascunho'?'Rascunho, ainda não enviado':'Não enviado')+'</li>').join('')+p.unassigned.map(x=>'<li>'+esc(x.subject)+' · aguardando autocadastro de um professor nesta série.</li>').join('')+'</ul><p class="cr-help">Os números consideram as disciplinas deste cronograma e os vínculos salvos pelos professores. Atualização automática a cada 30 segundos fora da edição.</p></section>';
  }
  function documentList(s){
-  const docs=s.documents.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
+  const chosen=activePlan(s);const docs=s.documents.filter(d=>d.status!=='rascunho'&&(!chosen||(d.grade===chosen.grade&&d.assessment===chosen.assessment&&d.stage===chosen.stage))).slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
   return '<section class="cr-card"><h3>2. Roteiros recebidos dos professores</h3>'+
    '<p class="cr-help">Aprovar permite a inclusão no material final. Devolver solicita correções mantendo a autoria e o histórico do roteiro.</p>'+
    (docs.length?'<div class="cr-documents">'+docs.map(d=>'<article><div class="cr-document-top"><div><strong>'+esc(d.grade)+' · '+esc(d.subject)+'</strong>'+
@@ -143,10 +152,10 @@
    '</section>';
  }
  function composeView(s){
-  const list=s.composite||[],pending=list.filter(x=>x.condition!=='aprovado');
+  const list=planRows(s),pending=list.filter(x=>x.condition!=='aprovado');
   const ref=s.year===2026?'<p class="cr-help">O roteiro de 2026 pode aparecer apenas como referência histórica, nunca como material aprovado sem conferência da Gestão.</p>':'';
   return '<section class="cr-card"><div class="cr-preview-head"><div><h3>4. Prévia para famílias</h3><p>Roteiros agrupados automaticamente por data, série e disciplina.</p></div>'+
-   '<div class="cr-actions"><label class="cr-page-label">Página PNG <input id="crPngPage" type="number" min="1" max="100" value="'+(s.pngPage||1)+'"></label><button class="cr-btn" id="crExportPNG">Baixar PNG</button><button class="cr-btn primary" id="crExportPDF">Baixar PDF completo</button></div></div>'+
+   '<div class="cr-actions"><label class="cr-page-label">Página PNG <input id="crPngPage" type="number" min="1" max="100" value="'+(s.pngPage||1)+'"></label><button class="cr-btn" id="crExportPNG">Baixar PNG</button><button class="cr-btn primary" id="crExportPDF">Baixar PDF desta série</button></div></div>'+
    '<p class="cr-help">'+list.length+' disciplina(s) programada(s) · '+pending.length+' pendência(s). Os arquivos com pendências terão a marca PRÉVIA PARA CONFERÊNCIA.</p>'+ref+
    '<div class="cr-preview-list">'+(list.length?list.slice().sort(byDate).map(row=>
     '<article class="cr-preview-item"><div><time>'+fmt(row.date)+'</time><strong>'+esc(row.grade)+' · '+esc(row.subject)+'</strong><span>'+esc(row.assessment)+' · '+row.stage+'ª etapa</span></div>'+
@@ -162,15 +171,7 @@
     '</article>').join(''):'<div class="cr-empty">Cadastre o cronograma acima para formar os roteiros automaticamente.</div>')+'</div>'+
     '</section>';
  }
- function teacherRoster(s){
- const rows=s.teacherLinks||[],pending=rows.filter(x=>x.status==='pendente'||x.status==='segmento-nao-autorizado');
- return '<section class="cr-card cr-full"><div class="cr-editor-title"><h3>Professores e disciplinas vinculadas</h3>'+
-  '<button class="cr-btn" type="button" id="crApplyTeacherPlan">Conferir/aplicar cadastros iniciais</button></div>'+
-  '<p class="cr-help">'+rows.length+' profissionais previstos · '+pending.length+' precisam de cadastro ou ajuste de segmento. Os vínculos são por e-mail institucional já cadastrado, sem criação de contas falsas.</p>'+
-  '<div class="cr-roster-grid">'+rows.map(x=>'<div><strong>'+esc(x.person)+'</strong><small>'+esc(x.teacher?.name||x.reason||'Aguardando cadastro')+
-  '</small><span>'+x.linked+' combinações vinculadas</span></div>').join('')+'</div></section>';
-}
-function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignmentEditor(s)+documentList(s)+scheduleEditor(s)+composeView(s)+'</div>'}
+function managerForm(s){return planBuilder(s)+progressView(s)+'<div class="cr-grid">'+documentList(s)+composeView(s)+'</div>'}
  function render(s){
   s.host.innerHTML=header(s)+alert(s)+(s.role==='gestao'?managerForm(s):selfAssignmentForm(s)+teacherForm(s))+
    '<footer class="cr-footer"><button type="button" id="crReload" class="cr-small">Atualizar dados</button>'+
@@ -197,7 +198,7 @@ function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignme
   const $=q=>s.host.querySelector(q);
   $('#crReload')?.addEventListener('click',()=>void reload(s).catch(e=>err(s,e)));
   $('#crWorkYear')?.addEventListener('change',async e=>{
-   s.year=Number(e.target.value);s.loaded=false;s.grade='';s.subject='';s.selfPending=null;s.selfSegments=null;s.selfGrades={};s.selfSubjects={};s.pendingSchedule=null;s.pendingAssignments=null;s.editorParts=null;s.editorSourceText=null;s.editorInstructions=null;
+   s.year=Number(e.target.value);s.loaded=false;s.grade='';s.subject='';s.selfPending=null;s.selfSegments=null;s.selfGrades={};s.selfSubjects={};s.planDraft=null;s.planId='';s.pendingSchedule=null;s.pendingAssignments=null;s.editorParts=null;s.editorSourceText=null;s.editorInstructions=null;
    try{await fetchData(s);render(s)}catch(e){err(s,e)}
   });
   if(s.role==='equipe'){
@@ -263,36 +264,28 @@ function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignme
     }catch(e){s.message=e.message;render(s)}
    });
   }else{
-   $('#crApplyTeacherPlan')?.addEventListener('click',async()=>{
-    try{
-     const preview=await send(s,'applyTeacherPlan',{dryRun:true});
-     const matched=(preview.preview||[]).filter(x=>x.items).length,pending=(preview.preview||[]).filter(x=>!x.items);
-     if(!confirm('Vincular os '+matched+' professores encontrados e preservar atribuições manuais existentes? '+
-       pending.length+' cadastro(s) ainda precisam de conferência.'))return;
-     const applied=await send(s,'applyTeacherPlan',{dryRun:false,confirm:true,replaceExisting:false});
-     s.message='Vínculos conferidos: '+(applied.applied||[]).filter(x=>x.status==='aplicado').length+
-       ' aplicados; vínculos manuais anteriores preservados.';await fetchData(s);render(s);
-    }catch(e){err(s,e)}
+   $('#crNewPlan')?.addEventListener('click',()=>{s.planDraft={grade:'6º ano',assessment:'AP2',stage:1,start:'',end:'',items:[]};render(s)});
+   $('#crPlanSelect')?.addEventListener('change',e=>{s.planId=e.target.value;s.planDraft=null;render(s)});
+   $('#crEditPlan')?.addEventListener('click',()=>{s.planDraft={...activePlan(s),items:s.schedule.filter(x=>x.planId===s.planId).map(x=>({...x}))};render(s)});
+   $('#crCancelPlan')?.addEventListener('click',()=>{s.planDraft=null;render(s)});
+   for(const [id,key] of [['crPlanGrade','grade'],['crPlanTest','assessment'],['crPlanStage','stage'],['crPlanStart','start'],['crPlanEnd','end']])$('#'+id)?.addEventListener('change',e=>{
+    const d=s.planDraft,previous=d[key];d[key]=key==='stage'?Number(e.target.value):e.target.value;
+    if((key==='start'||key==='end')&&d.start&&d.end){const outside=d.items.filter(x=>x.date<d.start||x.date>d.end);if(outside.length){if(confirm('A mudança de período retirará '+outside.length+' disciplina(s) fora das novas datas. Confirmar?'))d.items=d.items.filter(x=>x.date>=d.start&&x.date<=d.end);else d[key]=previous;}}
+    if(key==='grade')d.items=d.items.filter(x=>(s.types.subjectsByGrade[d.grade]||[]).includes(x.subject));
+    render(s);
    });
-   $('#crTeacher')?.addEventListener('change',()=>{s.teacherEmail=$('#crTeacher').value;s.pendingAssignments=null;render(s)});
-   $('#crAssignGrade')?.addEventListener('change',()=>changeGrade(s,'crAssignGrade','crAssignSubject'));
-   $('#crScheduleGrade')?.addEventListener('change',()=>changeGrade(s,'crScheduleGrade','crScheduleSubject'));
-   $('#crScheduleDate')?.addEventListener('change',event=>{s.scheduleDate=event.target.value});
-   $('#crAssignSubject')?.addEventListener('change',()=>{s.subject=$('#crAssignSubject').value});
-   $('#crScheduleSubject')?.addEventListener('change',()=>{s.subject=$('#crScheduleSubject').value});
-   $('#crAddAssignment')?.addEventListener('click',()=>{
-    const grade=$('#crAssignGrade').value,subject=$('#crAssignSubject').value,owner=s.assignments.find(a=>a.teacher?.email===s.teacherEmail);
-    const a=s.pendingAssignments||[...(owner?.items||[])];if(!a.some(x=>x.grade===grade&&x.subject===subject))a.push({grade,subject});
-    s.pendingAssignments=a;render(s);
+   s.host.querySelectorAll('[data-day-add]').forEach(btn=>btn.onclick=()=>{
+    const date=btn.dataset.dayAdd,subject=[...s.host.querySelectorAll('[data-day-subject]')].find(el=>el.dataset.daySubject===date)?.value;
+    if(!subject)return;const d=s.planDraft;if(!d.items.some(x=>x.date===date&&x.subject===subject))d.items.push({date,subject});render(s);
    });
-   s.host.querySelectorAll('[data-unassign]').forEach(btn=>btn.onclick=()=>{
-    const owner=s.assignments.find(a=>a.teacher?.email===s.teacherEmail),list=s.pendingAssignments||[...(owner?.items||[])];
-    s.pendingAssignments=list.filter((_,i)=>i!==Number(btn.dataset.unassign));render(s);
+   s.host.querySelectorAll('[data-plan-remove]').forEach(btn=>btn.onclick=()=>{s.planDraft.items.splice(Number(btn.dataset.planRemove),1);render(s)});
+   s.host.querySelectorAll('[data-plan-move]').forEach(btn=>btn.onclick=()=>{
+    const rows=s.planDraft.items,i=Number(btn.dataset.planMove),dir=Number(btn.dataset.dir);let j=i+dir;
+    while(j>=0&&j<rows.length&&rows[j].date!==rows[i].date)j+=dir;
+    if(j>=0&&j<rows.length)[rows[i],rows[j]]=[rows[j],rows[i]];render(s);
    });
-   $('#crSaveAssignments')?.addEventListener('click',async()=>{
-    const owner=s.assignments.find(a=>a.teacher?.email===s.teacherEmail),items=s.pendingAssignments||owner?.items||[];
-    try{await send(s,'assign',{email:s.teacherEmail,items});s.message='Disciplinas vinculadas à conta do professor.';await fetchData(s);s.pendingAssignments=null;render(s)}
-    catch(e){err(s,e)}
+   $('#crSavePlan')?.addEventListener('click',async()=>{
+    try{const result=await send(s,'savePlan',{plan:s.planDraft,baseRevision:s.scheduleRevision});s.planId=result.planId;s.planDraft=null;await fetchData(s);s.message='Cronograma salvo. Os envios dos professores serão organizados automaticamente.';render(s)}catch(e){err(s,e)}
    });
    s.host.querySelectorAll('[data-review]').forEach(btn=>btn.onclick=async()=>{
     const {review,author,doc,revision}=btn.dataset;
@@ -301,27 +294,6 @@ function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignme
     if(review==='aprovado'&&!confirm('Aprovar este roteiro para a organização destinada às famílias?'))return;
     try{await send(s,'review',{authorId:author,documentId:doc,revision:Number(revision),status:review,reviewNote:note});
      s.message='Situação do roteiro atualizada.';await fetchData(s);render(s)}catch(e){err(s,e)}
-   });
-   $('#crAddSchedule')?.addEventListener('click',()=>{
-    const date=$('#crScheduleDate').value,grade=$('#crScheduleGrade').value,subject=$('#crScheduleSubject').value,
-     assessment=$('#crScheduleTest').value,stage=Number($('#crScheduleStage').value);
-    if(!date||!grade||!subject||!assessment){s.message='Preencha data, série, disciplina e avaliação.';render(s);return}
-    const row={date,grade,subject,assessment,stage},list=s.pendingSchedule||[...s.schedule];
-    if(list.some(e=>e.date===date&&e.grade===grade&&e.subject===subject&&e.assessment===assessment&&e.stage===stage)){
-     s.message='Esta disciplina já consta nesta data.';render(s);return}
-    list.push(row);s.scheduleDate=date;s.pendingSchedule=list;s.message='';render(s);
-   });
-   s.host.querySelectorAll('[data-remove-schedule]').forEach(btn=>btn.onclick=()=>{
-    const list=s.pendingSchedule||[...s.schedule];s.pendingSchedule=list.filter((_,i)=>i!==Number(btn.dataset.removeSchedule));render(s);
-   });
-   s.host.querySelectorAll('[data-move-schedule]').forEach(btn=>btn.onclick=()=>{
-    const list=[...(s.pendingSchedule||s.schedule)],i=Number(btn.dataset.moveSchedule),direction=Number(btn.dataset.direction);
-    let j=i+direction;while(j>=0&&j<list.length&&(list[j].date!==list[i].date||list[j].grade!==list[i].grade))j+=direction;
-    if(j<0||j>=list.length)return;[list[i],list[j]]=[list[j],list[i]];s.pendingSchedule=list.map((x,order)=>({...x,order}));render(s);
-   });
-   $('#crSaveSchedule')?.addEventListener('click',async()=>{
-    try{await send(s,'schedule',{items:s.pendingSchedule||s.schedule});s.message='Cronograma salvo. Os roteiros aprovados serão associados automaticamente às datas.';await fetchData(s);s.pendingSchedule=null;render(s)}
-    catch(e){err(s,e)}
    });
    $('#crPngPage')?.addEventListener('change',e=>{s.pngPage=Math.max(1,Math.min(100,Number(e.target.value)||1))});
    $('#crExportPNG')?.addEventListener('click',()=>exportFile(s,'png'));
@@ -351,10 +323,20 @@ function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignme
    ctx.fillStyle='#e4eaf0';ctx.fillRect(margin,253,W-2*margin,2);y=288;pages.push(canvas);
   };
   const ensure=h=>{if(y+h>H-130)addPage()};
-  const line=(text,size=20,bold=false,color='#163e60',indented=0)=>{
+  const line=(text,size=20,bold=false,color='#163e60',indented=0,justify=false)=>{
    ctx.font=(bold?'bold ':'')+size+'px Arial';ctx.fillStyle=color;
-   const all=wrap(ctx,text,W-2*margin-indented);
-   for(const str of all){ensure(size*1.4+6);ctx.font=(bold?'bold ':'')+size+'px Arial';ctx.fillStyle=color;ctx.fillText(str,margin+indented,y);y+=size*1.38;}
+   for(const paragraph of String(text||'').split(/\r?\n/)){
+    const all=wrap(ctx,paragraph,W-2*margin-indented);
+    for(let index=0;index<all.length;index++){
+     const str=all[index];ensure(size*1.4+6);ctx.font=(bold?'bold ':'')+size+'px Arial';ctx.fillStyle=color;
+     const words=str.split(/\s+/).filter(Boolean);
+     if(justify&&index<all.length-1&&words.length>1){
+      const width=words.reduce((sum,word)=>sum+ctx.measureText(word).width,0),gap=(W-2*margin-indented-width)/(words.length-1);let x=margin+indented;
+      for(const word of words){ctx.fillText(word,x,y);x+=ctx.measureText(word).width+gap;}
+     }else ctx.fillText(str,margin+indented,y);
+     y+=size*1.38;
+    }
+   }
   };
   addPage();
   const entries=rows.filter(x=>x.date);
@@ -364,11 +346,17 @@ function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignme
    if(row.grade!==currentGrade){
     if(currentGrade)addPage();currentGrade=row.grade;currentDate='';
     line('ROTEIRO DE AVALIAÇÃO · '+row.grade.toUpperCase(),28,true);y+=16;
-    line('CRONOGRAMA DAS AVALIAÇÕES',22,true);
+    if(s.outputPlan){line(s.outputPlan.assessment+' · '+s.outputPlan.stage+'ª ETAPA',21,true);line('PERÍODO: '+fmt(s.outputPlan.start)+' A '+fmt(s.outputPlan.end),19);y+=12;}
+    line('DATA / DISCIPLINAS',22,true);
     const summary=new Map();for(const r of entries.filter(x=>x.grade===currentGrade)){
      const subjects=summary.get(r.date)||[];subjects.push(r.subject+' ('+r.assessment+' · '+r.stage+'ª etapa)');summary.set(r.date,subjects);
     }
-    for(const [date,subjects] of summary)line(fmt(date)+' — '+subjects.join(' / '),18);
+    for(const [date,subjects] of summary){
+     ctx.font='18px Arial';const wrapped=wrap(ctx,subjects.join(' / '),W-2*margin-205),height=Math.max(52,wrapped.length*26+24);
+     ensure(height+12);ctx.fillStyle='#edf3f8';ctx.fillRect(margin,y-20,W-2*margin,height);
+     ctx.fillStyle='#163e60';ctx.font='bold 18px Arial';ctx.fillText(fmt(date),margin+12,y+4);
+     ctx.font='18px Arial';wrapped.forEach((text,index)=>ctx.fillText(text,margin+190,y+4+index*26));y+=height+8;
+    }
     y+=28;
    }
    if(row.date!==currentDate){
@@ -377,13 +365,13 @@ function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignme
    }
    ensure(108);line(row.grade.toUpperCase()+' · '+row.subject,24,true);line(row.assessment+' · '+row.stage+'ª ETAPA',17,true,'#698098');y+=10;
    if(row.roteiro?.sourceText){
-     line(row.roteiro.sourceText,19,false,'#163e60');
+     line(row.roteiro.sourceText,19,false,'#163e60',0,true);
    }else if(row.roteiro?.blocks?.length){
     for(const b of row.roteiro.blocks){
      line('LIVRO / MATERIAL: '+b.book,19,false);
      line('UNIDADE: '+b.unit,19,false);
      line('CAPÍTULO: '+b.chapter,19,false);
-     line('TEMAS: '+b.theme,19,false);
+     line('TEMAS: '+b.theme,19,false,'#163e60',0,true);
      line('PÁGINAS: '+b.pages,19,false);
      y+=12;
     }
@@ -407,8 +395,10 @@ function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignme
  }
  function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),40000)}
  async function exportFile(s,kind){
-  if(!s.composite.length){s.message='Defina e salve ao menos uma avaliação no cronograma antes de exportar.';render(s);return}
-  const list=makePages(s),base='Cora_Roteiros_Avaliacoes_'+s.year;
+  const progress=progressData(s),selected=planRows(s);
+  if(!selected.length){s.message='Defina e salve ao menos uma avaliação no cronograma antes de exportar.';render(s);return}
+  if(selected.some(x=>x.condition!=='aprovado')||progress.pending.length||progress.unassigned.length){s.message='O download final será liberado após o envio e a aprovação de todas as disciplinas deste roteiro.';render(s);return;}
+  const plan=activePlan(s),list=makePages({...s,composite:selected,outputPlan:plan}),base='Cora_Roteiro_'+safeFileName(plan.grade+'_'+plan.assessment+'_'+plan.stage+'_etapa_'+s.year);
   try{
    if(kind==='pdf'){
     if(!window.CoraPDF?.fromCanvases)throw Error('Gerador PDF indisponível. Atualize o aplicativo.');
@@ -426,11 +416,12 @@ function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignme
  async function mount({role,host,year,api:callApi}={}){
   if(!host||typeof callApi!=='function')return;
   if(inst.get(host)?.year===year&&inst.get(host)?.loaded)return;
+  if(inst.get(host)?.timer)clearInterval(inst.get(host).timer);
   const s={role,host,year,api:callApi,grade:'',subject:'',stage:1,assessment:'AP2',message:'',loaded:false,
    assignments:[],documents:[],schedule:[],composite:[],people:[],templates:[],teacherLinks:[],editorSourceText:null};inst.set(host,s);
   host.innerHTML='<div class="cr-loading">Carregando roteiros e vínculos pedagógicos...</div>';
-  try{await fetchData(s);render(s);}catch(e){host.innerHTML='<div class="cr-error">Não foi possível acessar os roteiros: '+esc(e.message)+
+  try{await fetchData(s);render(s);if(role==='gestao'){s.timer=setInterval(async()=>{if(!host.isConnected){clearInterval(s.timer);return;}if(s.planDraft||document.hidden||s.refreshing)return;s.refreshing=true;try{await fetchData(s);render(s)}catch{}finally{s.refreshing=false}},30000);}}catch(e){host.innerHTML='<div class="cr-error">Não foi possível acessar os roteiros: '+esc(e.message)+
    '<p>Confirme seu login individual e atualize a página.</p></div>'}
  }
- window.CoraRoteiros={mount,makePages,compositionKey:idFor};
+ window.CoraRoteiros={mount,makePages,compositionKey:idFor,progressData,planDays};
 })();
