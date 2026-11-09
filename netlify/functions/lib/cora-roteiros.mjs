@@ -126,7 +126,8 @@ async function fullDocuments(year,people){
  const result=await Promise.all(people.map(async p=>(await docsOf(year,p.id))));
  return result.flat();
 }
-const supported={grades,subjectsByGrade:Object.fromEntries(grades.map(g=>[g,subjectsFor(g)])),tests};
+const segments={'Educação Infantil':grades.slice(0,5),'Ensino Fundamental I':grades.slice(5,10),'Ensino Fundamental II':grades.slice(10,14),'Ensino Médio':grades.slice(14)};
+const supported={segments,grades,subjectsByGrade:Object.fromEntries(grades.map(g=>[g,subjectsFor(g)])),tests};
 export async function roteiroAction({role,member,request,url}){
  const year=isYear(url.searchParams.get('year'));if(!year)return error('Ano letivo inválido.');
  const isManager=role==='gestao';
@@ -170,7 +171,7 @@ export async function roteiroAction({role,member,request,url}){
     canvaReport:isManager&&year===2026?CANVA_IMPORT_REPORT:null,
     teacherLinks:isManager?teacherLinks:[],people:isManager?people:[],assignments,selfConfirmed:!isManager&&(await read(assignmentsKey(year,member.id),{})).source==='autocadastro-professor'};
   }
-  return {year,types:supported,people:isManager?people:[],assignments,documents,schedule,
+  return {year,types:supported,profileSegments:isManager?[]:(await read(assignmentsKey(year,member.id),{})).segments||member.segments||[],people:isManager?people:[],assignments,documents,schedule,
    templates:isManager?[]:templates,
    canvaReport:isManager&&year===2026?CANVA_IMPORT_REPORT:null,
    teacherLinks:isManager?teacherLinks:[],
@@ -211,8 +212,10 @@ export async function roteiroAction({role,member,request,url}){
   if(!Array.isArray(body.items)||!body.items.length||body.items.length>40)return error('Escolha de 1 a 40 combinações de série e disciplina.');
   const items=body.items.map(normalizePair);
   if(items.some(x=>!x))return error('Série ou disciplina inválida.');
+  const selectedSegments=Array.isArray(body.segments)?body.segments:[...new Set(items.map(x=>requiredSegment(x.grade)))];
+  if(!selectedSegments.length||selectedSegments.some(x=>!segments[x])||items.some(x=>!selectedSegments.includes(requiredSegment(x.grade))))return error('Confira os segmentos selecionados e as turmas vinculadas.');
   const unique=items.filter((x,i)=>items.findIndex(y=>y.grade===x.grade&&y.subject===x.subject)===i);
-  await write(assignmentsKey(year,member.id),{year,teacherId:member.id,items:unique,source:'autocadastro-professor',supplementArtsPhysics2026:true,updatedAt:new Date().toISOString()});
+  await write(assignmentsKey(year,member.id),{year,teacherId:member.id,items:unique,segments:[...new Set(selectedSegments)],source:'autocadastro-professor',supplementArtsPhysics2026:true,updatedAt:new Date().toISOString()});
   return {ok:true,items:unique};
  }
  if(operation==='assign'){

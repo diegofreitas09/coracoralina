@@ -75,3 +75,5 @@
 .cr-roster-grid small{font-size:10px;color:#647d91;margin:5px 0}
 .cr-roster-grid span{font-size:10px;color:#356c8b;font-weight:750}
 @media(max-width:560px){.cr-canva-source{padding:10px}.cr-roster-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.cr-segments{border:1px solid #91a9bd;border-radius:12px;padding:16px;margin:16px 0;display:flex;flex-wrap:wrap;gap:12px}.cr-segments legend{font-weight:700}.cr-segments p{flex-basis:100%;margin:4px 0}.cr-segments label{display:flex;gap:8px;align-items:center}.cr-segments input[type=checkbox]{width:20px;min-width:20px;height:20px;margin:0}.cr-segments select{max-width:100%;min-width:160px}

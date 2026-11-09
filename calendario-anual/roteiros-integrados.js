@@ -20,7 +20,7 @@
  const stageSelect=stage=>[1,2,3,4].map(n=>'<option '+(Number(stage)===n?'selected ':'')+'value="'+n+'">'+n+'ª etapa</option>').join('');
  function api(s,body,params=''){return s.api('roteiros',body,'year='+s.year+(params?'&'+params:''))}
  async function fetchData(s){const answer=await api(s,undefined);
-  s.types=answer.types;s.people=answer.people||[];s.assignments=answer.assignments||[];s.documents=answer.documents||[];
+  s.types=answer.types;s.profileSegments=answer.profileSegments||[];s.people=answer.people||[];s.assignments=answer.assignments||[];s.documents=answer.documents||[];
   s.schedule=answer.schedule||[];s.composite=answer.composite||[];s.loaded=true;
   s.templates=answer.templates||[];s.teacherLinks=answer.teacherLinks||[];
   s.canvaReport=answer.canvaReport||null;s.canvaSource=answer.canvaSource||null;
@@ -36,12 +36,23 @@
  function header(s){return '<header class="cr-heading"><div><small>COLÉGIO CORA CORALINA · '+(s.role==='gestao'?'GESTÃO':'EQUIPE PEDAGÓGICA')+'</small>'+
    '<h2>Roteiros das avaliações</h2><p>Livro → Unidade → Capítulo → Temas → Páginas. Organização anual integrada.</p></div>'+
    '<label class="cr-year">Ano do roteiro<select id="crWorkYear">'+opt(Array.from({length:10},(_,i)=>String(2026+i)),String(s.year))+'</select></label></header>'}
+ function selectedSegments(s){
+  if(s.selfSegments)return s.selfSegments;
+  const config=s.types.segments||{};
+  return unique([...s.profileSegments.filter(x=>config[x]),...Object.keys(config).filter(segment=>s.assignments.some(x=>config[segment].includes(x.grade)))]);
+ }
  function selfAssignmentForm(s){
-  const items=s.selfPending||s.assignments,grade=s.selfGrade||'6º ano',subs=s.types.subjectsByGrade[grade]||[];
-  return '<section class="cr-card"><h3>Minhas séries e disciplinas · '+s.year+'</h3><p>Cadastre as turmas em que você leciona. Ao salvar, os roteiros disponíveis serão vinculados à sua conta para revisão.</p>'+
-   '<label>Série<select id="crSelfGrade">'+opt(s.types.grades,grade)+'</select></label><label>Disciplina<select id="crSelfSubject">'+opt(subs,s.selfSubject||subs[0])+'</select></label>'+
-   '<button type="button" id="crSelfAdd" class="cr-btn">Adicionar série e disciplina</button><div>'+items.map((x,i)=>'<p>'+esc(x.grade)+' · '+esc(x.subject)+' <button type="button" data-self-remove="'+i+'">Retirar</button></p>').join('')+'</div>'+
-   '<button type="button" id="crSelfSave" class="cr-btn primary">Confirmar minhas turmas e carregar roteiros</button></section>';
+  const items=s.selfPending||s.assignments,config=s.types.segments||{},selected=selectedSegments(s);
+  return '<section class="cr-card"><h3>Meus segmentos, turmas e disciplinas · '+s.year+'</h3><p>Os segmentos cadastrados no seu perfil já aparecem marcados. Você pode atuar em mais de um segmento e em disciplinas diferentes.</p>'+
+   '<fieldset class="cr-segments"><legend>1. Em quais segmentos você leciona?</legend>'+Object.keys(config).map(segment=>'<label><input type="checkbox" data-self-segment="'+esc(segment)+'" '+(selected.includes(segment)?'checked':'')+'> '+esc(segment)+'</label>').join('')+'</fieldset>'+
+   selected.map(segment=>{
+    const chosen=(s.selfGrades||{})[segment]||[],subjects=chosen.length?(s.types.subjectsByGrade[chosen[0]]||[]).filter(subject=>chosen.every(grade=>(s.types.subjectsByGrade[grade]||[]).includes(subject))):[];
+    return '<fieldset class="cr-segments"><legend>'+esc(segment)+'</legend><p>2. Marque uma ou mais turmas para esta disciplina.</p>'+config[segment].map(grade=>'<label><input type="checkbox" data-self-grade="'+esc(grade)+'" data-segment="'+esc(segment)+'" '+(chosen.includes(grade)?'checked':'')+'> '+esc(grade)+'</label>').join('')+
+     '<label>3. Disciplina dessas turmas<select data-self-subject="'+esc(segment)+'">'+opt(subjects,(s.selfSubjects||{})[segment]||subjects[0],chosen.length?'Escolha a disciplina':'Selecione as turmas primeiro')+'</select></label>'+
+     '<p class="cr-help">A lista mostra as disciplinas disponíveis nas turmas marcadas. Para outra disciplina, escolha suas respectivas turmas e adicione novamente.</p><button type="button" class="cr-btn" data-self-add="'+esc(segment)+'" '+(!chosen.length?'disabled':'')+'>Adicionar disciplina às turmas marcadas</button></fieldset>';
+   }).join('')+
+   '<h4>Minhas atribuições</h4><div>'+items.map((x,i)=>'<p>'+esc(x.grade)+' · '+esc(x.subject)+' <button type="button" data-self-remove="'+i+'">Retirar</button></p>').join('')+'</div>'+
+   '<button type="button" id="crSelfSave" class="cr-btn primary">Confirmar segmentos, turmas e carregar roteiros</button></section>';
  }
  function teacherForm(s){
   const grades=unique(s.assignments.map(x=>x.grade)),chosen=grades.includes(s.grade)?s.grade:grades[0];
@@ -186,19 +197,29 @@ function managerForm(s){return teacherRoster(s)+'<div class="cr-grid">'+assignme
   const $=q=>s.host.querySelector(q);
   $('#crReload')?.addEventListener('click',()=>void reload(s).catch(e=>err(s,e)));
   $('#crWorkYear')?.addEventListener('change',async e=>{
-   s.year=Number(e.target.value);s.loaded=false;s.grade='';s.subject='';s.selfPending=null;s.pendingSchedule=null;s.pendingAssignments=null;s.editorParts=null;s.editorSourceText=null;s.editorInstructions=null;
+   s.year=Number(e.target.value);s.loaded=false;s.grade='';s.subject='';s.selfPending=null;s.selfSegments=null;s.selfGrades={};s.selfSubjects={};s.pendingSchedule=null;s.pendingAssignments=null;s.editorParts=null;s.editorSourceText=null;s.editorInstructions=null;
    try{await fetchData(s);render(s)}catch(e){err(s,e)}
   });
   if(s.role==='equipe'){
-   $('#crSelfGrade')?.addEventListener('change',e=>{readPartForm(s);s.selfGrade=e.target.value;s.selfSubject='';render(s)});
-   $('#crSelfAdd')?.addEventListener('click',()=>{
-    readPartForm(s);const grade=$('#crSelfGrade').value,subject=$('#crSelfSubject').value;
-    if(!grade||!subject)return;const items=s.selfPending||[...s.assignments];
-    if(!items.some(x=>x.grade===grade&&x.subject===subject))items.push({grade,subject});s.selfPending=items;render(s);
+   s.host.querySelectorAll('[data-self-segment]').forEach(box=>box.onchange=()=>{
+    readPartForm(s);s.selfSegments=[...s.host.querySelectorAll('[data-self-segment]:checked')].map(x=>x.dataset.selfSegment);
+    const allowed=s.selfSegments.flatMap(x=>s.types.segments[x]);s.selfPending=(s.selfPending||s.assignments).filter(x=>allowed.includes(x.grade));render(s);
+   });
+   s.host.querySelectorAll('[data-self-grade]').forEach(box=>box.onchange=()=>{
+    readPartForm(s);const segment=box.dataset.segment;s.selfGrades=s.selfGrades||{};
+    s.selfGrades[segment]=[...s.host.querySelectorAll('[data-self-grade]:checked')].filter(x=>x.dataset.segment===segment).map(x=>x.dataset.selfGrade);render(s);
+   });
+   s.host.querySelectorAll('[data-self-subject]').forEach(select=>select.onchange=()=>{s.selfSubjects=s.selfSubjects||{};s.selfSubjects[select.dataset.selfSubject]=select.value;});
+   s.host.querySelectorAll('[data-self-add]').forEach(btn=>btn.onclick=()=>{
+    readPartForm(s);const segment=btn.dataset.selfAdd,grades=(s.selfGrades||{})[segment]||[];
+    const subject=[...s.host.querySelectorAll('[data-self-subject]')].find(x=>x.dataset.selfSubject===segment)?.value;
+    if(!subject||!grades.length)return;const items=s.selfPending||[...s.assignments];
+    for(const grade of grades)if(!items.some(x=>x.grade===grade&&x.subject===subject))items.push({grade,subject});
+    s.selfPending=items;render(s);
    });
    s.host.querySelectorAll('[data-self-remove]').forEach(btn=>btn.onclick=()=>{readPartForm(s);s.selfPending=(s.selfPending||s.assignments).filter((_,i)=>i!==Number(btn.dataset.selfRemove));render(s)});
    $('#crSelfSave')?.addEventListener('click',async()=>{
-    try{await send(s,'selfAssign',{items:s.selfPending||s.assignments});s.selfPending=null;s.editorParts=null;s.editorSourceText=null;s.editorInstructions=null;await fetchData(s);s.message='Turmas cadastradas. Escolha uma das quatro etapas para revisar e encaminhar seus roteiros.';render(s)}catch(e){err(s,e)}
+    try{await send(s,'selfAssign',{items:s.selfPending||s.assignments,segments:selectedSegments(s)});s.selfPending=null;s.editorParts=null;s.editorSourceText=null;s.editorInstructions=null;await fetchData(s);s.message='Turmas cadastradas. Escolha uma das quatro etapas para revisar e encaminhar seus roteiros.';render(s)}catch(e){err(s,e)}
    });
    s.host.querySelectorAll('[data-choose-stage]').forEach(btn=>btn.onclick=()=>{s.stage=Number(btn.dataset.chooseStage);s.editorParts=null;s.editorInstructions=null;s.editorSourceText=null;render(s)});
    $('#crGrade')?.addEventListener('change',()=>{readPartForm(s);s.grade=$('#crGrade').value;s.subject='';s.editorParts=null;s.editorInstructions=null;s.editorSourceText=null;render(s)});
