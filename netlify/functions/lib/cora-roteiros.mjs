@@ -43,6 +43,16 @@ const permittedSegment=(teacher,grade)=>Array.isArray(teacher.segments)&&
 const roster=async()=>{const data=await listEmployees();return (data.members||[]).filter(m=>m.id&&m.email).map(identity);};
 const effectiveAssignments=(rule,teacher)=>rule.assignments.map(normalizePair).filter(Boolean)
  .filter(pair=>permittedSegment(teacher,pair.grade)).filter((item,i,all)=>all.findIndex(v=>v.grade===item.grade&&v.subject===item.subject)===i);
+// Complemento solicitado pela Gestão: aplicar uma única vez sem retirar vínculos existentes.
+const assignmentSupplement=(saved,rule,items)=>{
+ const subject=rule.person==='Júlia'?'ARTE':rule.person==='Mônica'?'FÍSICA':null;
+ if(!subject||saved.supplementArtsPhysics2026)return null;
+ const additions=items.filter(x=>x.subject===subject);
+ if(!additions.length)return null;
+ const merged=[...(saved.items||[])];
+ for(const item of additions)if(!belongs(merged,item))merged.push(item);
+ return {...saved,items:merged,supplementArtsPhysics2026:true};
+};
 async function bootstrapTeacherLinks(year,people){
  if(year!==2026)return [];
  const rows=planForRoster(people);
@@ -50,7 +60,11 @@ async function bootstrapTeacherLinks(year,people){
   if(!row.teacher)return {person:row.person,linked:0,status:'pendente',reason:row.reason};
   const items=effectiveAssignments(row.rule,row.teacher),expected=row.rule.assignments.length;
   const key=assignmentsKey(year,row.teacher.id);
-  const saved=await read(key,null);
+  let saved=await read(key,null);
+  if(saved!==null){
+   const supplemented=assignmentSupplement(saved,row.rule,items);
+   if(supplemented){saved={...supplemented,updatedAt:new Date().toISOString()};await write(key,saved);}
+  }
   if(saved!==null)return {person:row.person,teacher:row.teacher,linked:saved.items?.length||0,
     expected,status:'cadastro-existente',skipped:expected-items.length};
   if(!items.length)return {person:row.person,teacher:row.teacher,linked:0,expected,status:'segmento-nao-autorizado'};
@@ -249,4 +263,4 @@ export async function roteiroAction({role,member,request,url}){
  return error('Operação desconhecida.');
 }
 export const roteiroConfig=supported;
-export const roteiroRules={gradeOf,subjectOf,testOf,validDate,idFor,permittedSegment,cleanDoc,normalizePair,bootstrapTeacherLinks,effectiveAssignments};
+export const roteiroRules={gradeOf,subjectOf,testOf,validDate,idFor,permittedSegment,cleanDoc,normalizePair,bootstrapTeacherLinks,effectiveAssignments,assignmentSupplement};

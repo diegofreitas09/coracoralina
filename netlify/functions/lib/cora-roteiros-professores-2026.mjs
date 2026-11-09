@@ -18,7 +18,8 @@ export const TEACHER_PLAN=[
  {person:'Emanuel',aliases:['Emanuel'],assignments:pairs(GRADES_EM,['INGLÊS'])},
  {person:'Júlia',aliases:['Júlia','Julia'],assignments:[
    ...pairs(['6º ano','7º ano'],['HISTÓRIA','FILOSOFIA']),
-   ...pairs(['1ª série'],['ARTE'])]},
+   ...pairs([...GRADES_FII,'1ª série'],['ARTE'])]},
+ {person:'Mônica',aliases:['Mônica','Monica'],assignments:pairs(['9º ano',...GRADES_EM],['FÍSICA'])},
  {person:'Renan',aliases:['Renan'],assignments:pairs(['8º ano','9º ano',...GRADES_EM],['HISTÓRIA','FILOSOFIA','SOCIOLOGIA'])},
  {person:'Mariana',aliases:['Mariana'],assignments:pairs(['8º ano','9º ano',...GRADES_EM],['GEOGRAFIA'])},
  {person:'Alana',aliases:['Alana'],assignments:pairs(['6º ano','7º ano'],['GEOGRAFIA'])},

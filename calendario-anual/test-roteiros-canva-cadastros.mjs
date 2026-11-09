@@ -21,14 +21,14 @@ assert.ok(f('8º ano',2,'AP2','MATEMÁTICA')?.rawText.includes('Expressões alg�
 assert.ok(f('8º ano',1,'AP2','MATEMÁTICA')?.rawText.includes('Conjuntos numéricos'));
 assert.ok(f('1ª série',1,'AP2','INGLÊS')?.rawText.includes('Dreams, goals'));
 assert.ok(CANVA_IMPORT_REPORT.unmatchedLabels.length>=4,'Sinalizar rótulos sem corpo mesmo que o conteúdo esteja em outra caixa');
-assert.equal(TEACHER_PLAN.length,15);
+assert.equal(TEACHER_PLAN.length,16);
 const sample=TEACHER_PLAN.map((x,i)=>({
  id:'p-'+i,email:'p'+i+'@escola.test',name:x.person==='Breno'?'Alysson Breno Bezerra da Silva':
     x.person+' Sobrenome',profile:'Professor',status:'Ativo',
  segments:['Ensino Fundamental II','Ensino Médio']
 }));
 const res=planForRoster(sample);
-assert.ok(res.every(r=>r.matches===1), 'As 15 pessoas devem ser identificadas sem ambiguidade');
+assert.ok(res.every(r=>r.matches===1), 'As 16 pessoas devem ser identificadas sem ambiguidade');
 assert.ok(res.every(r=>r.teacher&&r.teacher.email), 'Requer conta real e e-mail');
 const assigned=new Map(res.map(r=>[r.person,roteiroRules.effectiveAssignments(r.rule,r.teacher)]));
 assert.ok(assigned.get('Herculano').some(x=>x.grade==='6º ano'&&x.subject==='GRAMÁTICA'));
@@ -40,6 +40,16 @@ assert.ok(assigned.get('Randolfo').some(x=>x.grade==='3ª série'&&x.subject==='
 assert.ok(assigned.get('John').some(x=>x.grade==='2ª série'&&x.subject==='BIOLOGIA'));
 assert.ok(assigned.get('Breno').some(x=>x.grade==='7º ano'&&x.subject==='EDUAÇÃO FÍSICA'));
 assert.ok(assigned.get('Gleiciane').some(x=>x.grade==='8º ano'&&x.subject==='MATEMÁTICA'));
+assert.deepEqual(assigned.get('Júlia').filter(x=>x.subject==='ARTE').map(x=>x.grade),['6º ano','7º ano','8º ano','9º ano','1ª série']);
+assert.deepEqual(assigned.get('Mônica').map(x=>x.grade),['9º ano','1ª série','2ª série','3ª série']);
+assert.ok(assigned.get('Mônica').every(x=>x.subject==='FÍSICA'));
+const juliaRule=TEACHER_PLAN.find(x=>x.person==='Júlia');
+const savedJulia={items:[{grade:'6º ano',subject:'HISTÓRIA'},{grade:'1ª série',subject:'ARTE'}]};
+const migrated=roteiroRules.assignmentSupplement(savedJulia,juliaRule,assigned.get('Júlia'));
+assert.equal(migrated.items.filter(x=>x.subject==='ARTE').length,5);
+assert.ok(migrated.items.some(x=>x.subject==='HISTÓRIA'));
+assert.equal(roteiroRules.assignmentSupplement(migrated,juliaRule,assigned.get('Júlia')),null,'Não reaplicar após ajuste manual');
+assert.equal(roteiroRules.assignmentSupplement(savedJulia,juliaRule,[]),null,'Não ampliar segmento sem autorização');
 const ambiguous=[...sample,{...sample[0],id:'another-id',email:'other@escola.test'}];
 assert.equal(planForRoster(ambiguous).find(x=>x.person==='Herculano').matches,2);
 assert.equal(planForRoster(ambiguous).find(x=>x.person==='Herculano').teacher,null,'Não atribuir a conta ambígua');
@@ -78,4 +88,4 @@ assert.ok(UI.includes('crConfirmCanva')&&UI.includes('applyTeacherPlan'));
 assert.ok(UI.includes("row.template.rawText")&&UI.includes("CoraPDF.fromCanvases("));
 assert.ok(API.includes("if(action==='roteiros'"));
 assert.ok(roteiroConfig.subjectsByGrade['8º ano'].includes('SOCIOLOGIA'));
-console.log('PASSOU: 539 roteiros Canva, 7 turmas, 15 professores, autorização por segmento, autoria, etapas, AD/AP2, revisão obrigatória, exportação e sem reutilização indevida em 2027.');
+console.log('PASSOU: 539 roteiros Canva, 7 turmas, 16 professores, autorização por segmento, autoria, etapas, AD/AP2, revisão obrigatória, exportação e sem reutilização indevida em 2027.');
